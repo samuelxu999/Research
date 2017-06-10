@@ -23,29 +23,42 @@ This document introduce how to setup opencv develoment environment on Ubuntu-16.
 		cd ~/opencv
 		mkdir build
 		cd build
-	b) Configuring. Run cmake [<some optional parameters>] <path to the OpenCV source directory> 
-	For example:
-		sudo cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..
+
+	b) Configuration: 
+		--- Run cmake [<some optional parameters>] <path to the OpenCV source directory> 
+			For example:
+				sudo cmake -D CMAKE_BUILD_TYPE=Release WITH_QT=ON -D CMAKE_INSTALL_PREFIX=/usr/local ..
+		--- We recommend using camke-gui to set configure and generate Makefile
+		1. Execute `sudo cmake-gui` to open GUI for configuratation
+		2. On cmake-gui window, set source folder, for example /opt/opencv-3.2.0 and build folder, for example /opt/opencv-3.2.0/build
+		3. Then set CMAKE_BUILD_TYPE=Release, WITH_QT=ON
+		4. Press "configure" button to make configure, then press "Generate" button to create Makefile.
+	
 	c) Build:
 		sudo make
+
 	d) Install:
 		sudo make install	
 
 3) Install Qt dependency:
-    Qt install: https://www.qt.io/download-open-source/?hsCtaTracking=f977210e-de67-475f-a32b-65cec207fd03%7Cd62710cd-e1db-46aa-8d4d-2f1c1ffdacea
-    
-    For example:
-        sudo apt-get install libqt4-designer libqt4-opengl libqt4-svg libqtgui4 libqtwebkit4
+    Qt package install: https://www.qt.io/download-open-source/?hsCtaTracking=f977210e-de67-475f-a32b-65cec207fd03%7Cd62710cd-e1db-46aa-8d4d-2f1c1ffdacea
+
+    Install qt-sdk:
+	sudo apt-get install qt-sdk
+    The minimum dependency for QT are: libqt4-designer libqt4-opengl libqt4-svg libqtgui4 libqtwebkit4
 
 4) Install boost:
         a) Get the version of Boost that you require
                 wget -O boost_1_55_0.tar.gz http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz/download
                 tar xzvf boost_1_55_0.tar.gz
                 cd boost_1_55_0/
+
         b) Boost's bootstrap setup:
                 ./bootstrap.sh --prefix=/usr/local
+
         c) Then build it with:
                 ./b2
+
         d) eventually install it:
                 sudo ./b2 install
                 
