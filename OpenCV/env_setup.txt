@@ -49,9 +49,9 @@ This document introduce how to setup opencv develoment environment on Ubuntu-16.
 
 4) Install boost:
         a) Get the version of Boost that you require
-                wget -O boost_1_55_0.tar.gz http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz/download
-                tar xzvf boost_1_55_0.tar.gz
-                cd boost_1_55_0/
+                wget -O boost_1_64_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.gz/download
+                tar xzvf boost_1_64_0.tar.gz
+                cd boost_1_64_0/
 
         b) Boost's bootstrap setup:
                 ./bootstrap.sh --prefix=/usr/local
