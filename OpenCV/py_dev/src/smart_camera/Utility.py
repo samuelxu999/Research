@@ -1,7 +1,7 @@
 """
-=====
+==========================
 Utility
-=====
+==========================
 Created on June 26, 2017
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu

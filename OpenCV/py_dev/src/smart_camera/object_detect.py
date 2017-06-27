@@ -1,7 +1,7 @@
 """
-=====
-object detect.
-=====
+==========================
+Object detect.
+==========================
 Created on June 26, 2017
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
@@ -18,7 +18,7 @@ class ObjDetect(object):
     
     '''ObjDetect construction function'''
     def __init__(self):
-        super().__init__()  
+        #super().__init__()  
         #initialize UserConfig()
         self.userconfig = MyUtility.UserConfig() 
     
@@ -84,16 +84,12 @@ def test_fun():
     frame, faces = myObjDetect.detect_face(frame)
     #frame = myObjDetect.detect_eye(frame)
     #print(faces)
-    cv2.imshow('img',frame)
+    cv2.imshow('Show Image',frame)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
 
 if __name__ == "__main__":
-    #process("kobe.bmp")
     test_fun()
-    #detect_face()
-    
-    
-    #test()
+
   

@@ -1,7 +1,7 @@
 """
-=====
-object detect.
-=====
+========================
+Video Stream.
+========================
 Created on June 26, 2017
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
@@ -20,7 +20,7 @@ class VideoStream(object):
     
     '''ObjDetect construction function'''
     def __init__(self):
-        super().__init__()  
+        #super().__init__()  
         self.cap=""
     
     
@@ -105,12 +105,11 @@ class VideoStream(object):
             ret, frame = self.get_Frame()
             
             #verify frame
-            if ret==True:
-                #frame = cv2.flip(frame,0)
-        
-                # write the flipped frame
+            if ret==True:        
+                # write the frame
                 out.write(frame)
-        
+                
+                #show live frame
                 cv2.imshow('frame',frame)
                 if cv2.waitKey(33) & 0xFF == ord('q'):
                     break
@@ -155,7 +154,7 @@ class VideoStream(object):
             
             #frame refresh rate: cv2.waitKey(3) means 3ms
             #press "q" will quit video show
-            if cv2.waitKey(30) & 0xFF == ord('q'):
+            if cv2.waitKey(33) & 0xFF == ord('q'):
                 break
             
         # When everything done, release the capture
@@ -166,7 +165,7 @@ class VideoStream(object):
     This function will capture video from camera and detect faces
     @camera_id: camera index, start from 0.
     '''   
-    def camera_FaceDetect(self, camera_id):
+    def camera_FaceDetect(self, camera_id, detect_freq):
         
         #initialize VideoCapture
         self.set_Cap(int(camera_id))
@@ -178,7 +177,9 @@ class VideoStream(object):
         if(not self.cap.isOpened()):
             print("Camera is not available!")
             return
-                
+        
+        detect_rate=0
+        
         while(True):
             # Capture frame-by-frame
             ret, frame = self.get_Frame()
@@ -188,9 +189,13 @@ class VideoStream(object):
                 print("No frame from camera!")
                 break
             
-            #detect face 
-            frame, faces = myObjDetect.detect_face(frame)
-            #frame = myObjDetect.detect_eye(frame)
+            detect_rate+=1
+            
+            if((detect_rate%int(detect_freq))==0):
+                #detect face 
+                frame, faces = myObjDetect.detect_face(frame)
+                #frame = myObjDetect.detect_eye(frame)
+                detect_rate=0
            
             # Display the resulting frame
             cv2.imshow('Camera Player',frame)
@@ -208,7 +213,7 @@ class VideoStream(object):
     This function will capture video from camera and detect faces.
     @video_file: video file path.
     '''   
-    def video_FaceDetect(self, video_file):
+    def video_FaceDetect(self, video_file, detect_freq):
         
         if(not os.path.isfile(video_file)):
             print("Video %s is not exist!"  %(video_file))
@@ -224,6 +229,8 @@ class VideoStream(object):
         if(not self.cap.isOpened()):
             print("Video could not open!"  %(video_file))
             return
+        
+        detect_rate=0
                         
         while(True):
             # Capture frame-by-frame
@@ -234,16 +241,20 @@ class VideoStream(object):
                 print("No frame from video!")
                 break
             
-            #detect face 
-            frame, faces = myObjDetect.detect_face(frame)
-            #frame = myObjDetect.detect_eye(frame)
+            detect_rate+=1
+            
+            if((detect_rate%int(detect_freq))==0):
+                #detect face 
+                frame, faces = myObjDetect.detect_face(frame)
+                #frame = myObjDetect.detect_eye(frame)
+                detect_rate=0
             
             # Display the resulting frame
             cv2.imshow('Video Player',frame)
             
             #frame refresh rate: cv2.waitKey(3) means 3ms
             #press "q" will quit video show
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(33) & 0xFF == ord('q'):
                 break
             
         # When everything done, release the capture
@@ -253,10 +264,10 @@ class VideoStream(object):
 def test_fun():
     myVideo=VideoStream()
     #myVideo.camera_Previewer(0)
-    #myVideo.video_Player("D:\dji_album\DJI_0036.MP4")
+    #myVideo.video_Player("./test.avi")
     #myVideo.camera_Videosave(0, "./test.avi")
-    myVideo.camera_FaceDetect(0)
-    #myVideo.video_FaceDetect("./test.avi")
+    myVideo.camera_FaceDetect(0, 10)
+    #myVideo.video_FaceDetect("./test.avi", 10)
         
 if __name__ == "__main__":
     #process("kobe.bmp")
