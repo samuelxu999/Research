@@ -1,4 +1,4 @@
-This document introduce how to setup opencv develoment environment on Ubuntu-16.04:
+A) This document introduce how to setup opencv develoment environment on Ubuntu-16.04:
 
 1) Install cmake:
 	sudo apt-get install cmake	(cmd)
@@ -62,3 +62,17 @@ This document introduce how to setup opencv develoment environment on Ubuntu-16.
         d) eventually install it:
                 sudo ./b2 install
                 
+B) Here are instruction about how to set up opencv-python development environment. If opencv environment has been available on your system by executing previous steps, please skip following instruction.
+
+	--- Ubuntu: Default python environment shoould be available on your Ubuntu-16.04, they are python2.7 or python3.5; Otherwize, install python by manual.
+		1)Install pip:					https://packaging.python.org/install_requirements_linux/
+			sudo apt-get install python-pip			#python2.7
+			sudo apt-get install python3-pip		#python3.5
+		2)Install opencv-python:		https://pypi.python.org/pypi/opencv-python
+			sudo python -m pip install opencv-python			#python2.7
+			sudo python3.5 -m pip install opencv-python			#python3.5
+			
+	--- Windows: Install python 3.5 or higher version on your system
+		2)Install opencv-python:		https://pypi.python.org/pypi/opencv-python
+			python -m pip install opencv-python
+	

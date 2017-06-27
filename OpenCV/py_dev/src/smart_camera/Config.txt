@@ -1,0 +1,3 @@
+[Opencv-config]
+opencv_data = D:\ProgramFiles\opencv\sources\data
+
