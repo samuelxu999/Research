@@ -264,10 +264,10 @@ class VideoStream(object):
 def test_fun():
     myVideo=VideoStream()
     #myVideo.camera_Previewer(0)
-    #myVideo.video_Player("./test.avi")
+    #myVideo.video_Player("E:\Video_20170612\EC-Main-Entrance-out.mp4")
     #myVideo.camera_Videosave(0, "./test.avi")
     myVideo.camera_FaceDetect(0, 10)
-    #myVideo.video_FaceDetect("./test.avi", 10)
+    #myVideo.video_FaceDetect("E:\Video_20170612\EC-Main-Entrance-in.mp4", 10)
         
 if __name__ == "__main__":
     #process("kobe.bmp")
