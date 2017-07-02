@@ -34,7 +34,12 @@ def Meanshift():
     
     while(1):
         ret ,frame = cap.read()
-    
+
+        #verify frame
+        if(not ret):
+            print("No frame from camera!")
+            break
+        
         if ret == True:
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
@@ -81,6 +86,11 @@ def Camshift():
     
     while(1):
         ret ,frame = cap.read()
+        
+        #verify frame
+        if(not ret):
+            print("No frame from camera!")
+            break
     
         if ret == True:
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -135,6 +145,12 @@ def LucasKanadeOpticalFlow():
     
     while(1):
         ret,frame = cap.read()
+        
+        #verify frame
+        if(not ret):
+            print("No frame from camera!")
+            break
+        
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
         # calculate optical flow
@@ -176,6 +192,12 @@ def DenseOpticalFlow():
     
     while(1):
         ret, frame2 = cap.read()
+        
+        #verify frame
+        if(not ret):
+            print("No frame from camera!")
+            break
+        
         next = cv2.cvtColor(frame2,cv2.COLOR_BGR2GRAY)
     
         flow = cv2.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
@@ -200,15 +222,71 @@ def DenseOpticalFlow():
 def BackgroundSubtractorMOG():
     cap = cv2.VideoCapture('../../res/vtest.avi')
 
-    #fgbg = cv2.createBackgroundSubtractorKNN()
-    fgbg = cv2.createBackgroundSubtractorMOG2()
+    #BackgroundSubtractorMOG
+    fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
+    
 
     while(1):
         ret, frame = cap.read()
+        
+        #verify frame
+        if(not ret):
+            print("No frame from camera!")
+            break
     
         fgmask = fgbg.apply(frame)
     
+        cv2.imshow('BackgroundSubtractorMOG',fgmask)
+        k = cv2.waitKey(30) & 0xff
+        if k == 27:
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
+    
+def BackgroundSubtractorMOG2():
+    cap = cv2.VideoCapture('../../res/vtest.avi')
+
+    #BackgroundSubtractorMOG2
+    fgbg = cv2.createBackgroundSubtractorMOG2()
+    
+
+    while(1):
+        ret, frame = cap.read()
+        
+        #verify frame
+        if(not ret):
+            print("No frame from camera!")
+            break
+        
+        fgmask = fgbg.apply(frame)
+    
         cv2.imshow('BackgroundSubtractorMOG2',fgmask)
+        k = cv2.waitKey(30) & 0xff
+        if k == 27:
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
+    
+def BackgroundSubtractorGMG():
+    cap = cv2.VideoCapture('../../res/vtest.avi')
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
+    
+    while(1):
+        ret, frame = cap.read()
+        
+        #verify frame
+        if(not ret):
+            print("No frame from camera!")
+            break
+    
+        fgmask = fgbg.apply(frame)
+        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
+    
+        cv2.imshow('BackgroundSubtractorGMG',fgmask)
         k = cv2.waitKey(30) & 0xff
         if k == 27:
             break
@@ -222,4 +300,8 @@ if __name__ == '__main__':
     #LucasKanadeOpticalFlow()
     #DenseOpticalFlow()
     BackgroundSubtractorMOG()
+    #BackgroundSubtractorMOG2()
+    #BackgroundSubtractorGMG()
+    
+    
     

@@ -91,9 +91,15 @@ def BRIEF_Detection():
     # compute the descriptors with BRIEF
     kp, des = brief.compute(img, kp)
     
+    img2 = cv2.drawKeypoints(img, kp, None, color=(255,0,0))
+    
     #print(brief.getInt('bytes'))
     #print(brief.__gt__('bytes'))
     print(des.shape)
+    
+    cv2.imshow('BRIEF_Detection',img2)
+    if cv2.waitKey(0) & 0xff == 27:
+        cv2.destroyAllWindows()
     
 if __name__ == '__main__':
     #HarrisCornerDetection()
