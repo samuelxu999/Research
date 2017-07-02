@@ -74,16 +74,16 @@ def FastCornerDetection():
     plt.xticks([]), plt.yticks([])
     plt.show()
     
-'''def BRIEF_Detection():
+def BRIEF_Detection():
     img = cv2.imread('../../res/blox.jpg',0)
 
     # Initiate STAR detector
     #star = cv2.FeatureDetector_create("STAR")
     star = cv2.xfeatures2d.StarDetector_create()
-    
+
     # Initiate BRIEF extractor
     #brief = cv2.DescriptorExtractor_create("BRIEF")
-    brief = cv2.BriefDescriptorExtractor_create()
+    brief = cv2.xfeatures2d.BriefDescriptorExtractor_create()
     
     # find the keypoints with STAR
     kp = star.detect(img,None)
@@ -91,11 +91,13 @@ def FastCornerDetection():
     # compute the descriptors with BRIEF
     kp, des = brief.compute(img, kp)
     
-    print(brief.getInt('bytes'))
-    print(des.shape)'''
-
+    #print(brief.getInt('bytes'))
+    #print(brief.__gt__('bytes'))
+    print(des.shape)
+    
 if __name__ == '__main__':
     #HarrisCornerDetection()
     #ShiTomasiCornerDetection()
-    FastCornerDetection()
+    #FastCornerDetection()
+    BRIEF_Detection()
     
