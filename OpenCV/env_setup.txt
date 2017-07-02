@@ -20,8 +20,10 @@ A) This document introduce how to setup opencv develoment environment on Ubuntu-
     --- Building OpenCV from Source Using CMake
 	a) Create a temporary directory, which we denote as <cmake_build_dir>, where you want to put the generated Makefiles, project files as well the object files and output binaries and enter there.
 	For example:
-		cd ~/opencv
-		mkdir build
+		mkdir /opt/opencv_3.2_dev
+		cd /opt/opencv_3.2_dev
+		mkdir build			#for build
+		mkdir sources		#for source code, extract opencv and opencv_contrib from downloaded packages
 		cd build
 
 	b) Configuration: 
@@ -30,9 +32,10 @@ A) This document introduce how to setup opencv develoment environment on Ubuntu-
 				sudo cmake -D CMAKE_BUILD_TYPE=Release WITH_QT=ON -D CMAKE_INSTALL_PREFIX=/usr/local ..
 		--- We recommend using camke-gui to set configure and generate Makefile
 		1. Execute `sudo cmake-gui` to open GUI for configuratation
-		2. On cmake-gui window, set source folder, for example /opt/opencv-3.2.0 and build folder, for example /opt/opencv-3.2.0/build
-		3. Then set CMAKE_BUILD_TYPE=Release, WITH_QT=ON
-		4. Press "configure" button to make configure, then press "Generate" button to create Makefile.
+		2. On cmake-gui window, set source folder, in my case:/opt/opencv_3.2_dev/sources/opencv ; and build folder:/opt/opencv_3.2_dev/build
+		3. Press "configure" button to make configure, 
+		4. After configure process finish, set CMAKE_BUILD_TYPE=Release, WITH_QT=ON, OPENCV_TXTRA_MODULES_PATH=/opt/opencv_3.2_dev/sources/opencv_contrib/modules
+		5. Finally, press "Generate" button to create Makefile.
 	
 	c) Build:
 		sudo make
@@ -71,8 +74,13 @@ B) Here are instruction about how to set up opencv-python development environmen
 		2)Install opencv-python:		https://pypi.python.org/pypi/opencv-python
 			sudo python -m pip install opencv-python			#python2.7
 			sudo python3.5 -m pip install opencv-python			#python3.5
+		3)Install opencv-python:		https://pypi.python.org/pypi/opencv-contrib-python
+			sudo python -m pip install opencv-contrib-python			#python2.7
+			sudo python3.5 -m pip install opencv-contrib-python			#python3.5
 			
 	--- Windows: Install python 3.5 or higher version on your system
 		2)Install opencv-python:		https://pypi.python.org/pypi/opencv-python
 			python -m pip install opencv-python
+		3)Install opencv-contrib-python: https://pypi.python.org/pypi/opencv-contrib-python
+			python -m pip install opencv-contrib-python
 	
