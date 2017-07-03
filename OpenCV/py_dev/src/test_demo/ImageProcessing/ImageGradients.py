@@ -16,7 +16,8 @@ We will see following functions : cv2.Sobel(), cv2.Scharr(), cv2.Laplacian() etc
 '''
 
 def Image_Gradients():
-    img = cv2.imread('../../res/Adaptive_Thresholding.bmp',0)
+    #img = cv2.imread('../../../res/Adaptive_Thresholding.bmp',0)
+    img = cv2.imread('../../../res/sudoku.png',0)
 
     laplacian = cv2.Laplacian(img,cv2.CV_64F)
     sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
@@ -34,7 +35,7 @@ def Image_Gradients():
     plt.show()
 
 def Double_Edge():
-    img = cv2.imread('../../res/box.jpg',0)
+    img = cv2.imread('../../../res/box.jpg',0)
 
     # Output dtype = cv2.CV_8U
     sobelx8u = cv2.Sobel(img,cv2.CV_8U,1,0,ksize=5)
@@ -54,5 +55,5 @@ def Double_Edge():
     plt.show()
 
 if __name__ == '__main__':
-    #Image_Gradients()
+    Image_Gradients()
     Double_Edge()

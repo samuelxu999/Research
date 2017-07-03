@@ -15,8 +15,8 @@ We will use the Brute-Force matcher and FLANN Matcher in OpenCV
 '''
 
 def Basic_BFMatcher():
-    img1 = cv2.imread('../../res/box_in.png',0)          # queryImage
-    img2 = cv2.imread('../../res/box_in_scene.png',0)    # trainImage
+    img1 = cv2.imread('../../../res/box_in.png',0)          # queryImage
+    img2 = cv2.imread('../../../res/box_in_scene.png',0)    # trainImage
     
     # Initiate SIFT detector
     orb = cv2.ORB_create()
@@ -41,8 +41,8 @@ def Basic_BFMatcher():
     plt.show()
     
 def SIFT_BFMatcher():
-    img1 = cv2.imread('../../res/box_in.png',0)          # queryImage
-    img2 = cv2.imread('../../res/box_in_scene.png',0)    # trainImage
+    img1 = cv2.imread('../../../res/box_in.png',0)          # queryImage
+    img2 = cv2.imread('../../../res/box_in_scene.png',0)    # trainImage
     # Initiate SIFT detector
     #sift = cv2.SIFT()
     sift = cv2.xfeatures2d.SIFT_create()
@@ -62,8 +62,8 @@ def SIFT_BFMatcher():
     plt.imshow(img3),plt.show()
     
 def FLANNMatcher():
-    img1 = cv2.imread('../../res/box_in.png',0)          # queryImage
-    img2 = cv2.imread('../../res/box_in_scene.png',0)    # trainImage
+    img1 = cv2.imread('../../../res/box_in.png',0)          # queryImage
+    img2 = cv2.imread('../../../res/box_in_scene.png',0)    # trainImage
     
     # Initiate SIFT detector
     #sift = cv2.SIFT()
@@ -98,8 +98,8 @@ def FLANNMatcher():
     plt.imshow(img3,),plt.show()
 
 if __name__ == '__main__':
-    #Basic_BFMatcher()
-    #SIFT_BFMatcher()
+    Basic_BFMatcher()
+    SIFT_BFMatcher()
     FLANNMatcher()
     
     

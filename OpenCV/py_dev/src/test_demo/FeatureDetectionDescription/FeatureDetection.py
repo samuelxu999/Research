@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 '''
 
 def HarrisCornerDetection():
-    img = cv2.imread('../../res/chessboard.png')
+    img = cv2.imread('../../../res/chessboard.png')
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     
     gray = np.float32(gray)
@@ -31,7 +31,7 @@ def HarrisCornerDetection():
         cv2.destroyAllWindows()
 
 def ShiTomasiCornerDetection():  
-    img = cv2.imread('../../res/blox.jpg')
+    img = cv2.imread('../../../res/blox.jpg')
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     
     corners = cv2.goodFeaturesToTrack(gray,25,0.01,10)
@@ -44,7 +44,7 @@ def ShiTomasiCornerDetection():
     plt.imshow(img),plt.show()
 
 def FastCornerDetection():
-    img = cv2.imread('../../res/blox.jpg',0)
+    img = cv2.imread('../../../res/blox.jpg',0)
 
     # Initiate FAST object with default values
     fast = cv2.FastFeatureDetector_create()
@@ -75,7 +75,7 @@ def FastCornerDetection():
     plt.show()
     
 def BRIEF_Detection():
-    img = cv2.imread('../../res/blox.jpg',0)
+    img = cv2.imread('../../../res/blox.jpg',0)
 
     # Initiate STAR detector
     #star = cv2.FeatureDetector_create("STAR")
@@ -102,8 +102,8 @@ def BRIEF_Detection():
         cv2.destroyAllWindows()
     
 if __name__ == '__main__':
-    #HarrisCornerDetection()
-    #ShiTomasiCornerDetection()
-    #FastCornerDetection()
+    HarrisCornerDetection()
+    ShiTomasiCornerDetection()
+    FastCornerDetection()
     BRIEF_Detection()
     

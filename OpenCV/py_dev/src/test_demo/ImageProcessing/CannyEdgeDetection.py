@@ -16,7 +16,7 @@ OpenCV functions for that : cv2.Canny()
 '''
 
 def CannyEdgeDetection():
-    img = cv2.imread('../../res/kobe.bmp',0)
+    img = cv2.imread('../../../res/kobe.bmp',0)
     edges = cv2.Canny(img,100,200)
     
     plt.subplot(121),plt.imshow(img,cmap = 'gray')

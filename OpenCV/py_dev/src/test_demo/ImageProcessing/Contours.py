@@ -94,7 +94,7 @@ def GetContourPerimeter(contours):
 
 def test_contours():
     #cnt=GetContours('../../res/box.jpg')
-    cnt=GetContours('../../res/thunder.jpg')
+    cnt=GetContours('../../../res/thunder.jpg')
     print("Contours number are:%d" %(len(cnt[0])))
     print("Moments:%s" %(GetMoments(cnt)))
     print("Contour Area:%s" %(GetContourArea(cnt)))
@@ -102,8 +102,8 @@ def test_contours():
     DrawContours(cnt,False)
 
 def BoundingRectangle():
-    img = cv2.imread('../../res/thunder.jpg')
-    cnt=GetContours('../../res/thunder.jpg')    
+    img = cv2.imread('../../../res/thunder.jpg')
+    cnt=GetContours('../../../res/thunder.jpg')    
 
     #Straight Bounding Rectangle
     img1=copy.deepcopy(img)
@@ -153,5 +153,5 @@ def BoundingRectangle():
 
 if __name__ == '__main__':
     test_contours()
-    #BoundingRectangle()
+    BoundingRectangle()
     

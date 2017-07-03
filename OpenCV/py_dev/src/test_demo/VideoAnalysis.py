@@ -295,13 +295,13 @@ def BackgroundSubtractorGMG():
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    #Meanshift()
-    #Camshift()
-    #LucasKanadeOpticalFlow()
-    #DenseOpticalFlow()
+    Meanshift()
+    Camshift()
+    LucasKanadeOpticalFlow()
+    DenseOpticalFlow()
     BackgroundSubtractorMOG()
-    #BackgroundSubtractorMOG2()
-    #BackgroundSubtractorGMG()
+    BackgroundSubtractorMOG2()
+    BackgroundSubtractorGMG()
     
     
     
