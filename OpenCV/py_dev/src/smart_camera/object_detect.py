@@ -75,15 +75,77 @@ class ObjDetect(object):
         #    ret_frame = cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)  
               
         return ret_frame
+    
+    #return whether contour r inside q
+    def inside(self, r, q):
+        rx, ry, rw, rh = r
+        qx, qy, qw, qh = q
+        return rx > qx and ry > qy and rx + rw < qx + qw and ry + rh < qy + qh
+    
+    #draw rectangles for found object
+    def draw_detections(self, img, rects, thickness = 1):
+        for x, y, w, h in rects:
+            # the HOG detector returns slightly larger rectangles than the real objects.
+            # so we slightly shrink the rectangles to get a nicer output.
+            pad_w, pad_h = int(0.15*w), int(0.05*h)
+            cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
+
+    def detectBody(self, _frame):
+        #new HOGDescriptor and set DefaultPeopleDetector
+        hog = cv2.HOGDescriptor()
+        hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() ) 
         
+        #get hog.detectMultiScale() result
+        found, w = hog.detectMultiScale(_frame, winStride=(8,8), padding=(32,32), scale=1.05)
+        
+        #used for filtered found object to only record maximum rectangles
+        found_filtered = []        
+        for ri, r in enumerate(found):
+            for qi, q in enumerate(found):
+                if ri != qi and self.inside(r, q):
+                    break
+            else:
+                found_filtered.append(r)
+        
+        #self.draw_detections(_frame, found)
+        self.draw_detections(_frame, found_filtered, 1)
+        
+    def detectMotion(self,_firstframe,_frame,_minArea):
+        # resize the frame, convert it to grayscale, and blur it
+        gray = cv2.cvtColor(_frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        
+        # compute the absolute difference between the current frame and first frame
+        frameDelta = cv2.absdiff(_firstframe, gray)
+        thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
+        
+        # dilate the thresholded image to fill in holes, then find contours on thresholded image
+        thresh = cv2.dilate(thresh, None, iterations=2)
+        tmp_img, cnts, _temp = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        text="Free"
+        # loop over the contours
+        for c in cnts:
+            # if the contour is too small, ignore it
+            if cv2.contourArea(c) < _minArea:
+                continue
+     
+            # compute the bounding box for the contour, draw it on the frame,
+            (x, y, w, h) = cv2.boundingRect(c)
+            cv2.rectangle(_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            text = "Occupied"
+            
+        # draw the text and timestamp on the frame
+        cv2.putText(_frame, "Status: {}".format(text), (10, 20),
+        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
 def test_fun():
     frame = cv2.imread('../../res/groupface.jpg')
     
     myObjDetect=ObjDetect()
-    frame, faces = myObjDetect.detect_face(frame)
+    #frame, faces = myObjDetect.detect_face(frame)
     #frame = myObjDetect.detect_eye(frame)
-    #print(faces)
+    myObjDetect.detectBody(frame)
     cv2.imshow('Show Image',frame)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

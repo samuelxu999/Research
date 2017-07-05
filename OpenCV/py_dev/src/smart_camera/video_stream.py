@@ -9,15 +9,41 @@ Created on June 26, 2017
 @Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_gui/py_video_display/py_video_display.html#display-video
 """
 
+import time
+import datetime
 import cv2
 import os.path
 import object_detect
+from enum import Enum
+from matplotlib.pyplot import switch_backend
 
+
+# Define for stream type: camera or video files
+class StreamType(Enum):
+    Camera = 0 
+    Video = 1
+    
+
+# Define detect mode
+class DetectionMode(Enum):
+    NoDetection = 0 
+    Face = 1
+    Eyes = 2
+    Body = 3
+    Motion = 4 
+    
+# Define detect mode
+class RecordMode(Enum):
+    NoRecord = 0 
+    VideoRecord = 1
+    PictureSnap = 2  
+
+    
 '''
 @Function: Video stream handler, such as open camera and preview, playback video, save camera video.
 '''
 class VideoStream(object):
-    
+   
     '''ObjDetect construction function'''
     def __init__(self):
         #super().__init__()  
@@ -46,231 +72,186 @@ class VideoStream(object):
             ret, frame = [False, 0]
         return ret, frame
     
+    
     '''
-    This function will capture video from camera
-    @camera_id: camera index, start from 0.
-    '''   
-    def camera_Previewer(self, camera_id):
+    This function play stream based on 
+    @_streamType: StreamType.Camera or StreamType.Video.
+    @_frame_freq: set frame frequency for previewing, default value is 1. 
+    @_recordmode: define record mode: video recording(only support StreamType.Camera) or picture snap.
+    @_streamSrc: video file path.
+    @_streamDes: destination path to save record.
+    '''  
+    def StreamPreviewer(self, _streamType=StreamType.Camera, 
+                        _frame_freq=1, _recordmode=RecordMode.NoRecord, 
+                        _streamSrc='', _streamDes=''):
+        if(_streamType==StreamType.Camera):
+            #initialize VideoCapture
+            self.set_Cap(0)
+        elif(_streamType==StreamType.Video):
+            #verify video file path
+            if(not os.path.isfile(_streamSrc)):
+                print("Video %s is not exist!"  %(_streamSrc))
+                return
+            #print(StreamType.Video.value)
+            self.set_Cap(_streamSrc)
+        else:
+            print("Not supported stream mode, please use StreamType.Camera or StreamType.Video")
         
-        #initialize VideoCapture
-        self.set_Cap(int(camera_id))
+        #if use camera type and set record mode, then check _streamDes path validation            
+        if((_recordmode==RecordMode.VideoRecord) and (_streamType==StreamType.Camera)):
+            folder,filename=os.path.split(_streamDes);
+            #check whether destination folder is exist
+            if(not os.path.exists(folder)):
+                print("Record  save path: %s is not exist!"  %(folder))
+                return
+            # Define the codec and create VideoWriter object
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            out = cv2.VideoWriter(_streamDes,fourcc, 20.0, (640,480))
         
         #Check whether cap is opened successful.
         if(not self.cap.isOpened()):
-            print("Camera is not available!")
+            print("Stream source is not available!")
             return
-                
+        
         while(True):
             # Capture frame-by-frame
             ret, frame = self.get_Frame()
             
             #verify frame
             if(not ret):
-                print("No frame from camera!")
+                print("No frame, exit program!")
                 break
+            
+            '''cv2.putText(frame, datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),
+                (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)'''
             
             # Display the resulting frame
-            cv2.imshow('Camera Player',frame)
+            cv2.imshow('Stream Previewer',frame)
             
-            #frame refresh rate: cv2.waitKey(1) means 1ms
-            #press "q" will quit video show
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            
-        # When everything done, release the capture
-        self.cap.release()
-        cv2.destroyAllWindows()
-       
- 
-    '''
-    This function will capture video from camera and save as file
-    @camera_id: camera index, start from 0.
-    '''   
-    def camera_Videosave(self, camera_id, video_file):
-        
-        #initialize VideoCapture
-        self.set_Cap(int(camera_id))
-        
-        #Check whether cap is opened successful.
-        if(not self.cap.isOpened()):
-            print("Camera is not available!")
-            return
-        
-        # Define the codec and create VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter(video_file,fourcc, 20.0, (640,480))
-                
-        while(self.cap.isOpened()):
-            # Capture frame-by-frame
-            ret, frame = self.get_Frame()
-            
-            #verify frame
-            if ret==True:        
+            if(_recordmode==RecordMode.PictureSnap):
+                #press key 'c' to save frame as %time.png 
+                if cv2.waitKey(1) & 0xFF == ord('c'):
+                    mytime=datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+                    cv2.imwrite(mytime+'.png',frame)
+                    #print(mytime+'.png')
+            elif((_recordmode==RecordMode.VideoRecord) and (_streamType==StreamType.Camera)):
                 # write the frame
                 out.write(frame)
-                
-                #show live frame
-                cv2.imshow('frame',frame)
-                if cv2.waitKey(33) & 0xFF == ord('q'):
-                    break
-            else:
-                print("No frame from camera!")
-                break
-            
-        # When everything done, release the capture
-        self.cap.release()
-        out.release()
-        cv2.destroyAllWindows()
-        
-    '''
-    This function will capture video from camera
-    @video_file: video file path.
-    '''   
-    def video_Player(self, video_file):
-        
-        if(not os.path.isfile(video_file)):
-            print("Video %s is not exist!"  %(video_file))
-            return
-        
-        #initialize VideoCapture
-        self.set_Cap(video_file)
-        
-        #Check whether cap is opened successful.
-        if(not self.cap.isOpened()):
-            print("Video could not open!"  %(video_file))
-            return
-                        
-        while(True):
-            # Capture frame-by-frame
-            ret, frame = self.get_Frame()
-            
-            #verify frame
-            if(not ret):
-                print("No frame from video!")
-                break
-            
-            # Display the resulting frame
-            cv2.imshow('Video Player',frame)
-            
-            #frame refresh rate: cv2.waitKey(3) means 3ms
-            #press "q" will quit video show
-            if cv2.waitKey(33) & 0xFF == ord('q'):
-                break
-            
-        # When everything done, release the capture
-        self.cap.release()
-        cv2.destroyAllWindows()
-        
-    '''
-    This function will capture video from camera and detect faces
-    @camera_id: camera index, start from 0.
-    '''   
-    def camera_FaceDetect(self, camera_id, detect_freq):
-        
-        #initialize VideoCapture
-        self.set_Cap(int(camera_id))
-        
-        #initialize object_detect instance        
-        myObjDetect=object_detect.ObjDetect()
-        
-        #Check whether cap is opened successful.
-        if(not self.cap.isOpened()):
-            print("Camera is not available!")
-            return
-        
-        detect_rate=0
-        
-        while(True):
-            # Capture frame-by-frame
-            ret, frame = self.get_Frame()
-            
-            #verify frame
-            if(not ret):
-                print("No frame from camera!")
-                break
-            
-            detect_rate+=1
-            
-            if((detect_rate%int(detect_freq))==0):
-                #detect face 
-                frame, faces = myObjDetect.detect_face(frame)
-                #frame = myObjDetect.detect_eye(frame)
-                detect_rate=0
-           
-            # Display the resulting frame
-            cv2.imshow('Camera Player',frame)
             
             #frame refresh rate: cv2.waitKey(1) means 1ms
             #press "q" will quit video show
-            if cv2.waitKey(33) & 0xFF == ord('q'):
+            if cv2.waitKey(_frame_freq) & 0xFF == ord('q'):
                 break
             
         # When everything done, release the capture
         self.cap.release()
+        if((_recordmode==RecordMode.VideoRecord) and (_streamType==StreamType.Camera)):
+            out.release()
         cv2.destroyAllWindows()
-        
+    
     '''
-    This function will capture video from camera and detect faces.
-    @video_file: video file path.
-    '''   
-    def video_FaceDetect(self, video_file, detect_freq):
+    This function will process stream frame and apply feature detection 
+    @_streamType: StreamType.Camera or StreamType.Video.
+    @_frame_freq: set frame frequency for previewing, default value is 1. 
+    @_detectmode: define detect mode
+    @_streamSrc: video file path.
+    ''' 
+    def StreamDetection(self, _streamType=StreamType.Camera, _frame_freq=1,
+                        _detectmode=DetectionMode.NoDetection, _detect_freq=1, _streamSrc=''):
         
-        if(not os.path.isfile(video_file)):
-            print("Video %s is not exist!"  %(video_file))
-            return
-        
-        #initialize VideoCapture
-        self.set_Cap(video_file)
-        
-        #initialize object_detect instance        
-        myObjDetect=object_detect.ObjDetect()
+        if(_streamType==StreamType.Camera):
+            #initialize VideoCapture
+            self.set_Cap(0)
+        elif(_streamType==StreamType.Video):
+            #verify video file path
+            if(not os.path.isfile(_streamSrc)):
+                print("Video %s is not exist!"  %(_streamSrc))
+                return
+            #print(StreamType.Video.value)
+            self.set_Cap(_streamSrc)
+        else:
+            print("Not supported stream mode, please use StreamType.Camera or StreamType.Video")
         
         #Check whether cap is opened successful.
         if(not self.cap.isOpened()):
-            print("Video could not open!"  %(video_file))
+            print("Stream source is not available!")
             return
         
+        if(_detectmode!=DetectionMode.NoDetection):
+            #initialize object_detect instance        
+            myObjDetect=object_detect.ObjDetect()
+        
+        #initialize detect_date
         detect_rate=0
-                        
+        
+        if(_detectmode==DetectionMode.Motion):
+            # initialize the first frame in the video stream
+            backgroundFrame = None
+        
         while(True):
             # Capture frame-by-frame
             ret, frame = self.get_Frame()
             
             #verify frame
             if(not ret):
-                print("No frame from video!")
+                print("No frame, exit program!")
                 break
             
+            '''cv2.putText(frame, datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),
+                (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)'''
+           
             detect_rate+=1
             
-            if((detect_rate%int(detect_freq))==0):
-                #detect face 
-                frame, faces = myObjDetect.detect_face(frame)
-                #frame = myObjDetect.detect_eye(frame)
+            if((detect_rate%int(_detect_freq))==0):                
+                if(_detectmode==DetectionMode.Face):
+                    #detect face 
+                    frame, faces = myObjDetect.detect_face(frame)
+                elif(_detectmode==DetectionMode.Eyes):
+                    frame = myObjDetect.detect_eye(frame)
+                elif(_detectmode==DetectionMode.Body):
+                    myObjDetect.detectBody(frame)
+                elif(_detectmode==DetectionMode.Motion):
+                    if(backgroundFrame is None):
+                        # resize the frame, convert it to grayscale, and blur it
+                        #frame = cv2.imread('./001.png')
+                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        gray = cv2.GaussianBlur(gray, (21, 21), 0)
+                        backgroundFrame = gray
+                    else:
+                        myObjDetect.detectMotion(backgroundFrame, frame, 1000)
+                else:
+                    pass
                 detect_rate=0
-            
+                
             # Display the resulting frame
-            cv2.imshow('Video Player',frame)
+            cv2.imshow('Stream Detector',frame)
             
-            #frame refresh rate: cv2.waitKey(3) means 3ms
+            #frame refresh rate: cv2.waitKey(1) means 1ms
             #press "q" will quit video show
-            if cv2.waitKey(33) & 0xFF == ord('q'):
+            if cv2.waitKey(_frame_freq) & 0xFF == ord('q'):
                 break
             
         # When everything done, release the capture
         self.cap.release()
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows()                 
+
         
 def test_fun():
     myVideo=VideoStream()
-    #myVideo.camera_Previewer(0)
-    #myVideo.video_Player("E:\Video_20170612\EC-Main-Entrance-out.mp4")
-    #myVideo.camera_Videosave(0, "./test.avi")
-    myVideo.camera_FaceDetect(0, 10)
-    #myVideo.video_FaceDetect("E:\Video_20170612\EC-Main-Entrance-in.mp4", 10)
+    #myVideo.StreamPreviewer(StreamType.Camera, 1, RecordMode.VideoRecord,'','./test.avi')
+    #myVideo.StreamPreviewer(StreamType.Camera, 1, RecordMode.PictureSnap)    
+    #myVideo.StreamPreviewer(StreamType.Video, 33, RecordMode.PictureSnap, '../../res/vtest.avi')
+    
+    
+    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,'./test.avi')
+    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,'../../res/vtest.avi')
+    myVideo.StreamDetection(StreamType.Video,33,DetectionMode.Motion,1,'../../res/vtest.avi')
+    
+    #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion)
+    #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Body,10)
+
         
 if __name__ == "__main__":
-    #process("kobe.bmp")
     test_fun()
         
 
