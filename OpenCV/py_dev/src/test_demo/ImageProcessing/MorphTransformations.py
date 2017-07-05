@@ -23,7 +23,7 @@ def Erosion():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(erosion),plt.title('Erosion')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Erosion Test')
     plt.show()
     
 def Dilation():
@@ -35,7 +35,7 @@ def Dilation():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(dilation),plt.title('Dilation')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Dilation Test')
     plt.show()
     
 def Opening():
@@ -47,7 +47,7 @@ def Opening():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(opening),plt.title('Opening')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Opening Test')
     plt.show()
     
 def Closing():
@@ -59,7 +59,7 @@ def Closing():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(closing),plt.title('Closing')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Closing Test')
     plt.show()
     
 def Gradient():
@@ -71,7 +71,7 @@ def Gradient():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(gradient),plt.title('Gradient')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Gradient Test')
     plt.show()
     
 def  TopHat():
@@ -83,7 +83,7 @@ def  TopHat():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(tophat),plt.title('Top Hat')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Top Hat')
     plt.show()
     
 def  BlackHat():
@@ -95,7 +95,7 @@ def  BlackHat():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(blackhat),plt.title('Black Hat')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Black Hat')
     plt.show()
     
 if __name__ == '__main__':

@@ -67,6 +67,7 @@ def Affine():
     
     plt.subplot(121),plt.imshow(img),plt.title('Input')
     plt.subplot(122),plt.imshow(dst),plt.title('Output')
+    plt.suptitle('Affine Transformation')
     plt.show()
 
 #Perspective Transformation    
@@ -83,6 +84,7 @@ def Perspective():
     
     plt.subplot(121),plt.imshow(img),plt.title('Input')
     plt.subplot(122),plt.imshow(dst),plt.title('Output')
+    plt.suptitle('Perspective Transformation')
     plt.show()
     
 

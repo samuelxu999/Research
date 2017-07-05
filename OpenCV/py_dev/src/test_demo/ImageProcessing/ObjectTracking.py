@@ -2,15 +2,15 @@
 Created on 2017.07.03
 
 @author: Ronghua Xu        
+
+@Function: Changing Colorspaces
+
+@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_colorspaces/py_colorspaces.html#converting-colorspaces
 '''
 
 import cv2
 import numpy as np
 
-'''
-@Function: Changing Colorspaces
-@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_colorspaces/py_colorspaces.html#converting-colorspaces
-'''
 def ObjectTracking():
     cap = cv2.VideoCapture(0)
 

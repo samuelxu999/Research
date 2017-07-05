@@ -2,18 +2,17 @@
 Created on 2017.06.28
 
 @author: Ronghua Xu        
+
+@Function: Image Gradients
+Find Image gradients, edges etc
+We will see following functions : cv2.Sobel(), cv2.Scharr(), cv2.Laplacian() etc
+
+@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_gradients/py_gradients.html#gradients
 '''
 
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
-
-'''
-@Function: Image Gradients
-Find Image gradients, edges etc
-We will see following functions : cv2.Sobel(), cv2.Scharr(), cv2.Laplacian() etc
-@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_gradients/py_gradients.html#gradients
-'''
 
 def Image_Gradients():
     #img = cv2.imread('../../../res/Adaptive_Thresholding.bmp',0)
@@ -31,7 +30,7 @@ def Image_Gradients():
     plt.title('Sobel X'), plt.xticks([]), plt.yticks([])
     plt.subplot(2,2,4),plt.imshow(sobely,cmap = 'gray')
     plt.title('Sobel Y'), plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Image Gradients')
     plt.show()
 
 def Double_Edge():
@@ -51,7 +50,7 @@ def Double_Edge():
     plt.title('Sobel CV_8U'), plt.xticks([]), plt.yticks([])
     plt.subplot(1,3,3),plt.imshow(sobel_8u,cmap = 'gray')
     plt.title('Sobel abs(CV_64F)'), plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Double Edge')
     plt.show()
 
 if __name__ == '__main__':

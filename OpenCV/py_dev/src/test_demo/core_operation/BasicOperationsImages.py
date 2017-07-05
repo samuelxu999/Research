@@ -2,19 +2,18 @@
 Created on 2017.07.03
 
 @author: Ronghua Xu        
-'''
 
-import cv2
-from matplotlib import pyplot as plt
-
-'''
 @Function: Basic Operations on Images
 Access pixel values and modify them
 Access image properties
 Setting Region of Image (ROI)
 Splitting and Merging images
+
 @Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_core/py_basic_ops/py_basic_ops.html#basic-ops
 '''
+
+import cv2
+from matplotlib import pyplot as plt
 
 def AccessingModifyingpixelvalues():
     #load image
@@ -50,7 +49,7 @@ def AccessingModifyingpixelvalues():
     img[273:333, 100:160] = ball
     
     # Display the original frame
-    cv2.imshow('Images',img)    
+    cv2.imshow('Accessing and Modifying pixel values Test',img)    
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
@@ -77,7 +76,7 @@ def MakingBordersImages():
     plt.title('WRAP'),  plt.xticks([]), plt.yticks([])
     plt.subplot(236),plt.imshow(constant,'gray')
     plt.title('CONSTANT'),  plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Making Borders Images')
     plt.show()
 
     

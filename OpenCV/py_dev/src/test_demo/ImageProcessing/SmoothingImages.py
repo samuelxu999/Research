@@ -31,6 +31,7 @@ def Convolution2D():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(dst),plt.title('Convolution2D-Averaging')
     plt.xticks([]), plt.yticks([])
+    plt.suptitle('Convolution2D')
     plt.show()
 
 '''
@@ -48,7 +49,7 @@ def AveragingBlurring():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(blur_Averaging),plt.title('Blurred-Averaging')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Averaging Blurring')
     plt.show()
     
 def GaussianBlurring():
@@ -61,7 +62,7 @@ def GaussianBlurring():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(blur_Gaussian),plt.title('Blurred-Gaussian')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Gaussian Blurring')
     plt.show()
     
 def MedianBlurring():
@@ -74,7 +75,7 @@ def MedianBlurring():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(blur_Median),plt.title('Blurred-Median')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Median Blurring')
     plt.show()
     
 def BilateralBlurring():
@@ -87,7 +88,7 @@ def BilateralBlurring():
     plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(blur_bilateral),plt.title('Blurred-Bilateral')
     plt.xticks([]), plt.yticks([])
-    
+    plt.suptitle('Bilateral Blurring')
     plt.show()
     
 if __name__ == '__main__':

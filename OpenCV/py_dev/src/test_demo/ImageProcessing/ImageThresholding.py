@@ -2,17 +2,17 @@
 Created on 2017.06.28
 
 @author: Ronghua Xu        
+
+@Function: Image Thresholding
+In this tutorial, you will learn Simple thresholding, Adaptive thresholding
+You will learn these functions : cv2.threshold, cv2.adaptiveThreshold etc.
+
+@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html#thresholding
 '''
 
 import cv2
 from matplotlib import pyplot as plt
 
-'''
-@Function: Image Thresholding
-In this tutorial, you will learn Simple thresholding, Adaptive thresholding
-You will learn these functions : cv2.threshold, cv2.adaptiveThreshold etc.
-@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_thresholding/py_thresholding.html#thresholding
-'''
 def Simple_Thresholding():
         # Create a black image
     img = cv2.imread('../../../res/gradient.png',0)
@@ -29,7 +29,7 @@ def Simple_Thresholding():
         plt.subplot(2,3,i+1),plt.imshow(images[i],'gray')
         plt.title(titles[i])
         plt.xticks([]),plt.yticks([])
-    
+    plt.suptitle('Simple Thresholding')
     plt.show()
 
 def Adaptive_Thresholding():
@@ -49,8 +49,8 @@ def Adaptive_Thresholding():
     
     for i in range(4):
         plt.subplot(2,2,i+1),plt.imshow(images[i],'gray')
-        plt.title(titles[i])
-        plt.xticks([]),plt.yticks([])
+        plt.title(titles[i]), plt.xticks([]),plt.yticks([])
+    plt.suptitle('Adaptive Thresholding')
     plt.show()
 
 def OtsuBinarization():
@@ -81,6 +81,7 @@ def OtsuBinarization():
         plt.title(titles[i*3+1]), plt.xticks([]), plt.yticks([])
         plt.subplot(3,3,i*3+3),plt.imshow(images[i*3+2],'gray')
         plt.title(titles[i*3+2]), plt.xticks([]), plt.yticks([])
+    plt.suptitle('OtsuBinarization Thresholding')
     plt.show()
     
 '''def FindOtsuThreshold():
@@ -118,7 +119,7 @@ def OtsuBinarization():
     
 
 if __name__ == '__main__':
-    #Simple_Thresholding()
+    Simple_Thresholding()
     Adaptive_Thresholding()
-    #OtsuBinarization()
+    OtsuBinarization()
     #FindOtsuThreshold()
