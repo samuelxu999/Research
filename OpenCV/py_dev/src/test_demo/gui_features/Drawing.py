@@ -2,17 +2,17 @@
 Created on 2017.06.28
 
 @author: Ronghua Xu        
+
+@Function: Drawing Functions in OpenCV
+Learn to draw different geometric shapes with OpenCV
+You will learn these functions : cv2.line(), cv2.circle() , cv2.rectangle(), cv2.ellipse(), cv2.putText() etc.
+
+@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_gui/py_drawing_functions/py_drawing_functions.html#drawing-functions
 '''
 
 import numpy as np
 import cv2
 
-'''
-@Function: Drawing Functions in OpenCV
-Learn to draw different geometric shapes with OpenCV
-You will learn these functions : cv2.line(), cv2.circle() , cv2.rectangle(), cv2.ellipse(), cv2.putText() etc.
-@Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_gui/py_drawing_functions/py_drawing_functions.html#drawing-functions
-'''
 def test_drawing():
     # Create a black image
     img = np.zeros((512,512,3), np.uint8)
