@@ -18,12 +18,6 @@ from enum import Enum
 from matplotlib.pyplot import switch_backend
 
 
-# Define for stream type: camera or video files
-class StreamType(Enum):
-    Camera = 0 
-    Video = 1
-    
-
 # Define detect mode
 class DetectionMode(Enum):
     NoDetection = 0 
@@ -31,12 +25,18 @@ class DetectionMode(Enum):
     Eyes = 2
     Body = 3
     Motion = 4 
+
+# Define for stream type: camera or video files
+class StreamType(Enum):
+    Camera = 0 
+    Video = 1
     
+
 # Define detect mode
 class RecordMode(Enum):
     NoRecord = 0 
     VideoRecord = 1
-    PictureSnap = 2  
+    PictureSnap = 2 
 
     
 '''
@@ -154,10 +154,13 @@ class VideoStream(object):
     @_streamType: StreamType.Camera or StreamType.Video.
     @_frame_freq: set frame frequency for previewing, default value is 1. 
     @_detectmode: define detect mode
+    @_detect_freq: set how many frames interval for each detect
     @_streamSrc: video file path.
+    @_motionmethod: define motion detect method
     ''' 
     def StreamDetection(self, _streamType=StreamType.Camera, _frame_freq=1,
-                        _detectmode=DetectionMode.NoDetection, _detect_freq=1, _streamSrc=''):
+                        _detectmode=DetectionMode.NoDetection, _detect_freq=1, 
+                        _streamSrc='',_motionmethod=object_detect.MotionMethod.Diff):
         
         if(_streamType==StreamType.Camera):
             #initialize VideoCapture
@@ -201,28 +204,36 @@ class VideoStream(object):
                 (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)'''
            
             detect_rate+=1
-            
+            object_count=0
             if((detect_rate%int(_detect_freq))==0):                
                 if(_detectmode==DetectionMode.Face):
                     #detect face 
                     frame, faces = myObjDetect.detect_face(frame)
+                    object_count = len(faces)
                 elif(_detectmode==DetectionMode.Eyes):
                     frame = myObjDetect.detect_eye(frame)
                 elif(_detectmode==DetectionMode.Body):
-                    myObjDetect.detectBody(frame)
+                    object_count = myObjDetect.detectBody(frame)
                 elif(_detectmode==DetectionMode.Motion):
                     if(backgroundFrame is None):
                         # resize the frame, convert it to grayscale, and blur it
-                        #frame = cv2.imread('./001.png')
+                        #frame = cv2.imread('./backgroundframe.png')
                         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                         gray = cv2.GaussianBlur(gray, (21, 21), 0)
                         backgroundFrame = gray
                     else:
-                        myObjDetect.detectMotion(backgroundFrame, frame, 1000)
+                        if(_motionmethod==object_detect.MotionMethod.Diff):
+                            backgroundFrame,object_count = myObjDetect.detectMotionDiff(backgroundFrame, frame, 100, object_detect.MotionType.Static)
+                        else:
+                            object_count = myObjDetect.detectMotionMOG(frame, 2000, _motionmethod)
                 else:
                     pass
                 detect_rate=0
-                
+            
+            # draw the detect object count on the frame
+            cv2.putText(frame, "Detect: {}".format(object_count), (10, 20),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2) 
+               
             # Display the resulting frame
             cv2.imshow('Stream Detector',frame)
             
@@ -230,13 +241,17 @@ class VideoStream(object):
             #press "q" will quit video show
             if cv2.waitKey(_frame_freq) & 0xFF == ord('q'):
                 break
-            
+                
         # When everything done, release the capture
         self.cap.release()
         cv2.destroyAllWindows()                 
 
         
 def test_fun():
+    filesrc0='../../res/vtest.avi'
+    filesrc1='E:\Video_20170612\EC-Main-Entrance-2017-05-21_02h10min05s000ms.mp4'
+    filesrc2='E:\Video_20170612\EC-Main-Entrance-out.mp4'
+    
     myVideo=VideoStream()
     #myVideo.StreamPreviewer(StreamType.Camera, 1, RecordMode.VideoRecord,'','./test.avi')
     #myVideo.StreamPreviewer(StreamType.Camera, 1, RecordMode.PictureSnap)    
@@ -245,10 +260,10 @@ def test_fun():
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,'./test.avi')
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,'../../res/vtest.avi')
-    myVideo.StreamDetection(StreamType.Video,33,DetectionMode.Motion,1,'../../res/vtest.avi')
+    myVideo.StreamDetection(StreamType.Video,33,DetectionMode.Motion,1,filesrc2,object_detect.MotionMethod.MOG)
     
-    #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion)
-    #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Body,10)
+    #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
+    #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)
 
         
 if __name__ == "__main__":

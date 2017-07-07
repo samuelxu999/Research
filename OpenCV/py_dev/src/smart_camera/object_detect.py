@@ -11,8 +11,27 @@ Created on June 26, 2017
 
 import copy
 import cv2
-
+from enum import Enum
 import Utility as MyUtility
+from _ast import While
+
+# Define feature type
+class FeatureTpye(Enum):
+    NoFeature = 0 
+    Face = 1
+    Eyes = 2
+    Body = 3
+
+# Define motion type:Static--Compared with background frame;Dynamic--compare between pre_frame and cur_frame
+class MotionType(Enum):
+    Static = 0
+    Dynamic = 1
+    
+#define MotionMethod 
+class MotionMethod(Enum):
+    Diff = 0 
+    MOG = 1 
+    MOG2 = 2
 
 class ObjDetect(object):
     
@@ -20,7 +39,10 @@ class ObjDetect(object):
     def __init__(self):
         #super().__init__()  
         #initialize UserConfig()
-        self.userconfig = MyUtility.UserConfig() 
+        self.userconfig = MyUtility.UserConfig()
+        #initialize BackgroundSubtractorMOG
+        self.bgSubMOG = cv2.bgsegm.createBackgroundSubtractorMOG()
+        self.bgSubMOG2 = cv2.createBackgroundSubtractorMOG2()
     
     '''detect faces on frame'''    
     def detect_face(self,frame):
@@ -38,8 +60,14 @@ class ObjDetect(object):
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
         
         #plot rectangle on each face
-        for (x,y,w,h) in faces:
-            ret_frame = cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)  
+        '''for (x,y,w,h) in faces:
+            ret_frame = cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)  '''
+        
+        #used for filtered found object to only record father contour's location        
+        found_filtered=MyUtility.Utilities.rect_filter(faces)
+        
+        #self.draw_detections(_frame, found)
+        MyUtility.Utilities.draw_detections(ret_frame, found_filtered, 2)
         
         #return marked frame and faces list   
         return ret_frame,faces
@@ -56,8 +84,7 @@ class ObjDetect(object):
         ret_frame=copy.deepcopy(frame)
         
         #get faces list
-        tmp_frame, faces = self.detect_face(frame)
-        
+        tmp_frame, faces = self.detect_face(frame)        
         
         gray = cv2.cvtColor(ret_frame, cv2.COLOR_BGR2GRAY)
         
@@ -70,86 +97,94 @@ class ObjDetect(object):
             eyes = eye_cascade.detectMultiScale(roi_gray)
             for (ex,ey,ew,eh) in eyes:
                 cv2.rectangle(roi_color,(ex,ey),(ex+ew,ey+eh),(0,255,0),2)
-        #plot rectangle on each face
-        #for (x,y,w,h) in eyes:
-        #    ret_frame = cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)  
               
         return ret_frame
-    
-    #return whether contour r inside q
-    def inside(self, r, q):
-        rx, ry, rw, rh = r
-        qx, qy, qw, qh = q
-        return rx > qx and ry > qy and rx + rw < qx + qw and ry + rh < qy + qh
-    
-    #draw rectangles for found object
-    def draw_detections(self, img, rects, thickness = 1):
-        for x, y, w, h in rects:
-            # the HOG detector returns slightly larger rectangles than the real objects.
-            # so we slightly shrink the rectangles to get a nicer output.
-            pad_w, pad_h = int(0.15*w), int(0.05*h)
-            cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
-
+       
     def detectBody(self, _frame):
         #new HOGDescriptor and set DefaultPeopleDetector
         hog = cv2.HOGDescriptor()
         hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() ) 
         
-        #get hog.detectMultiScale() result
+        #get hog.detectMultiScale() result: location and weight
         found, w = hog.detectMultiScale(_frame, winStride=(8,8), padding=(32,32), scale=1.05)
         
-        #used for filtered found object to only record maximum rectangles
-        found_filtered = []        
-        for ri, r in enumerate(found):
-            for qi, q in enumerate(found):
-                if ri != qi and self.inside(r, q):
-                    break
-            else:
-                found_filtered.append(r)
+        #used for filtered found object to only record father contour's location        
+        found_filtered=MyUtility.Utilities.rect_filter(found)
         
         #self.draw_detections(_frame, found)
-        self.draw_detections(_frame, found_filtered, 1)
+        MyUtility.Utilities.draw_detections(_frame, found_filtered, 1)
         
-    def detectMotion(self,_firstframe,_frame,_minArea):
+        return len(found_filtered)
+    
+    '''
+    Compare difference between _preframe and _curframe to detect object
+    '''    
+    def detectMotionDiff(self,_preframe,_curframe,_minArea,_mode=MotionType.Static):
         # resize the frame, convert it to grayscale, and blur it
-        gray = cv2.cvtColor(_frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(_curframe, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
         
         # compute the absolute difference between the current frame and first frame
-        frameDelta = cv2.absdiff(_firstframe, gray)
+        frameDelta = cv2.absdiff(_preframe, gray)
         thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
         
+        #refresh _preframe
+        if(_mode==MotionType.Dynamic):
+                _preframe=copy.copy(gray)
+
         # dilate the thresholded image to fill in holes, then find contours on thresholded image
         thresh = cv2.dilate(thresh, None, iterations=2)
         tmp_img, cnts, _temp = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
-        text="Free"
-        # loop over the contours
-        for c in cnts:
-            # if the contour is too small, ignore it
-            if cv2.contourArea(c) < _minArea:
-                continue
-     
-            # compute the bounding box for the contour, draw it on the frame,
-            (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            text = "Occupied"
+        #get filtered contour rectangles
+        found_filtered=MyUtility.Utilities.cont_filter(cnts, _minArea)
+                
+        #draw bounding box for detected objects    
+        MyUtility.Utilities.draw_detections(_curframe, found_filtered, 1)
+        
+        return _preframe, len(found_filtered)
+    
+    '''
+    Through BackgroundSubtractorMOG
+    ''' 
+    def detectMotionMOG(self,_frame, _minArea, _mode=MotionMethod.MOG2):
+        
+        # Blur Filtering
+        blur= cv2.medianBlur(_frame,5)
+        #blur = cv2.GaussianBlur(_frame,(5,5),0)
+        #blur = cv2.bilateralFilter(_frame,9,75,75)
+        
+        #get background mask
+        if(_mode==MotionMethod.MOG):
+            fgmask = self.bgSubMOG.apply(blur)
+        elif(_mode==MotionMethod.MOG2):
+            fgmask = self.bgSubMOG2.apply(blur)
+        else:
+            return 0
+        
+        #MyUtility.Utilities.Block_Show(fgmask)
+        
+        # find contours on thresholded image
+        tmp_img, cnts, _temp = cv2.findContours(fgmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        #get filtered contour rectangles
+        found_filtered=MyUtility.Utilities.cont_filter(cnts, _minArea)
+                
+        #draw bounding box for detected objects    
+        MyUtility.Utilities.draw_detections(_frame, found_filtered, 1)
             
-        # draw the text and timestamp on the frame
-        cv2.putText(_frame, "Status: {}".format(text), (10, 20),
-        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        return len(found_filtered)   
 
 def test_fun():
     frame = cv2.imread('../../res/groupface.jpg')
     
     myObjDetect=ObjDetect()
     #frame, faces = myObjDetect.detect_face(frame)
-    #frame = myObjDetect.detect_eye(frame)
-    myObjDetect.detectBody(frame)
+    frame = myObjDetect.detect_eye(frame)
+    #myObjDetect.detectBody(frame)
     cv2.imshow('Show Image',frame)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    
 
 if __name__ == "__main__":
     test_fun()
