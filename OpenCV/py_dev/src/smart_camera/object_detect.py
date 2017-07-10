@@ -9,6 +9,7 @@ Created on June 26, 2017
 @Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_objdetect/py_face_detection/py_face_detection.html#face-detection
 """
 
+import numpy as np
 import copy
 import cv2
 from enum import Enum
@@ -42,14 +43,16 @@ class ObjDetect(object):
         self.userconfig = MyUtility.UserConfig()
         #initialize BackgroundSubtractorMOG
         self.bgSubMOG = cv2.bgsegm.createBackgroundSubtractorMOG()
-        self.bgSubMOG2 = cv2.createBackgroundSubtractorMOG2()
+        self.bgSubMOG2 = cv2.createBackgroundSubtractorMOG2(detectShadows = True)
     
     '''detect faces on frame'''    
     def detect_face(self,frame):
 
-        opencv_data = self.userconfig.getOpencvData()+'\haarcascades\haarcascade_frontalface_default.xml'
+        opencv_data = self.userconfig.getOpencvData()+'/haarcascades/haarcascade_frontalface_alt.xml'
         
-        #face_cascade = cv2.CascadeClassifier('D:\ProgramFiles\opencv\sources\data\haarcascades\haarcascade_frontalface_default.xml')
+        #opencv_data = self.userconfig.getOpencvData()+'/haarcascades/haarcascade_upperbody.xml'
+        
+        #face_cascade = cv2.CascadeClassifier('D:\ProgramFiles/opencv/sources/data/haarcascades/haarcascade_frontalface_default.xml')
         face_cascade = cv2.CascadeClassifier(opencv_data)
         
         #copy frame to ret_frame
@@ -75,9 +78,9 @@ class ObjDetect(object):
     '''detect eyes on frame'''
     def detect_eye(self,frame):
 
-        opencv_data = self.userconfig.getOpencvData()+'\haarcascades\haarcascade_eye.xml'
+        opencv_data = self.userconfig.getOpencvData()+'/haarcascades/haarcascade_eye.xml'
         
-        #face_cascade = cv2.CascadeClassifier('D:\ProgramFiles\opencv\sources\data\haarcascades\haarcascade_eye.xml')
+        #face_cascade = cv2.CascadeClassifier('D:\ProgramFiles/opencv/sources/data/haarcascades/haarcascade_eye.xml')
         eye_cascade = cv2.CascadeClassifier(opencv_data)
         
         #copy frame to ret_frame
@@ -134,6 +137,9 @@ class ObjDetect(object):
 
         # dilate the thresholded image to fill in holes, then find contours on thresholded image
         thresh = cv2.dilate(thresh, None, iterations=2)
+        
+        #MyUtility.Utilities.Block_Show(thresh)
+        
         tmp_img, cnts, _temp = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         #get filtered contour rectangles
@@ -162,6 +168,17 @@ class ObjDetect(object):
         else:
             return 0
         
+        
+        #threshold to remove shadow
+        ret,fgmask = cv2.threshold(fgmask,127,255,cv2.THRESH_BINARY)
+        
+        # noise removal
+        kernel = np.ones((2,2),np.uint8)
+        fgmask = cv2.erode(fgmask,kernel,iterations = 1)
+        fgmask = cv2.morphologyEx(fgmask,cv2.MORPH_OPEN,kernel,iterations = 1)
+        fgmask = cv2.morphologyEx(fgmask,cv2.MORPH_CLOSE,kernel,iterations = 1)
+        fgmask = cv2.dilate(fgmask,kernel,iterations = 1)
+        
         #MyUtility.Utilities.Block_Show(fgmask)
         
         # find contours on thresholded image
@@ -177,6 +194,7 @@ class ObjDetect(object):
 
 def test_fun():
     frame = cv2.imread('../../res/groupface.jpg')
+    #frame = cv2.imread('../../res/kobe.bmp')
     
     myObjDetect=ObjDetect()
     #frame, faces = myObjDetect.detect_face(frame)

@@ -47,8 +47,8 @@ class Utilities():
         for x, y, w, h in rects:
             # the HOG detector returns slightly larger rectangles than the real objects.
             # so we slightly shrink the rectangles to get a nicer output.
-            pad_w, pad_h = int(0.15*w), int(0.05*h)
-            cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
+            pad_w, pad_h = int(0.15*w), int(0.15*h)
+            cv2.rectangle(img, (x-pad_w, y-pad_h), (x+w+pad_w, y+h+pad_h), (0, 255, 0), thickness)
     
     #get filtered contours based on _minArea
     @staticmethod

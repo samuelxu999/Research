@@ -225,7 +225,7 @@ class VideoStream(object):
                         if(_motionmethod==object_detect.MotionMethod.Diff):
                             backgroundFrame,object_count = myObjDetect.detectMotionDiff(backgroundFrame, frame, 100, object_detect.MotionType.Static)
                         else:
-                            object_count = myObjDetect.detectMotionMOG(frame, 2000, _motionmethod)
+                            object_count = myObjDetect.detectMotionMOG(frame, 100, _motionmethod)
                 else:
                     pass
                 detect_rate=0
@@ -250,17 +250,18 @@ class VideoStream(object):
 def test_fun():
     filesrc0='../../res/vtest.avi'
     filesrc1='E:\Video_20170612\EC-Main-Entrance-2017-05-21_02h10min05s000ms.mp4'
-    filesrc2='E:\Video_20170612\EC-Main-Entrance-out.mp4'
+    filesrc2='E:\Video_20170612\EC-Main-Entrance-in.mp4'
+    filesrc3='D:\dji_album\DJI_0036.mp4'
     
     myVideo=VideoStream()
     #myVideo.StreamPreviewer(StreamType.Camera, 1, RecordMode.VideoRecord,'','./test.avi')
     #myVideo.StreamPreviewer(StreamType.Camera, 1, RecordMode.PictureSnap)    
-    #myVideo.StreamPreviewer(StreamType.Video, 33, RecordMode.PictureSnap, '../../res/vtest.avi')
+    #myVideo.StreamPreviewer(StreamType.Video, 33, RecordMode.PictureSnap, filesrc0)
     
     
-    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,'./test.avi')
-    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,'../../res/vtest.avi')
-    myVideo.StreamDetection(StreamType.Video,33,DetectionMode.Motion,1,filesrc2,object_detect.MotionMethod.MOG)
+    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
+    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
+    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,object_detect.MotionMethod.MOG2)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)
