@@ -1,4 +1,4 @@
-"""
+'''
 ========================
 Video Stream.
 ========================
@@ -7,15 +7,19 @@ Created on June 26, 2017
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide video stream related function.
 @Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_gui/py_video_display/py_video_display.html#display-video
-"""
+'''
 
 import time
 import datetime
 import cv2
 import os.path
-import object_detect
 from enum import Enum
 from matplotlib.pyplot import switch_backend
+
+import Utility as MyUtility
+import object_detect as ObjDetect
+import flow_tracking as flowTrack
+
 
 
 # Define detect mode
@@ -157,10 +161,11 @@ class VideoStream(object):
     @_detect_freq: set how many frames interval for each detect
     @_streamSrc: video file path.
     @_motionmethod: define motion detect method
+    @_minArea: input minimum area of contour to filter noise
     ''' 
     def StreamDetection(self, _streamType=StreamType.Camera, _frame_freq=1,
                         _detectmode=DetectionMode.NoDetection, _detect_freq=1, 
-                        _streamSrc='',_motionmethod=object_detect.MotionMethod.Diff):
+                        _streamSrc='',_motionmethod=ObjDetect.MotionMethod.Diff, _minArea=100):
         
         if(_streamType==StreamType.Camera):
             #initialize VideoCapture
@@ -182,8 +187,12 @@ class VideoStream(object):
         
         if(_detectmode!=DetectionMode.NoDetection):
             #initialize object_detect instance        
-            myObjDetect=object_detect.ObjDetect()
-        
+            myObjDetect=ObjDetect.ObjDetect()
+            myObjTrack =flowTrack.ObjTracking()
+            myLkTrack = flowTrack.lkTracking()
+            myMeanshift = flowTrack.MeanshiftTracking()
+            myCamshift = flowTrack.CamshiftTracking()
+            
         #initialize detect_date
         detect_rate=0
         
@@ -204,16 +213,16 @@ class VideoStream(object):
                 (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)'''
            
             detect_rate+=1
-            object_count=0
+            #clear found_objects
+            found_objects=[]
             if((detect_rate%int(_detect_freq))==0):                
                 if(_detectmode==DetectionMode.Face):
                     #detect face 
-                    frame, faces = myObjDetect.detect_face(frame)
-                    object_count = len(faces)
+                    frame, found_objects = myObjDetect.detect_face(frame)
                 elif(_detectmode==DetectionMode.Eyes):
                     frame = myObjDetect.detect_eye(frame)
                 elif(_detectmode==DetectionMode.Body):
-                    object_count = myObjDetect.detectBody(frame)
+                    found_objects = myObjDetect.detectBody(frame)
                 elif(_detectmode==DetectionMode.Motion):
                     if(backgroundFrame is None):
                         # resize the frame, convert it to grayscale, and blur it
@@ -222,13 +231,31 @@ class VideoStream(object):
                         gray = cv2.GaussianBlur(gray, (21, 21), 0)
                         backgroundFrame = gray
                     else:
-                        if(_motionmethod==object_detect.MotionMethod.Diff):
-                            backgroundFrame,object_count = myObjDetect.detectMotionDiff(backgroundFrame, frame, 100, object_detect.MotionType.Static)
+                        if(_motionmethod==ObjDetect.MotionMethod.Diff):
+                            backgroundFrame,found_objects = myObjDetect.detectMotionDiff(backgroundFrame, frame, _minArea, ObjDetect.MotionType.Static)
                         else:
-                            object_count = myObjDetect.detectMotionMOG(frame, 100, _motionmethod)
+                            found_objects = myObjDetect.detectMotionMOG(frame, _minArea, _motionmethod)
+                            #Apply Lucas-Kanade tracking method
+                            #frame = myLkTrack.Run(frame, found_objects)
+                            myObjTrack.Run(frame, found_objects, 100, MyUtility.DrawTpye.Default, 2)
+                            
+                            if(len(found_objects)>1):                                
+                                #cen_x, cen_y=MyUtility.Utilities.rectCenter(found_objects[1])
+                                #myMeanshift.Run(frame, (int(cen_x-5),int(cen_y),10,5))
+                                #myCamshift.Run(frame, (int(cen_x-10),int(cen_y-10),20,20))
+                                #myMeanshift.Run(frame, found_objects[0])
+                                #myCamshift.Run(frame, found_objects[0])
+                                pass
                 else:
                     pass
+                #reset detect_rate
                 detect_rate=0
+            
+            object_count=len(found_objects) 
+            #object_count=len(myObjTrack.tracks)           
+            
+            #draw bounding box for detected objects    
+            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 1, MyUtility.DrawTpye.Default)
             
             # draw the detect object count on the frame
             cv2.putText(frame, "Detect: {}".format(object_count), (10, 20),
@@ -239,7 +266,7 @@ class VideoStream(object):
             
             #frame refresh rate: cv2.waitKey(1) means 1ms
             #press "q" will quit video show
-            if cv2.waitKey(_frame_freq) & 0xFF == ord('q'):
+            if(cv2.waitKey(_frame_freq) & 0xFF == ord('q')):
                 break
                 
         # When everything done, release the capture
@@ -250,7 +277,7 @@ class VideoStream(object):
 def test_fun():
     filesrc0='../../res/vtest.avi'
     filesrc1='E:\Video_20170612\EC-Main-Entrance-2017-05-21_02h10min05s000ms.mp4'
-    filesrc2='E:\Video_20170612\EC-Main-Entrance-in.mp4'
+    filesrc2='E:\Video_20170612\EC-Main-Entrance-out.mp4'
     filesrc3='D:\dji_album\DJI_0036.mp4'
     
     myVideo=VideoStream()
@@ -261,7 +288,7 @@ def test_fun():
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
-    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,object_detect.MotionMethod.MOG2)
+    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc1,ObjDetect.MotionMethod.MOG2,2000)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)

@@ -1,4 +1,4 @@
-"""
+'''
 ==========================
 Object detect.
 ==========================
@@ -7,14 +7,13 @@ Created on June 26, 2017
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide ObjDetect for user to detect object related feature in frame of video stream.
 @Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_objdetect/py_face_detection/py_face_detection.html#face-detection
-"""
+'''
 
 import numpy as np
 import copy
 import cv2
 from enum import Enum
 import Utility as MyUtility
-from _ast import While
 
 # Define feature type
 class FeatureTpye(Enum):
@@ -67,10 +66,7 @@ class ObjDetect(object):
             ret_frame = cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)  '''
         
         #used for filtered found object to only record father contour's location        
-        found_filtered=MyUtility.Utilities.rect_filter(faces)
-        
-        #self.draw_detections(_frame, found)
-        MyUtility.Utilities.draw_detections(ret_frame, found_filtered, 2)
+        #found_filtered=MyUtility.Utilities.rect_filter(faces)
         
         #return marked frame and faces list   
         return ret_frame,faces
@@ -87,7 +83,7 @@ class ObjDetect(object):
         ret_frame=copy.deepcopy(frame)
         
         #get faces list
-        tmp_frame, faces = self.detect_face(frame)        
+        _, faces = self.detect_face(frame)        
         
         gray = cv2.cvtColor(ret_frame, cv2.COLOR_BGR2GRAY)
         
@@ -109,15 +105,12 @@ class ObjDetect(object):
         hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() ) 
         
         #get hog.detectMultiScale() result: location and weight
-        found, w = hog.detectMultiScale(_frame, winStride=(8,8), padding=(32,32), scale=1.05)
+        found, _ = hog.detectMultiScale(_frame, winStride=(8,8), padding=(32,32), scale=1.05)
         
         #used for filtered found object to only record father contour's location        
         found_filtered=MyUtility.Utilities.rect_filter(found)
         
-        #self.draw_detections(_frame, found)
-        MyUtility.Utilities.draw_detections(_frame, found_filtered, 1)
-        
-        return len(found_filtered)
+        return found_filtered
     
     '''
     Compare difference between _preframe and _curframe to detect object
@@ -140,15 +133,12 @@ class ObjDetect(object):
         
         #MyUtility.Utilities.Block_Show(thresh)
         
-        tmp_img, cnts, _temp = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        _, cnts, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         #get filtered contour rectangles
         found_filtered=MyUtility.Utilities.cont_filter(cnts, _minArea)
-                
-        #draw bounding box for detected objects    
-        MyUtility.Utilities.draw_detections(_curframe, found_filtered, 1)
-        
-        return _preframe, len(found_filtered)
+      
+        return _preframe, found_filtered
     
     '''
     Through BackgroundSubtractorMOG
@@ -170,7 +160,7 @@ class ObjDetect(object):
         
         
         #threshold to remove shadow
-        ret,fgmask = cv2.threshold(fgmask,127,255,cv2.THRESH_BINARY)
+        _,fgmask = cv2.threshold(fgmask,127,255,cv2.THRESH_BINARY)
         
         # noise removal
         kernel = np.ones((2,2),np.uint8)
@@ -182,15 +172,12 @@ class ObjDetect(object):
         #MyUtility.Utilities.Block_Show(fgmask)
         
         # find contours on thresholded image
-        tmp_img, cnts, _temp = cv2.findContours(fgmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        _, cnts, _ = cv2.findContours(fgmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         #get filtered contour rectangles
         found_filtered=MyUtility.Utilities.cont_filter(cnts, _minArea)
-                
-        #draw bounding box for detected objects    
-        MyUtility.Utilities.draw_detections(_frame, found_filtered, 1)
             
-        return len(found_filtered)   
+        return found_filtered   
 
 def test_fun():
     frame = cv2.imread('../../res/groupface.jpg')
