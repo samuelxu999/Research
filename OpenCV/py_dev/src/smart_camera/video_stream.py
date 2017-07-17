@@ -9,12 +9,10 @@ Created on June 26, 2017
 @Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_gui/py_video_display/py_video_display.html#display-video
 '''
 
-import time
 import datetime
 import cv2
 import os.path
 from enum import Enum
-from matplotlib.pyplot import switch_backend
 
 import Utility as MyUtility
 import object_detect as ObjDetect
@@ -209,6 +207,10 @@ class VideoStream(object):
                 print("No frame, exit program!")
                 break
             
+            #resize frame solution to optimize performance
+            #dim = (640, 480)
+            #frame = cv2.resize(frame, dim, interpolation = cv2.INTER_CUBIC)
+            
             '''cv2.putText(frame, datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),
                 (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)'''
            
@@ -252,15 +254,20 @@ class VideoStream(object):
                 detect_rate=0
             
             object_count=len(found_objects) 
-            #object_count=len(myObjTrack.tracks)           
+            track_count=len(myObjTrack.objtracks)           
             
             #draw bounding box for detected objects    
-            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 1, MyUtility.DrawTpye.Default)
+            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 2, MyUtility.DrawTpye.Default)
             
             # draw the detect object count on the frame
-            cv2.putText(frame, "Detect: {}".format(object_count), (10, 20),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2) 
-               
+            cv2.putText(frame, "Detect: {}".format(object_count), (10, 25), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)   
+            
+            cv2.putText(frame, "Tracking: {}".format(track_count), (10, 50), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)           
+            
+            # Resize image if necessary
+            #frame = cv2.resize(frame, (1024, 768))   
             # Display the resulting frame
             cv2.imshow('Stream Detector',frame)
             
@@ -276,9 +283,10 @@ class VideoStream(object):
         
 def test_fun():
     filesrc0='../../res/vtest.avi'
-    filesrc1='E:\Video_20170612\EC-Main-Entrance-2017-05-21_02h10min05s000ms.mp4'
-    filesrc2='E:\Video_20170612\EC-Main-Entrance-out.mp4'
-    filesrc3='D:\dji_album\DJI_0036.mp4'
+    filesrc1='E:/Video_20170612/EC-Main-Entrance-2017-05-21_02h10min05s000ms.mp4'
+    filesrc2='E:/Video_20170612/EC-Main-Entrance-in.mp4'
+    filesrc3='D:/dji_album/DJI_0036.mp4'
+    filesrc4='D:/dji_album/traffic/DJI_0001.mp4'
     
     myVideo=VideoStream()
     #myVideo.StreamPreviewer(StreamType.Camera, 1, RecordMode.VideoRecord,'','./test.avi')
@@ -288,7 +296,7 @@ def test_fun():
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
-    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc1,ObjDetect.MotionMethod.MOG2,2000)
+    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2,100)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)

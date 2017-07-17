@@ -8,11 +8,8 @@ Created on July 10, 2017
 @TaskDescription: This module provide moving object tracking by processing frame of video stream.
 @Reference: https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_video/py_lucas_kanade/py_lucas_kanade.html#lucas-kanade
 '''
-
 import numpy as np
-import copy
 import cv2
-from enum import Enum
 import Utility as MyUtility
 
 '''
@@ -273,6 +270,12 @@ class ObjTracking(object):
         #set activate state
         _lb_object.activeTimeout=self.timeout
     
+    #delete inactive LabeledObject() instance from tracking list
+    def deleteObjTrack(self): 
+        for i, lb_object in enumerate(self.objtracks):
+            if(lb_object.isActive==0):
+                del self.objtracks[i] 
+    
     def Run(self, _frame, _found_object, _minDist=100, _drawMode=MyUtility.DrawTpye.Default, _thickness = 1):
         #saved tracked objects in _found_object
         old_tracks=[]            
@@ -308,6 +311,7 @@ class ObjTracking(object):
                 #add lb_object to self.tracks
                 self.objtracks.append(self.newObjTrack(rect))
         
+        #for each object to update active state and timeout
         for obj in self.objtracks:
             if(obj.isActive==0):
                 continue
@@ -327,7 +331,9 @@ class ObjTracking(object):
             # draw the tracking information on the frame
             if(len(obj.tracks)>0):
                 MyUtility.Utilities.draw_tracking(_frame, obj, _drawMode, _thickness)
-
+        
+        #delete inactive object from tracking list       
+        self.deleteObjTrack()
               
 if __name__ == '__main__':
     pass
