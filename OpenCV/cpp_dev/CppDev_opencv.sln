@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_opencv", "test_opencv\test_opencv.vcxproj", "{ABCC554A-54E0-4680-A550-23F0139D6D5B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SmartCamera", "SmartCamera\SmartCamera.vcxproj", "{B5D143C1-325A-4206-A05B-16E09DA052D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{ABCC554A-54E0-4680-A550-23F0139D6D5B}.Release|x64.Build.0 = Release|x64
 		{ABCC554A-54E0-4680-A550-23F0139D6D5B}.Release|x86.ActiveCfg = Release|Win32
 		{ABCC554A-54E0-4680-A550-23F0139D6D5B}.Release|x86.Build.0 = Release|Win32
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Debug|x64.ActiveCfg = Debug|x64
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Debug|x64.Build.0 = Debug|x64
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Debug|x86.ActiveCfg = Debug|Win32
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Debug|x86.Build.0 = Debug|Win32
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Release|x64.ActiveCfg = Release|x64
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Release|x64.Build.0 = Release|x64
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Release|x86.ActiveCfg = Release|Win32
+		{B5D143C1-325A-4206-A05B-16E09DA052D9}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
