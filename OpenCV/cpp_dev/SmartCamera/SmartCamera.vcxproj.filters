@@ -24,12 +24,21 @@
     <ClCompile Include="src\VideoStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Utilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ObjectDetect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\VideoStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

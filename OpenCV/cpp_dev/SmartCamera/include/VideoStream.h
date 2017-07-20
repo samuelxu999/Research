@@ -1,3 +1,13 @@
+/*
+========================
+Video Stream.
+========================
+Created on July 18, 2017
+@author: Xu Ronghua
+@Email:  rxu22@binghamton.edu
+@TaskDescription: This module provide video stream related function.
+*/
+
 #include "opencv2/objdetect.hpp"
 #include "opencv2/videoio.hpp"
 #include "opencv2/highgui.hpp"
@@ -42,5 +52,5 @@ class VideoStream {
 
 		int StreamPreviewer(int streamType, char* video_src);
 
-		int StreamDetection(int streamType, char* video_src, int detectmode);
+		int StreamDetection(int streamType, char* video_src, int detectmode, int minArea);
 };

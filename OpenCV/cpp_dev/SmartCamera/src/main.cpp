@@ -1,12 +1,4 @@
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <iostream>
-
-#include "../include/ObjectDetect.h"
-#include "../include/VideoStream.h"
-
-using namespace cv;
-using namespace std;
+#include "../include/main.h"
 
 /* This demo will tutor you how to load a picture to test your OpenCV development environment*/
 int loadImg(char* strPath) {
@@ -38,8 +30,8 @@ int testObjDetect(char* imgpath){
 	}
 
 	//detect face
-	std::vector<Rect> faces;
-	std::vector<Rect> eyes;
+	std::vector<cv::Rect> faces;
+	std::vector<cv::Rect> eyes;
 	ObjDetect myObjdetect = ObjDetect();
 	//myObjdetect.detectFace(frame, faces);
 	myObjdetect.detectEye(frame, eyes);
@@ -57,7 +49,8 @@ int testVideoStream(char* srcpath) {
 
 	//return myVideo.StreamPreviewer(StreamType::Camera, srcpath);
 
-	return myVideo.StreamDetection(StreamType::Camera, srcpath, DetectionMode::Face);
+	//return myVideo.StreamDetection(StreamType::Camera, srcpath, DetectionMode::Face);
+	return myVideo.StreamDetection(StreamType::Video, srcpath, DetectionMode::Motion,100);
 }
 
 	 

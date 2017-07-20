@@ -145,10 +145,13 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ObjectDetect.cpp" />
+    <ClCompile Include="src\Utilities.cpp" />
     <ClCompile Include="src\VideoStream.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\main.h" />
     <ClInclude Include="include\ObjectDetect.h" />
+    <ClInclude Include="include\Utilities.h" />
     <ClInclude Include="include\VideoStream.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

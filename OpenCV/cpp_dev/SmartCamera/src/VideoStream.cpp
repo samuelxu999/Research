@@ -1,5 +1,6 @@
 #include "../include/VideoStream.h"
 #include "../include/ObjectDetect.h"
+#include "../include/Utilities.h"
 
 VideoStream::VideoStream() {
 
@@ -57,7 +58,7 @@ int VideoStream::StreamPreviewer(int streamType, char* video_src) {
 
 	return 0;
 }
-int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode) {
+int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode, int minArea) {
 	int ret = 0;
 
 	//open stream
@@ -76,8 +77,10 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 
 	//read frame by frame to preview stream
 	Mat frame;
-	std::vector<Rect> faces;
+	Mat fgmask;
+	vector<cv::Rect> found_filtered;
 	ObjDetect myObjdetect = ObjDetect();
+	int object_count = 0;
 
 	while (capture.read(frame))
 	{
@@ -91,20 +94,31 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 		// Apply the detection to the frame
 		switch (detectmode) {
 		case DetectionMode::Face:
-			myObjdetect.detectFace(frame, faces);
+			myObjdetect.detectFace(frame, found_filtered);
 			break;
 		case DetectionMode::Eyes:
-			myObjdetect.detectEye(frame, faces);
+			myObjdetect.detectEye(frame, found_filtered);
 			break;
+		case DetectionMode::Motion:
+			myObjdetect.detectMotionMOG(frame, found_filtered, MotionMethod::MOG2, minArea);
 		default:
 			break;
 		}
+
+		//draw bounding box for detected objects 
+		Utilities::draw_detections(frame, found_filtered, Scalar(0, 255, 0),2, DrawTpye::Default);
+
+		//draw the detect object count on the frame
+		object_count = found_filtered.size();
+		putText(frame, ("Detect: " + to_string(object_count)), Point(10, 25), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 2);
+
+		putText(frame, ("Tracking: "), Point(10, 50), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 2);
 
 		// Apply the detection to the frame
 		imshow("Stream Detection", frame);
 
 		//display frame
-		char c = (char)waitKey(10);
+		char c = (char)waitKey(1);
 		if (c == 27) { break; } // escape
 	}
 

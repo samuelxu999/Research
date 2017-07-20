@@ -113,6 +113,15 @@ class Utilities():
         _area=int(w*h)
         
         return _area
+    
+    #return internal radius of rectangle r
+    @staticmethod
+    def rectRadius(_r):
+        _, _, w, h = _r      
+        
+        _radius=np.sqrt(int(w/2)**2+int(h/2)**2)
+        
+        return int(_radius)
         
         
     #draw rectangles for found object
@@ -175,8 +184,7 @@ class Utilities():
             for qi, q in enumerate(rects):
                 if ri != qi and Utilities.rectInside(r, q):
                     break
-            else:
-                found_filtered.append(r)
+            found_filtered.append(r)
         return found_filtered
     
     #Show frame and wait user to press q to close window

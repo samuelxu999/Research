@@ -184,8 +184,8 @@ def test_fun():
     #frame = cv2.imread('../../res/kobe.bmp')
     
     myObjDetect=ObjDetect()
-    #frame, faces = myObjDetect.detect_face(frame)
-    frame = myObjDetect.detect_eye(frame)
+    frame, faces = myObjDetect.detect_face(frame)
+    #frame = myObjDetect.detect_eye(frame)
     #myObjDetect.detectBody(frame)
     cv2.imshow('Show Image',frame)
     cv2.waitKey(0)
