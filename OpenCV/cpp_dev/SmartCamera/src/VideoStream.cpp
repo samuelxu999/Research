@@ -1,5 +1,6 @@
 #include "../include/VideoStream.h"
 #include "../include/ObjectDetect.h"
+#include "../include/FlowTracking.h"
 #include "../include/Utilities.h"
 
 VideoStream::VideoStream() {
@@ -80,8 +81,10 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 	Mat fgmask;
 	vector<cv::Rect> found_filtered;
 	ObjDetect myObjdetect = ObjDetect();
-	int object_count = 0;
+	ObjTracking myObjTrack = ObjTracking();
 
+	int object_count = 0;
+	int track_count = 0;
 	while (capture.read(frame))
 	{
 		if (frame.empty())
@@ -101,6 +104,7 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 			break;
 		case DetectionMode::Motion:
 			myObjdetect.detectMotionMOG(frame, found_filtered, MotionMethod::MOG2, minArea);
+			myObjTrack.run(frame, found_filtered, 100, DrawTpye::Default, 2);
 		default:
 			break;
 		}
@@ -112,7 +116,8 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 		object_count = found_filtered.size();
 		putText(frame, ("Detect: " + to_string(object_count)), Point(10, 25), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 2);
 
-		putText(frame, ("Tracking: "), Point(10, 50), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 2);
+		track_count = myObjTrack.objtracks.size();
+		putText(frame, ("Tracking: " + to_string(track_count)), Point(10, 50), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 2);
 
 		// Apply the detection to the frame
 		imshow("Stream Detection", frame);

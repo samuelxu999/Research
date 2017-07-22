@@ -216,17 +216,14 @@ class LabeledObject(object):
         self.isActive=0
         # wait 5 frame to check timeout, then set isActive=0 to inactive moving object
         self.activeTimeout=5
+        #generate random color
         self.color=np.random.randint(0,255,(1,3))
 
 
 '''
 Object tracking class
 '''        
-class ObjTracking(object):
-    
-    DrawAll = 0
-    DrawLabel = 1
-    DrawPath = 2
+class ObjTracking(object):    
 
     '''ObjTracking construction function'''
     def __init__(self):
@@ -259,15 +256,15 @@ class ObjTracking(object):
         #return new tracking object instance
         return lb_object
     
-    #update LabeledObject() instance
+    #update LabeledObject() instance by appending new point to tracking list
     def updateObjTrack(self, _lb_object, _rect):  
         #set current rectangle data
         _lb_object.rect=_rect
         
-        #set head of track data as center of rectangle
+        #append center of rectangle to lb_object.tracks list
         _lb_object.tracks.append(MyUtility.Utilities.rectCenter(_rect))
         
-        #set activate state
+        #refresh activeTimeout with default value in timeout
         _lb_object.activeTimeout=self.timeout
     
     #delete inactive LabeledObject() instance from tracking list

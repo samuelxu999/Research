@@ -7,6 +7,8 @@ Created on July 19, 2017
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide utility class for user to call function.
 */
+#ifndef UTILITIES_H
+#define UTILITIES_H
 
 #include "opencv2/objdetect.hpp"
 #include "opencv2/videoio.hpp"
@@ -56,12 +58,23 @@ class Utilities {
 		//return distance of p1 and p2
 		int static pointDistance(Point p1, Point p2);
 
+		//return distance of center of rectangle r and q
 		int static centerRectDistance(cv::Rect r, cv::Rect q);
 
+		//calculate area of rectangle rect
+		int static rectArea(cv::Rect rect);
+
+		//calculate internal radius of rectangle rect
+		int static rectRadius(cv::Rect rect);
+
+		//draw rectangles for found object
 		void static draw_detections(cv::Mat img, 
 									vector<cv::Rect> rects, 
 									Scalar rectColor = (0, 0, 255), 
 									int thickness = 1, 
 									int mode = DrawTpye::Default);
+
 };
+
+#endif
 

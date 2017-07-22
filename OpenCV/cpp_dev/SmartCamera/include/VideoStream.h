@@ -8,6 +8,9 @@ Created on July 18, 2017
 @TaskDescription: This module provide video stream related function.
 */
 
+#ifndef VIDEOSTREAM_H
+#define VIDEOSTREAM_H
+
 #include "opencv2/objdetect.hpp"
 #include "opencv2/videoio.hpp"
 #include "opencv2/highgui.hpp"
@@ -54,3 +57,5 @@ class VideoStream {
 
 		int StreamDetection(int streamType, char* video_src, int detectmode, int minArea);
 };
+
+#endif

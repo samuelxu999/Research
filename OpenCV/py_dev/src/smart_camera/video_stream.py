@@ -296,7 +296,7 @@ def test_fun():
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
-    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2,100)
+    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc4,ObjDetect.MotionMethod.MOG2,100)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)

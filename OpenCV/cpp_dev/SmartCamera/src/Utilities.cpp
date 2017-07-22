@@ -69,6 +69,16 @@ int Utilities::centerRectDistance(cv::Rect r, cv::Rect q){
 	return Utilities::pointDistance(p1,p2);
 }
 
+int Utilities::rectArea(cv::Rect rect) {
+	float area = int(rect.width * rect.height);
+	return int(area);
+}
+
+int Utilities::rectRadius(cv::Rect rect) {
+	float radius = sqrt(pow2(rect.width / 2) + pow2(rect.height / 2));
+	return int(radius);
+}
+
 void Utilities::draw_detections(cv::Mat frame, vector<cv::Rect> rects, Scalar color, int thickness, int mode) {
 	int pad_w = 0; 
 	int pad_h = 0;  

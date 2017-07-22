@@ -143,12 +143,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\FlowTracking.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ObjectDetect.cpp" />
     <ClCompile Include="src\Utilities.cpp" />
     <ClCompile Include="src\VideoStream.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\FlowTracking.h" />
     <ClInclude Include="include\main.h" />
     <ClInclude Include="include\ObjectDetect.h" />
     <ClInclude Include="include\Utilities.h" />
