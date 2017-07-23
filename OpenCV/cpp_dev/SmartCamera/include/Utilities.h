@@ -28,11 +28,11 @@ using namespace cv;
 //Define draw type
 enum DrawTpye
 {
-	Default = 0,
-	Rect = 1,
-	Center = 2,
-	LabelText = 3,
-	PolyLines = 4
+	DrawDefault = 0,
+	DrawRect = 1,
+	DrawCenter = 2,
+	DrawLabelText = 3,
+	DrawPolyLines = 4
 }; 
 
 
@@ -44,7 +44,7 @@ class Utilities {
 		bool static rectInside(cv::Rect r, cv::Rect q);
 
 		//get filtered contours based on _minArea
-		vector<cv::Rect> static cont_filter(vector<vector<Point>> cnts, int minArea);
+		vector<cv::Rect> static cont_filter(vector< vector<Point> > cnts, int minArea);
 
 		//get filtered rectangle to remove inside ones
 		vector<cv::Rect> static rect_filter(vector<cv::Rect> rects);
@@ -72,7 +72,7 @@ class Utilities {
 									vector<cv::Rect> rects, 
 									Scalar rectColor = (0, 0, 255), 
 									int thickness = 1, 
-									int mode = DrawTpye::Default);
+									int mode = DrawDefault);
 
 };
 

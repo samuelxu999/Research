@@ -56,13 +56,13 @@ void ObjTracking::deleteObjTrack() {
 
 //draw tracking infomration on frame, such as label and path.
 void draw_tracking(cv::Mat frame, LabeledObject obj, int mode , int thickness) {
-	if (mode == DrawTpye::Default || mode == DrawTpye::LabelText) {
+	if (mode == DrawDefault || mode == DrawLabelText) {
 		//display object label
 		Point p = obj.tracks[obj.tracks.size() - 1];
 		putText(frame, to_string(obj.idx), Point(p.x-4, p.y-4), 
 				FONT_HERSHEY_SIMPLEX, 0.5, obj.color, 1);
 	}
-	if (mode == DrawTpye::Default || mode == DrawTpye::PolyLines) {
+	if (mode == DrawDefault || mode == DrawPolyLines) {
 		//draw moving path
 		vector<Point> pts;
 		for (size_t i = 0; i < obj.tracks.size(); i++) {

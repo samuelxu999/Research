@@ -64,7 +64,7 @@ class ObjTracking {
 		//run tracking algorithm
 		void run(Mat frame, vector<cv::Rect> found_object, 
 					int minDist = 100, 
-					int drawMode = DrawTpye::Default, 
+					int drawMode = DrawDefault, 
 					int thickness = 1);
 };
 

@@ -104,13 +104,13 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 			break;
 		case DetectionMode::Motion:
 			myObjdetect.detectMotionMOG(frame, found_filtered, MotionMethod::MOG2, minArea);
-			myObjTrack.run(frame, found_filtered, 100, DrawTpye::Default, 2);
+			myObjTrack.run(frame, found_filtered, 100, DrawDefault, 2);
 		default:
 			break;
 		}
 
 		//draw bounding box for detected objects 
-		Utilities::draw_detections(frame, found_filtered, Scalar(0, 255, 0),2, DrawTpye::Default);
+		Utilities::draw_detections(frame, found_filtered, Scalar(0, 255, 0),2, DrawDefault);
 
 		//draw the detect object count on the frame
 		object_count = found_filtered.size();
