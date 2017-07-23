@@ -1,0 +1,10 @@
+cmake_minimum_required (VERSION 2.6)
+add_compile_options(-std=c++11)
+set(SRC_FILES main.cpp FlowTracking.cpp ObjectDetect.cpp Utilities.cpp VideoStream.cpp)
+project (SmartCamera)
+# Requires OpenCV
+FIND_PACKAGE( OpenCV REQUIRED )
+include_directories(${OpenCV_INCLUDE_DIRS})
+link_directories(${OpenCV_LIB_DIR})
+ADD_EXECUTABLE( ${PROJECT_NAME} ${SRC_FILES} )
+TARGET_LINK_LIBRARIES( ${PROJECT_NAME} ${OpenCV_LIBS} )
