@@ -90,7 +90,9 @@ void ObjTracking::run(Mat frame, vector<cv::Rect> found_object, int minDist, int
 		cv::Rect minRect = cv::Rect(0, 0, 0, 0);
 		
 		//for each object to check tracking information
-		for each (cv::Rect rect in found_object) {
+		//for each (cv::Rect rect in found_object) {
+		for (size_t j = 0; j < found_object.size(); j++) {
+			cv::Rect rect = found_object[j];
 			//get center of rect
 			Point cen_rect = Utilities::rectCenter(rect);
 			Point cen_obj = objtracks[i].tracks[objtracks[i].tracks.size() - 1];
@@ -115,7 +117,9 @@ void ObjTracking::run(Mat frame, vector<cv::Rect> found_object, int minDist, int
 	}
 	
 	//for each object to add new track object to self.tracks
-	for each (cv::Rect rect in found_object) {
+	//for each (cv::Rect rect in found_object) {
+	for (size_t i = 0; i < found_object.size(); i++) {
+		cv::Rect rect = found_object[i];
 		//if rect not in old_tracks
 		if (std::find(old_tracks.begin(), old_tracks.end(), rect) == old_tracks.end()) {
 			//add lb_object to self.tracks
