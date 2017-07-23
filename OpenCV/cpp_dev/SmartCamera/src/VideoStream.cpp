@@ -27,10 +27,10 @@ int VideoStream::StreamPreviewer(int streamType, char* video_src) {
 	int ret = 0;
 
 	//open stream
-	if (streamType == StreamType::Camera) { 
+	if (streamType == Camera) { 
 		ret = setCapture();
 	}
-	else if(streamType == StreamType::Video){
+	else if(streamType == Video){
 		ret = setCapture(video_src);
 	}
 	else{
@@ -63,10 +63,10 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 	int ret = 0;
 
 	//open stream
-	if (streamType == StreamType::Camera) {
+	if (streamType == Camera) {
 		ret = setCapture();
 	}
-	else if (streamType == StreamType::Video) {
+	else if (streamType == Video) {
 		ret = setCapture(video_src);
 	}
 	else {
@@ -96,13 +96,13 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 
 		// Apply the detection to the frame
 		switch (detectmode) {
-		case DetectionMode::Face:
+		case Face:
 			myObjdetect.detectFace(frame, found_filtered);
 			break;
-		case DetectionMode::Eyes:
+		case Eyes:
 			myObjdetect.detectEye(frame, found_filtered);
 			break;
-		case DetectionMode::Motion:
+		case Motion:
 			myObjdetect.detectMotionMOG(frame, found_filtered, MotionMethod::MOG2, minArea);
 			myObjTrack.run(frame, found_filtered, 100, DrawDefault, 2);
 		default:
