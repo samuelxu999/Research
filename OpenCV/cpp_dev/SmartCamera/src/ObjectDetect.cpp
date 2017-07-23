@@ -37,12 +37,6 @@ int ObjDetect::detectFace(Mat frame, vector<cv::Rect> &faces) {
 	//-- Detect faces
 	face_cascade.detectMultiScale(frame_gray, faces, 1.3, 5, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
 
-	//draw face
-	/*for (size_t i = 0; i < faces.size(); i++) {
-		//Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
-		//ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(0, 255, 0), 2, 8, 0);
-		rectangle(frame, faces[i], Scalar(0, 255, 0), 2, 8, 0);
-	}*/
 	return 0;
 }
 
@@ -127,22 +121,6 @@ int ObjDetect::detectMotionMOG(Mat frame, vector<cv::Rect> &found_filtered, int 
 	//filter contours
 	//vector<cv::Rect> found_filtered;
 	found_filtered =Utilities::cont_filter(contours, minArea);
-	
-	//cout << found_filtered.size() << "\n";
-	//cout << found_filtered[0] << "\n";
-
-	//Utilities::draw_detections(frame, found_filtered, Scalar(0, 255, 255));
-
-	/*Mat drawing = Mat::zeros(fgmask.size(), CV_8UC3);
-	RNG rng(255);
-	Rect  boundRect;
-	for (size_t i = 0; i< contours.size(); i++)
-	{
-		Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
-		//drawContours(drawing, contours, (int)i, color, 2, 8, hierarchy, 0, Point());
-		boundRect = boundingRect(contours[i]);
-		rectangle(frame, boundRect.tl(), boundRect.br(), Scalar(0, 255, 0), 2, 8, 0);
-	}*/
 
 	//imshow("FG Mask MOG", fgmask);
 

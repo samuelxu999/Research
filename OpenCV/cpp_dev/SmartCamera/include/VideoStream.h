@@ -24,24 +24,24 @@ using namespace cv;
 
 //Define for stream type: camera or video files
 enum StreamType { 
-	Camera = 0,
-	Video = 1
+	CAMERA = 0,
+	VIDEO = 1
 };
 
 //Define detect mode
 enum RecordMode {
-	NoRecord = 0,
-	VideoRecord = 1,
-	PictureSnap = 2
+	NO_RECORD = 0,
+	VIDEO_RECORD = 1,
+	PICTURE_SNAP = 2
 };
 
 // Define detect mode
 enum DetectionMode {
-	NoDetection = 0,
-	Face = 1,
-	Eyes = 2,
-	Body = 3,
-	Motion = 4
+	NO_DETECTION = 0,
+	FACE = 1,
+	EYES = 2,
+	BODY = 3,
+	MOTION = 4
 };
 
 class VideoStream {
@@ -55,7 +55,7 @@ class VideoStream {
 
 		int StreamPreviewer(int streamType, char* video_src);
 
-		int StreamDetection(int streamType, char* video_src, int detectmode, int minArea);
+		int StreamDetection(int streamType, char* video_src, int detectmode, int minArea=100, int minDist=50);
 };
 
 #endif

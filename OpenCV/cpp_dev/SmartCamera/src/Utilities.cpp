@@ -84,7 +84,7 @@ void Utilities::draw_detections(cv::Mat frame, vector<cv::Rect> rects, Scalar co
 	int pad_h = 0;  
 
 	for (size_t i = 0; i < rects.size(); i++) {
-		if (mode == DrawDefault || mode == DrawRect) {
+		if (mode == DrawTpye::DEFAULT || mode == DrawTpye::RECTANGLE) {
 			pad_w = int(ScaleWeight_W*rects[i].width / 2);
 			pad_h = int(ScaleWeight_H*rects[i].height / 2);
 			rectangle(frame,
@@ -92,7 +92,7 @@ void Utilities::draw_detections(cv::Mat frame, vector<cv::Rect> rects, Scalar co
 				Point(rects[i].br().x + pad_w, rects[i].br().y + pad_h),
 				color, thickness, 8, 0);
 		}
-		if (mode == DrawDefault || mode == DrawRect) {
+		if (mode == DrawTpye::DEFAULT || mode == DrawTpye::CENTER) {
 			circle(frame, Utilities::rectCenter(rects[i]), 3, Scalar(0, 0, 255), -1, 8, 0);
 		}
 	}

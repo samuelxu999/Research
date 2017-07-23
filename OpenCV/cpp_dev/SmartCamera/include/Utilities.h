@@ -28,11 +28,11 @@ using namespace cv;
 //Define draw type
 enum DrawTpye
 {
-	DrawDefault = 0,
-	DrawRect = 1,
-	DrawCenter = 2,
-	DrawLabelText = 3,
-	DrawPolyLines = 4
+	DEFAULT = 0,
+	RECTANGLE = 1,
+	CENTER = 2,
+	LABEL_TEXT = 3,
+	POLYLINES = 4
 }; 
 
 
@@ -72,7 +72,7 @@ class Utilities {
 									vector<cv::Rect> rects, 
 									Scalar rectColor = (0, 0, 255), 
 									int thickness = 1, 
-									int mode = DrawDefault);
+									int mode = DrawTpye::DEFAULT);
 
 };
 

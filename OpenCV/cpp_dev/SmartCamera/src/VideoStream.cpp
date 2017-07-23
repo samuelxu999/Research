@@ -27,10 +27,10 @@ int VideoStream::StreamPreviewer(int streamType, char* video_src) {
 	int ret = 0;
 
 	//open stream
-	if (streamType == Camera) { 
+	if (streamType == StreamType::CAMERA) {
 		ret = setCapture();
 	}
-	else if(streamType == Video){
+	else if(streamType == StreamType::VIDEO){
 		ret = setCapture(video_src);
 	}
 	else{
@@ -59,14 +59,14 @@ int VideoStream::StreamPreviewer(int streamType, char* video_src) {
 
 	return 0;
 }
-int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode, int minArea) {
+int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode, int minArea, int minDist) {
 	int ret = 0;
 
 	//open stream
-	if (streamType == Camera) {
+	if (streamType == StreamType::CAMERA) {
 		ret = setCapture();
 	}
-	else if (streamType == Video) {
+	else if (streamType == StreamType::VIDEO) {
 		ret = setCapture(video_src);
 	}
 	else {
@@ -96,21 +96,21 @@ int VideoStream::StreamDetection(int streamType, char* video_src, int detectmode
 
 		// Apply the detection to the frame
 		switch (detectmode) {
-		case Face:
+		case DetectionMode::FACE:
 			myObjdetect.detectFace(frame, found_filtered);
 			break;
-		case Eyes:
+		case DetectionMode::EYES:
 			myObjdetect.detectEye(frame, found_filtered);
 			break;
-		case Motion:
+		case DetectionMode::MOTION:
 			myObjdetect.detectMotionMOG(frame, found_filtered, MotionMethod::MOG2, minArea);
-			myObjTrack.run(frame, found_filtered, 100, DrawDefault, 2);
+			myObjTrack.run(frame, found_filtered, minDist, DrawTpye::DEFAULT, 2);
 		default:
 			break;
 		}
 
 		//draw bounding box for detected objects 
-		Utilities::draw_detections(frame, found_filtered, Scalar(0, 255, 0),2, DrawDefault);
+		Utilities::draw_detections(frame, found_filtered, Scalar(0, 255, 0),2, DrawTpye::DEFAULT);
 
 		//draw the detect object count on the frame
 		object_count = found_filtered.size();

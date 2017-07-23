@@ -24,7 +24,7 @@ using namespace cv;
 
 //define MotionMethod 
 enum MotionMethod {
-	Diff = 0,
+	DIFF = 0,
 	MOG = 1,
 	MOG2 = 2
 };
