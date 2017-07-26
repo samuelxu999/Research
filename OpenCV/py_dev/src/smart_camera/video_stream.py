@@ -284,7 +284,7 @@ class VideoStream(object):
 def test_fun():
     filesrc0='../../res/vtest.avi'
     filesrc1='E:/Video_20170612/EC-Main-Entrance-2017-05-21_02h10min05s000ms.mp4'
-    filesrc2='E:/Video_20170612/EC-Main-Entrance-in.mp4'
+    filesrc2='E:/Video_20170612/EC-Main-Entrance-out.mp4'
     filesrc3='D:/dji_album/DJI_0036.mp4'
     filesrc4='D:/dji_album/traffic/DJI_0001.mp4'
     
@@ -296,7 +296,7 @@ def test_fun():
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
-    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc4,ObjDetect.MotionMethod.MOG2,100)
+    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2,100)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)

@@ -273,7 +273,7 @@ class ObjTracking(object):
             if(lb_object.isActive==0):
                 del self.objtracks[i] 
     
-    def Run(self, _frame, _found_object, _minDist=100, _drawMode=MyUtility.DrawTpye.Default, _thickness = 1):
+    def Run(self, _frame, _found_object, _minDist=50, _drawMode=MyUtility.DrawTpye.Default, _thickness = 1):
         #saved tracked objects in _found_object
         old_tracks=[]            
         #self.tracks is not empty, update self.tracks
@@ -292,6 +292,7 @@ class ObjTracking(object):
                 #if center of rect within tracked object, then update track data of tracked object
                 if(MyUtility.Utilities.pointDistance((cen_x, cen_y),(ox, oy))<_minDist):
                     #add old_tracks list
+                    #if(MyUtility.Utilities.rectOverlap(lb_object.rect, rect, 0.1)):
                     old_tracks.append(rect)
                     #get minDistance and minRect                
                     if(MyUtility.Utilities.pointDistance((cen_x, cen_y),(ox, oy))<minDistance):

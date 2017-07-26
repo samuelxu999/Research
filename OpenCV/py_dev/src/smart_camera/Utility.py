@@ -12,6 +12,7 @@ import configparser
 import cv2
 import numpy as np
 from enum import Enum
+from ctypes.wintypes import FLOAT
 
 '''
 @Function: Manage configuration setting in config.txt file.   
@@ -47,6 +48,26 @@ class Utilities():
     ScaleWeight_W=0.15
     ScaleWeight_H=0.2
     
+    #return union of r inside q
+    @staticmethod
+    def union(a,b):
+        x = min(a[0], b[0])
+        y = min(a[1], b[1])
+        w = max(a[0]+a[2], b[0]+b[2]) - x
+        h = max(a[1]+a[3], b[1]+b[3]) - y
+        return (x, y, w, h)
+    
+    #return intersection of r and q
+    @staticmethod    
+    def intersection(a,b):
+        x = max(a[0], b[0])
+        y = max(a[1], b[1])
+        w = min(a[0]+a[2], b[0]+b[2]) - x
+        h = min(a[1]+a[3], b[1]+b[3]) - y
+        if(w<0 or h<0): 
+            return (0,0,0,0)
+        return (x, y, w, h)
+    
     #return whether contour r inside q
     @staticmethod
     def rectInside(r, q):
@@ -60,7 +81,14 @@ class Utilities():
         
         #compare center of r with bound of q to check whether r inside q or not
         return cen_rx > qx and cen_ry > qy and cen_rx < qx + qw and cen_ry < qy + qh'''
-    
+   
+    #return whether contour r and q overlap beyond overlap rate threshold
+    @staticmethod
+    def rectOverlap(r, q, _rate=0.5):        
+        # intersection: rect1 & rect2
+        r_sect = Utilities.intersection(r, q)
+        #if r and q has overlap, then check overlap rate
+        return Utilities.rectArea(r_sect)>0 and (Utilities.rectArea(r_sect)/Utilities.rectArea(q))>_rate
     
     #return center of rectangle
     @staticmethod
@@ -133,8 +161,8 @@ class Utilities():
                 # the HOG detector returns slightly larger rectangles than the real objects.
                 # so we slightly shrink the rectangles to get a nicer output.
                 pad_w, pad_h = int(Utilities.ScaleWeight_W*w), int(Utilities.ScaleWeight_H*h)
-                cv2.rectangle(img, (x-int(pad_w/2), y-int(pad_h/2)), (x+w+pad_w, y+h+pad_h), _rectColor, thickness)
-                #cv2.rectangle(img, (x, y), (x+w, y+h), _rectColor, thickness)
+                #cv2.rectangle(img, (x-int(pad_w/2), y-int(pad_h/2)), (x+w+pad_w, y+h+pad_h), _rectColor, thickness)
+                cv2.rectangle(img, (x, y), (x+w, y+h), _rectColor, thickness)
             
             if(_mode==DrawTpye.Default or _mode==DrawTpye.Center):
                 #get center of r
