@@ -273,7 +273,7 @@ class ObjTracking(object):
             if(lb_object.isActive==0):
                 del self.objtracks[i] 
     
-    def Run(self, _frame, _found_object, _minDist=50, _drawMode=MyUtility.DrawTpye.Default, _thickness = 1):
+    def Run(self, _frame, _found_object, _minDist=50, _drawMode=MyUtility.DrawType.Default, _thickness = 1):
         #saved tracked objects in _found_object
         old_tracks=[]            
         #self.tracks is not empty, update self.tracks
@@ -329,7 +329,7 @@ class ObjTracking(object):
             # draw the tracking information on the frame
             if(len(obj.tracks)>0):
                 MyUtility.Utilities.draw_tracking(_frame, obj, _drawMode, _thickness)
-                #MyUtility.Utilities.draw_detections(_frame, [obj.rect], obj.color[0].tolist(), _thickness, MyUtility.DrawTpye.Default)
+                #MyUtility.Utilities.draw_detections(_frame, [obj.rect], obj.color[0].tolist(), _thickness, MyUtility.DrawType.Default)
         #delete inactive object from tracking list       
         self.deleteObjTrack()
               

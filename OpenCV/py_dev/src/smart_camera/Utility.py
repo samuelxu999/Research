@@ -35,14 +35,15 @@ class UserConfig(object):
         self.myconfig.set('Opencv-config', 'opencv_data', _data)
         self.myconfig.write(open(self.configFilePath, 'w'))
 
-# Define feature type
-class DrawTpye(Enum):
+# Define draw type
+class DrawType(Enum):
     Default = 0 
     Rect = 1
     Center = 2
     LabelText = 4
     PolyLines = 8
-    
+
+#define Utilities and implement function   
 class Utilities():
     ScaleWeight_W=0.15
     ScaleWeight_H=0.2
@@ -153,10 +154,10 @@ class Utilities():
         
     #draw rectangles for found object
     @staticmethod
-    def draw_detections(img, rects, _rectColor=(0,0,255), thickness = 1, _mode=DrawTpye.Default.value):
+    def draw_detections(img, rects, _rectColor=(0,0,255), thickness = 1, _mode=DrawType.Default.value):
         for x, y, w, h in rects:
-            if(_mode==DrawTpye.Default.value or 
-               _mode&DrawTpye.Rect.value==DrawTpye.Rect.value):
+            if(_mode==DrawType.Default.value or 
+               _mode&DrawType.Rect.value==DrawType.Rect.value):
                 '''=================Drawing Rectangle around bound==================='''
                 # the HOG detector returns slightly larger rectangles than the real objects.
                 # so we slightly shrink the rectangles to get a nicer output.
@@ -164,8 +165,8 @@ class Utilities():
                 cv2.rectangle(img, (x-int(pad_w/2), y-int(pad_h/2)), (x+w+pad_w, y+h+pad_h), _rectColor, thickness)'''
                 cv2.rectangle(img, (x, y), (x+w, y+h), _rectColor, thickness)
             
-            if(_mode==DrawTpye.Default.value or 
-               _mode&DrawTpye.Center.value==DrawTpye.Center.value):
+            if(_mode==DrawType.Default.value or 
+               _mode&DrawType.Center.value==DrawType.Center.value):
                 #get center of r
                 cen_x, cen_y=Utilities.rectCenter((x, y, w, h))
                 '''=================Drawing Circle at center==================='''
@@ -173,11 +174,11 @@ class Utilities():
     
     #draw label or tracking path for object
     @staticmethod
-    def draw_tracking(_frame, _obj, _mode=DrawTpye.Default.value, thickness = 1):
+    def draw_tracking(_frame, _obj, _mode=DrawType.Default.value, thickness = 1):
         x, y, w, h = _obj.rect
         pad_w, pad_h = int(Utilities.ScaleWeight_W*w), int(Utilities.ScaleWeight_H*h)
-        if(_mode==DrawTpye.Default.value or 
-           _mode&DrawTpye.LabelText.value==DrawTpye.LabelText.value):
+        if(_mode==DrawType.Default.value or 
+           _mode&DrawType.LabelText.value==DrawType.LabelText.value):
             #display object label
             '''x,y=_obj.tracks[-1]
             cv2.putText(_frame, "{}".format(_obj.idx), (int(x-4), int(y-4)),
@@ -185,8 +186,8 @@ class Utilities():
             cv2.putText(_frame, "{}".format(_obj.idx), (int(x+pad_w/2), int(y-pad_h/2-5)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, _obj.color[0].tolist(), thickness)
         
-        if(_mode==DrawTpye.Default.value or 
-           _mode&DrawTpye.PolyLines.value==DrawTpye.PolyLines.value):
+        if(_mode==DrawType.Default.value or 
+           _mode&DrawType.PolyLines.value==DrawType.PolyLines.value):
             #draw moving path
             ls_pts=[]
             for p1, p2 in _obj.tracks:                    
@@ -195,15 +196,15 @@ class Utilities():
             pts = pts.reshape((-1,1,2))
             cv2.polylines(_frame, [pts], False, _obj.color[0].tolist(), thickness)
         
-        if(_mode==DrawTpye.Default.value or 
-           _mode&DrawTpye.Rect.value==DrawTpye.Rect.value):
+        if(_mode==DrawType.Default.value or 
+           _mode&DrawType.Rect.value==DrawType.Rect.value):
             #draw rectangle
             # the HOG detector returns slightly larger rectangles than the real objects.
             # so we slightly shrink the rectangles to get a nicer output.
             cv2.rectangle(_frame, (x-int(pad_w/2), y-int(pad_h/2)), (x+w+pad_w, y+h+pad_h), _obj.color[0].tolist(), thickness)
         
-        if(_mode==DrawTpye.Default.value or 
-           _mode&DrawTpye.Rect.Center.value==DrawTpye.Center.value):
+        if(_mode==DrawType.Default.value or 
+           _mode&DrawType.Rect.Center.value==DrawType.Center.value):
             #draw circle over center of tracked object 
             #get center of r
             cen_x, cen_y = _obj.tracks[-1]
