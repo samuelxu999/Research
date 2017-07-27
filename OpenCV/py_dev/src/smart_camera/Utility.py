@@ -12,7 +12,6 @@ import configparser
 import cv2
 import numpy as np
 from enum import Enum
-from ctypes.wintypes import FLOAT
 
 '''
 @Function: Manage configuration setting in config.txt file.   
