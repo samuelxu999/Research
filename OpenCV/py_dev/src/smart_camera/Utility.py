@@ -183,7 +183,7 @@ class Utilities():
             cv2.putText(_frame, "{}".format(_obj.idx), (int(x-4), int(y-4)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, _obj.color[0].tolist(), 1)'''
             cv2.putText(_frame, "{}".format(_obj.idx), (int(x+pad_w/2), int(y-pad_h/2-5)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, _obj.color[0].tolist(), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, _obj.color[0].tolist(), thickness)
         
         if(_mode==DrawTpye.Default.value or 
            _mode&DrawTpye.PolyLines.value==DrawTpye.PolyLines.value):

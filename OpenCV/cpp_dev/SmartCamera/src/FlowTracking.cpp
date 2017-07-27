@@ -57,8 +57,8 @@ void ObjTracking::deleteObjTrack() {
 //draw tracking infomration on frame, such as label and path.
 void draw_tracking(cv::Mat frame, LabeledObject obj, int mode , int thickness) {
 	cv::Rect rect = obj.rect;
-	int pad_w = 0;
-	int pad_h = 0;
+	int pad_w = int(ScaleWeight_W*rect.width / 2);
+	int pad_h = int(ScaleWeight_H*rect.height / 2);
 
 	//Draw label text on tracking object
 	if (mode== DrawTpye::DEFAULT || (mode&DrawTpye::LABEL_TEXT) == DrawTpye::LABEL_TEXT) {
@@ -66,7 +66,7 @@ void draw_tracking(cv::Mat frame, LabeledObject obj, int mode , int thickness) {
 		/*Point p = obj.tracks[obj.tracks.size() - 1];
 		putText(frame, to_string(obj.idx), Point(p.x-4, p.y-4), 
 				FONT_HERSHEY_SIMPLEX, 0.7, obj.color, 1);*/
-		Point p = Point(rect.x, rect.y - 10);
+		Point p = Point(rect.x+pad_w/2, rect.y - pad_h/2 - 15);
 		putText(frame, to_string(obj.idx), Point(p.x, p.y),
 			FONT_HERSHEY_SIMPLEX, 0.6, obj.color, thickness);
 	}
@@ -81,8 +81,6 @@ void draw_tracking(cv::Mat frame, LabeledObject obj, int mode , int thickness) {
 	}
 	//Draw rectangle over tracking object
 	if (mode == DrawTpye::DEFAULT || (mode&DrawTpye::RECTANGLE) == DrawTpye::RECTANGLE) {
-		pad_w = int(ScaleWeight_W*rect.width / 2);
-		pad_h = int(ScaleWeight_H*rect.height / 2);
 		rectangle(frame,
 			Point(rect.tl().x - pad_w, rect.tl().y - pad_h),
 			Point(rect.br().x + pad_w, rect.br().y + pad_h),
