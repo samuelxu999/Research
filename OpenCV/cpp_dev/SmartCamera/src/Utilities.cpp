@@ -80,19 +80,14 @@ int Utilities::rectRadius(cv::Rect rect) {
 }
 
 void Utilities::draw_detections(cv::Mat frame, vector<cv::Rect> rects, Scalar color, int thickness, int mode) {
-	int pad_w = 0; 
-	int pad_h = 0;  
-
 	for (size_t i = 0; i < rects.size(); i++) {
-		if (mode == DrawTpye::DEFAULT || mode == DrawTpye::RECTANGLE) {
-			pad_w = int(ScaleWeight_W*rects[i].width / 2);
-			pad_h = int(ScaleWeight_H*rects[i].height / 2);
+		if (mode == DrawTpye::DEFAULT || (mode&DrawTpye::RECTANGLE) == DrawTpye::RECTANGLE) {
 			rectangle(frame,
-				Point(rects[i].tl().x - pad_w, rects[i].tl().y - pad_h),
-				Point(rects[i].br().x + pad_w, rects[i].br().y + pad_h),
+				Point(rects[i].tl().x, rects[i].tl().y),
+				Point(rects[i].br().x, rects[i].br().y),
 				color, thickness, 8, 0);
 		}
-		if (mode == DrawTpye::DEFAULT || mode == DrawTpye::CENTER) {
+		if (mode == DrawTpye::DEFAULT || (mode&DrawTpye::CENTER) == DrawTpye::CENTER) {
 			circle(frame, Utilities::rectCenter(rects[i]), 3, Scalar(0, 0, 255), -1, 8, 0);
 		}
 	}

@@ -56,19 +56,41 @@ void ObjTracking::deleteObjTrack() {
 
 //draw tracking infomration on frame, such as label and path.
 void draw_tracking(cv::Mat frame, LabeledObject obj, int mode , int thickness) {
-	if (mode == DrawTpye::DEFAULT || mode == DrawTpye::LABEL_TEXT) {
+	cv::Rect rect = obj.rect;
+	int pad_w = 0;
+	int pad_h = 0;
+
+	//Draw label text on tracking object
+	if (mode== DrawTpye::DEFAULT || (mode&DrawTpye::LABEL_TEXT) == DrawTpye::LABEL_TEXT) {
 		//display object label
-		Point p = obj.tracks[obj.tracks.size() - 1];
+		/*Point p = obj.tracks[obj.tracks.size() - 1];
 		putText(frame, to_string(obj.idx), Point(p.x-4, p.y-4), 
-				FONT_HERSHEY_SIMPLEX, 0.5, obj.color, 1);
+				FONT_HERSHEY_SIMPLEX, 0.7, obj.color, 1);*/
+		Point p = Point(rect.x, rect.y - 10);
+		putText(frame, to_string(obj.idx), Point(p.x, p.y),
+			FONT_HERSHEY_SIMPLEX, 0.6, obj.color, thickness);
 	}
-	if (mode == DrawTpye::DEFAULT || mode == DrawTpye::POLYLINES) {
+	//Draw tracking path of tracking object
+	if (mode == DrawTpye::DEFAULT || (mode&DrawTpye::POLYLINES) == DrawTpye::POLYLINES) {
 		//draw moving path
 		vector<Point> pts;
 		for (size_t i = 0; i < obj.tracks.size(); i++) {
 			pts.push_back(obj.tracks[i]);
 		}
-		polylines(frame, pts,false, obj.color, 2);
+		polylines(frame, pts,false, obj.color, thickness);
+	}
+	//Draw rectangle over tracking object
+	if (mode == DrawTpye::DEFAULT || (mode&DrawTpye::RECTANGLE) == DrawTpye::RECTANGLE) {
+		pad_w = int(ScaleWeight_W*rect.width / 2);
+		pad_h = int(ScaleWeight_H*rect.height / 2);
+		rectangle(frame,
+			Point(rect.tl().x - pad_w, rect.tl().y - pad_h),
+			Point(rect.br().x + pad_w, rect.br().y + pad_h),
+			obj.color, thickness, 8, 0);
+	}
+	//Draw center point of tracking object
+	if (mode == DrawTpye::DEFAULT || (mode&DrawTpye::CENTER) == DrawTpye::CENTER) {
+		circle(frame, Utilities::rectCenter(rect), 5, obj.color, -1, 8, 0);
 	}
 
 }

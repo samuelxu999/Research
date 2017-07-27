@@ -31,8 +31,8 @@ enum DrawTpye
 	DEFAULT = 0,
 	RECTANGLE = 1,
 	CENTER = 2,
-	LABEL_TEXT = 3,
-	POLYLINES = 4
+	LABEL_TEXT = 4,
+	POLYLINES = 8
 }; 
 
 

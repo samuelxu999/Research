@@ -47,7 +47,7 @@ int testVideoStream(char* srcpath) {
 
 	VideoStream myVideo = VideoStream();	
 
-	//return myVideo.StreamPreviewer(StreamType::Camera, srcpath);
+	//return myVideo.StreamPreviewer(StreamType::CAMERA, srcpath);
 
 	//return myVideo.StreamDetection(StreamType::CAMERA, srcpath, DetectionMode::FACE);
 	return myVideo.StreamDetection(StreamType::VIDEO, srcpath, DetectionMode::MOTION, 100, 100);
