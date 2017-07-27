@@ -17,6 +17,7 @@ from enum import Enum
 import Utility as MyUtility
 import object_detect as ObjDetect
 import flow_tracking as flowTrack
+from _overlapped import NULL
 
 
 
@@ -163,7 +164,7 @@ class VideoStream(object):
     ''' 
     def StreamDetection(self, _streamType=StreamType.Camera, _frame_freq=1,
                         _detectmode=DetectionMode.NoDetection, _detect_freq=1, 
-                        _streamSrc='',_motionmethod=ObjDetect.MotionMethod.Diff, _minArea=100):
+                        _streamSrc='',_motionmethod=ObjDetect.MotionMethod.Diff, _minArea=100, _minDist=50):
         
         if(_streamType==StreamType.Camera):
             #initialize VideoCapture
@@ -239,7 +240,8 @@ class VideoStream(object):
                             found_objects = myObjDetect.detectMotionMOG(frame, _minArea, _motionmethod)
                             #Apply Lucas-Kanade tracking method
                             #frame = myLkTrack.Run(frame, found_objects)
-                            myObjTrack.Run(frame, found_objects, 100, MyUtility.DrawTpye.Default, 2)
+                            #drawmode=MyUtility.DrawTpye.LabelText.value|MyUtility.DrawTpye.PolyLines.value|MyUtility.DrawTpye.Rect.value|MyUtility.DrawTpye.Center.value
+                            myObjTrack.Run(frame, found_objects, _minDist, NULL, 2)
                             
                             if(len(found_objects)>1):                                
                                 #cen_x, cen_y=MyUtility.Utilities.rectCenter(found_objects[1])
@@ -257,14 +259,15 @@ class VideoStream(object):
             track_count=len(myObjTrack.objtracks)           
             
             #draw bounding box for detected objects    
-            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 2, MyUtility.DrawTpye.Default)
+            #drawmode=MyUtility.DrawTpye.Rect.value|MyUtility.DrawTpye.Center.value
+            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 2, NULL)
             
             # draw the detect object count on the frame
-            cv2.putText(frame, "Detect: {}".format(object_count), (10, 25), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)   
+            cv2.putText(frame, "Detect: {}".format(object_count), (10, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)   
             
-            cv2.putText(frame, "Tracking: {}".format(track_count), (10, 50), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)           
+            cv2.putText(frame, "Tracking: {}".format(track_count), (10, 60), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)           
             
             # Resize image if necessary
             #frame = cv2.resize(frame, (1024, 768))   
@@ -296,7 +299,7 @@ def test_fun():
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
-    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2,100)
+    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2, 100, 100)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)

@@ -329,7 +329,7 @@ class ObjTracking(object):
             # draw the tracking information on the frame
             if(len(obj.tracks)>0):
                 MyUtility.Utilities.draw_tracking(_frame, obj, _drawMode, _thickness)
-        
+                #MyUtility.Utilities.draw_detections(_frame, [obj.rect], obj.color[0].tolist(), _thickness, MyUtility.DrawTpye.Default)
         #delete inactive object from tracking list       
         self.deleteObjTrack()
               
