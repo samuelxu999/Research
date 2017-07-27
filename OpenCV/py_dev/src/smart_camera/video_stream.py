@@ -17,8 +17,6 @@ from enum import Enum
 import Utility as MyUtility
 import object_detect as ObjDetect
 import flow_tracking as flowTrack
-from _overlapped import NULL
-
 
 
 # Define detect mode
@@ -240,8 +238,8 @@ class VideoStream(object):
                             found_objects = myObjDetect.detectMotionMOG(frame, _minArea, _motionmethod)
                             #Apply Lucas-Kanade tracking method
                             #frame = myLkTrack.Run(frame, found_objects)
-                            #drawmode=MyUtility.DrawTpye.LabelText.value|MyUtility.DrawTpye.PolyLines.value|MyUtility.DrawTpye.Rect.value|MyUtility.DrawTpye.Center.value
-                            myObjTrack.Run(frame, found_objects, _minDist, NULL, 2)
+                            drawmode=MyUtility.DrawTpye.LabelText.value|MyUtility.DrawTpye.PolyLines.value|MyUtility.DrawTpye.Rect.value|MyUtility.DrawTpye.Center.value
+                            myObjTrack.Run(frame, found_objects, _minDist, drawmode, 2)
                             
                             if(len(found_objects)>1):                                
                                 #cen_x, cen_y=MyUtility.Utilities.rectCenter(found_objects[1])
@@ -259,8 +257,8 @@ class VideoStream(object):
             track_count=len(myObjTrack.objtracks)           
             
             #draw bounding box for detected objects    
-            #drawmode=MyUtility.DrawTpye.Rect.value|MyUtility.DrawTpye.Center.value
-            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 2, NULL)
+            drawmode=MyUtility.DrawTpye.Rect.value|MyUtility.DrawTpye.Center.value
+            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 2, drawmode)
             
             # draw the detect object count on the frame
             cv2.putText(frame, "Detect: {}".format(object_count), (10, 30), 
