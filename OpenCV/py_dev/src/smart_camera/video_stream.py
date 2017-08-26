@@ -159,6 +159,7 @@ class VideoStream(object):
     @_streamSrc: video file path.
     @_motionmethod: define motion detect method
     @_minArea: input minimum area of contour to filter noise
+    @_minDist: input minimum distance around tracking object to update tracking path
     ''' 
     def StreamDetection(self, _streamType=StreamType.Camera, _frame_freq=1,
                         _detectmode=DetectionMode.NoDetection, _detect_freq=1, 
@@ -183,12 +184,15 @@ class VideoStream(object):
             return
         
         if(_detectmode!=DetectionMode.NoDetection):
-            #initialize object_detect instance        
+            #initialize object detect instance        
             myObjDetect=ObjDetect.ObjDetect()
+            
+            #initialize object tracking instance  
             myObjTrack =flowTrack.ObjTracking()
             myLkTrack = flowTrack.lkTracking()
             myMeanshift = flowTrack.MeanshiftTracking()
             myCamshift = flowTrack.CamshiftTracking()
+            myMultiTracker =flowTrack.MultiTracker()
             
         #initialize detect_date
         detect_rate=0
@@ -240,6 +244,7 @@ class VideoStream(object):
                             #frame = myLkTrack.Run(frame, found_objects)
                             drawmode=MyUtility.DrawType.LabelText.value|MyUtility.DrawType.PolyLines.value|MyUtility.DrawType.Rect.value|MyUtility.DrawType.Center.value
                             myObjTrack.Run(frame, found_objects, _minDist, drawmode, 2)
+                            #myMultiTracker.Run(frame, found_objects, _minDist, drawmode, 2)
                             
                             if(len(found_objects)>1):                                
                                 #cen_x, cen_y=MyUtility.Utilities.rectCenter(found_objects[1])
@@ -297,7 +302,7 @@ def test_fun():
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
-    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2, 100, 100)
+    myVideo.StreamDetection(StreamType.Video,100,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2, 200, 60)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)

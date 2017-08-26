@@ -204,11 +204,161 @@ class  MeanshiftTracking(object):
         x,y,w,h = self.track_window
         cv2.rectangle(_frame, (x,y), (x+w,y+h), 255,1)
 
+
 '''
-define class to label founded objects
+=================================== object tracking based on kernel tracking algorithm ============================
 '''
-class LabeledObject(object):
+#define tracking object
+class ObjTracker(object):
+    '''TrackingObject construction function'''
+    def __init__(self):
+        self.idx=0
+        self.rect=[]
+        self.tracks=[]
+        self.isActive=0
+        # wait 5 frame to check timeout, then set isActive=0 to inactive moving object
+        self.activeTimeout=10
+        #generate random color
+        self.color=np.random.randint(0,255,(1,3))
+        
+        # Set up tracker. You can also use MIL, BOOSTING, KCF, TLD, MEDIANFLOW or GOTURN
+        self.tracker=cv2.Tracker_create("KCF")
+        
+        #set tracking window size
+        self.trackwindow=(50, 90)
+
+#Multi-Object tracking class      
+class MultiTracker(object): 
     '''ObjTracking construction function'''
+    def __init__(self):
+        #initialize instance variable
+        self.track_seeds=0
+        self.objtracks = []
+        self.track_len = 10
+        self.frame_idx = 0
+        self.detect_interval = 5
+        self.timeout = 10 
+        self.boundlimit=20 
+        
+    #create new ObjTracker() instance
+    def newObjTracker(self, _frame, _rect):
+        #new LabeledObject instance
+        objtracker=ObjTracker()
+        
+        #generate id for lb_object
+        self.track_seeds+=1
+        objtracker.idx=self.track_seeds
+        
+        #set current rectangle data
+        objtracker.rect=_rect
+        
+        #set head of track data as center of rectangle
+        objtracker.tracks.append(MyUtility.Utilities.rectCenter(_rect))
+        
+        #set activate state
+        objtracker.isActive=1
+        
+        # Initialize tracker with first frame and bounding box
+        cen_x, cen_y = MyUtility.Utilities.rectCenter(_rect)
+        w, h=objtracker.trackwindow
+        px=int(cen_x-w/2)
+        py=int(cen_y-h/2)
+        objtracker.tracker.init(_frame, (px, py, w, h))
+        
+        #return new tracking object instance
+        return objtracker
+    
+    #update ObjTracker() instance by appending new point to tracking list
+    def updateObjTracker(self, _frame, _objtracker):
+        # Update tracker
+        ok, _rect = _objtracker.tracker.update(_frame)
+        
+        if ok:
+            #set current rectangle data
+            x,y,w,h=_rect
+            cen_x, cen_y = MyUtility.Utilities.rectCenter(_rect)
+            
+            _objtracker.rect=(int(x), int(y), int(w), int(h))
+            
+            if(MyUtility.Utilities.pointDistance((cen_x, cen_y), _objtracker.tracks[-1])>2):
+                #refresh activeTimeout with default value in timeout
+                _objtracker.activeTimeout=self.timeout
+            
+                #append center of rectangle to lb_object.tracks list
+                _objtracker.tracks.append(MyUtility.Utilities.rectCenter(_rect))
+    
+    
+    #delete inactive LabeledObject() instance from tracking list
+    def deleteObjTracker(self): 
+        for i, objtracker in enumerate(self.objtracks):
+            if(objtracker.isActive==0):
+                del self.objtracks[i] 
+    
+    def Run(self, _frame, _found_object, _minDist=50, _drawMode=MyUtility.DrawType.Default, _thickness = 1):
+        #saved tracked objects in _found_object
+        old_tracks=[]            
+        
+        #self.tracks is not empty, update self.tracks
+        for _objtracker in self.objtracks:
+            #skip inactive trackers            
+            if(_objtracker.isActive==0):
+                continue
+            #check whether active tracker's current point is in frame boundary
+            if(not MyUtility.Utilities.pointInBoundary(_frame,_objtracker.tracks[-1], self.boundlimit)):
+                _objtracker.isActive=0
+                continue              
+
+            #for each object to check tracking information
+            for rect in _found_object:
+                #get center of rect
+                cen_x, cen_y = MyUtility.Utilities.rectCenter(rect)
+                ox, oy = _objtracker.tracks[-1]
+                
+                #check whether current point of rect is in frame boundary
+                if(not MyUtility.Utilities.pointInBoundary(_frame,(cen_x, cen_y), self.boundlimit)):
+                    old_tracks.append(rect)
+                    continue 
+
+                #if center of rect within tracked object, then update track data of tracked object
+                if(MyUtility.Utilities.pointDistance((cen_x, cen_y),(ox, oy))<_minDist):
+                    #add old_tracks list
+                    #if(MyUtility.Utilities.rectOverlap(lb_object.rect, rect, 0.1)):
+                    old_tracks.append(rect)
+                    
+            #add rect with minimum distance to tracks
+            self.updateObjTracker(_frame,_objtracker)
+            
+        #for each object to add new track object to self.objtracks
+        for rect in _found_object:
+            if(rect not in old_tracks):
+                #add lb_object to self.tracks
+                self.objtracks.append(self.newObjTracker(_frame,rect))
+        
+        #for each object to update active state and timeout
+        for obj in self.objtracks:
+            if(obj.isActive==0):
+                continue
+            
+            #update activeTimeout and check isActive state
+            if(obj.activeTimeout==0):
+                obj.isActive=0
+            else:
+                #calculate activeTimeout
+                obj.activeTimeout-=1
+
+            # draw the tracking information on the frame
+            if(len(obj.tracks)>0):
+                MyUtility.Utilities.draw_tracking(_frame, obj, _drawMode, _thickness)
+                #MyUtility.Utilities.draw_detections(_frame, [obj.rect], obj.color[0].tolist(), _thickness, MyUtility.DrawType.Default)
+        #delete inactive object from tracking list       
+        self.deleteObjTracker()
+        
+'''
+========================= object tracking based on point and Correspondence Based Matching Algorithm =================
+'''           
+#define class to label founded objects
+class LabeledObject(object):
+    '''LabeledObject construction function'''
     def __init__(self):
         self.idx=0
         self.rect=[]
@@ -218,11 +368,25 @@ class LabeledObject(object):
         self.activeTimeout=5
         #generate random color
         self.color=np.random.randint(0,255,(1,3))
+        
+        #flag for Resolving Occlusion
+        self.isOcclusion=0
+        self.mergeTimeout=5
 
-
-'''
-Object tracking class
-'''        
+#define class to merged blob to handle object merged scenario
+class MergedBlob(object):
+    '''MergedBlob construction function'''
+    def __init__(self):
+        self.idx=0
+        self.blob=[]
+        self.objmerged=[]
+        
+        # wait 5 frame to check timeout, then set isActive=0 to inactive moving object
+        self.activeTimeout=10
+        #generate random color
+        self.color=(0,255,255)
+        
+#Object tracking class      
 class ObjTracking(object):    
 
     '''ObjTracking construction function'''
@@ -233,7 +397,8 @@ class ObjTracking(object):
         self.track_len = 10
         self.frame_idx = 0
         self.detect_interval = 5
-        self.timeout = 5       
+        self.timeout = 5    
+        self.boundlimit=10   
             
     #create new LabeledObject() instance
     def newObjTrack(self, _rect):
@@ -246,6 +411,8 @@ class ObjTracking(object):
         
         #set current rectangle data
         lb_object.rect=_rect
+        lb_object.lastrect=[]
+        lb_object.lastvect=[]
         
         #set head of track data as center of rectangle
         lb_object.tracks.append(MyUtility.Utilities.rectCenter(_rect))
@@ -257,12 +424,26 @@ class ObjTracking(object):
         return lb_object
     
     #update LabeledObject() instance by appending new point to tracking list
-    def updateObjTrack(self, _lb_object, _rect):  
+    def updateObjTrack(self, _lb_object, _rect):          
+        if(_lb_object.isOcclusion==0):            
+            #set last rectangle data
+            _lb_object.lastrect=_lb_object.rect
+            #update latest vector
+            if(len(_lb_object.tracks)>5):
+                vect_norm=MyUtility.Utilities.pointDistance(_lb_object.tracks[-2],_lb_object.tracks[-1])
+                if(vect_norm>5):
+                    vect_angle=MyUtility.Utilities.pointAngle(_lb_object.tracks[-2],_lb_object.tracks[-1])
+                else:                  
+                    vect_angle=MyUtility.Utilities.pointAngle(_lb_object.tracks[-1],MyUtility.Utilities.rectCenter(_rect))
+                _lb_object.lastvect=(vect_norm,vect_angle)
+        
+        '''if(_lb_object.lastrect==[] or 
+           MyUtility.Utilities.centerRectDistance(_lb_object.rect,_rect)>5 ):'''
         #set current rectangle data
         _lb_object.rect=_rect
-        
+            
         #append center of rectangle to lb_object.tracks list
-        _lb_object.tracks.append(MyUtility.Utilities.rectCenter(_rect))
+        _lb_object.tracks.append(MyUtility.Utilities.rectCenter(_lb_object.rect))
         
         #refresh activeTimeout with default value in timeout
         _lb_object.activeTimeout=self.timeout
@@ -278,27 +459,78 @@ class ObjTracking(object):
         old_tracks=[]            
         #self.tracks is not empty, update self.tracks
         for lb_object in self.objtracks:
+            #skip inactive trackers            
             if(lb_object.isActive==0):
                 continue
+            #check whether active tracker's current point is in frame boundary
+            '''if(not MyUtility.Utilities.pointInBoundary(_frame,lb_object.tracks[-1], 15)):
+                lb_object.isActive=0
+                continue '''  
             
             minDistance =_minDist
             minRect = []
+            minAngleDiff=360.0
             #for each object to check tracking information
             for rect in _found_object:
                 #get center of rect
                 cen_x, cen_y = MyUtility.Utilities.rectCenter(rect)
                 ox, oy = lb_object.tracks[-1]
                 
-                #if center of rect within tracked object, then update track data of tracked object
+                #check whether current point of rect is in frame boundary
+                '''if(not MyUtility.Utilities.pointInBoundary(_frame,(cen_x, cen_y), self.boundlimit)):
+                    old_tracks.append(rect)
+                    continue '''
+                
+                minDistRect=[]
+                minAngleRect=[]
+                
+                #if center of detect blob within tracked object, then update track data of tracked object
                 if(MyUtility.Utilities.pointDistance((cen_x, cen_y),(ox, oy))<_minDist):
                     #add old_tracks list
                     #if(MyUtility.Utilities.rectOverlap(lb_object.rect, rect, 0.1)):
                     old_tracks.append(rect)
-                    #get minDistance and minRect                
+                    
+                    #Local optimization to search target blob                
                     if(MyUtility.Utilities.pointDistance((cen_x, cen_y),(ox, oy))<minDistance):
+                        #get minDistance and minRect
                         minDistance = MyUtility.Utilities.pointDistance((cen_x, cen_y),(ox, oy))
-                        minRect = rect
-
+                        minDistRect = rect
+                        #minRect = rect
+                    
+                        #get minAngleDiff and minAngleRect  
+                        if(len(lb_object.tracks)>2 and lb_object.lastvect!=[]):
+                            #angle1=MyUtility.Utilities.pointAngle(lb_object.tracks[-3],lb_object.tracks[-1])
+                            vect_norm, vect_angle=lb_object.lastvect
+                            angle2=MyUtility.Utilities.pointAngle(lb_object.tracks[-1],(cen_x, cen_y))
+                            
+                            AngleDiff=abs(angle2-vect_angle)
+                            if(AngleDiff>180):
+                                AngleDiff=360-AngleDiff
+                                
+                            if(AngleDiff<minAngleDiff):
+                                minAngleDiff=AngleDiff
+                                minAngleRect = rect
+                
+                if(lb_object.isOcclusion==0):
+                    #update minRect by compare minAngleDiff and minDistRect
+                    if(minDistRect != [] and minAngleRect!= []):
+                        sizediff1=abs(MyUtility.Utilities.rectArea(lb_object.lastrect)-MyUtility.Utilities.rectArea(minDistRect))
+                        sizediff2=abs(MyUtility.Utilities.rectArea(lb_object.lastrect)-MyUtility.Utilities.rectArea(minAngleRect))
+                        #if(MyUtility.Utilities.rectArea(minDistRect)>MyUtility.Utilities.rectArea(minAngleRect)):
+                        if(sizediff1<sizediff2):
+                            minRect = minDistRect
+                        else:
+                            minRect = minAngleRect
+                    elif(minDistRect != [] and minAngleRect == []):
+                        minRect = minDistRect
+                    elif(minDistRect == [] and minAngleRect != []):
+                        minRect = minAngleRect
+                else:          
+                    if(minAngleRect != [] and minAngleDiff<90 
+                       and MyUtility.Utilities.centerRectDistance(minAngleRect, lb_object.rect)>5):
+                            minRect = minAngleRect
+                            lb_object.isOcclusion=0
+                    
             #add rect with minimum distance to tracks
             if(minRect != []):
                 self.updateObjTrack(lb_object,minRect)
@@ -315,21 +547,32 @@ class ObjTracking(object):
                 continue
             
             #update activeTimeout and check isActive state
-            if(obj.activeTimeout==0):
+            if(obj.activeTimeout<=0):
                 obj.isActive=0
             else:
-                #calculate activeTimeout
-                obj.activeTimeout-=1
-            
-            #For those overlap objects, merge to one object by changing isActive state
+                #calculate merged object timeout
+                if(obj.isOcclusion==1):
+                    obj.mergeTimeout-=1
+                else:
+                    #calculate activeTimeout
+                    obj.activeTimeout-=1
+        
+            #For those overlap objects, merge to one blob
             for obj_t in self.objtracks:
-                if(obj.idx < obj_t.idx and obj.tracks[-1]==obj_t.tracks[-1]):
+                if(obj.idx != obj_t.idx and obj.tracks[-1]==obj_t.tracks[-1] and obj_t.isOcclusion==0):
+                    #obj_t.isActive=0
+                    obj_t.isOcclusion=1
+                    obj_t.mergeTimeout=2*self.timeout
+                    
+                if(obj.idx < obj_t.idx and obj.mergeTimeout<=0 and obj_t.mergeTimeout<=0):
+                    obj.isOcclusion=0
                     obj_t.isActive=0
-
+                    
             # draw the tracking information on the frame
             if(len(obj.tracks)>0):
                 MyUtility.Utilities.draw_tracking(_frame, obj, _drawMode, _thickness)
                 #MyUtility.Utilities.draw_detections(_frame, [obj.rect], obj.color[0].tolist(), _thickness, MyUtility.DrawType.Default)
+        
         #delete inactive object from tracking list       
         self.deleteObjTrack()
               

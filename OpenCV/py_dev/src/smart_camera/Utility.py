@@ -11,6 +11,7 @@ Created on June 26, 2017
 import configparser
 import cv2
 import numpy as np
+import math
 from enum import Enum
 
 '''
@@ -122,6 +123,35 @@ class Utilities():
         _diff=(px1-px2)**2 + (py1-py2)**2
         
         return np.sqrt(_diff)
+    
+    #return angle of p1 and p2
+    @staticmethod
+    def pointAngle(_p1, _p2):
+        px1, py1 = _p1
+        px2, py2 = _p2        
+        
+        angle=0        
+        x_diff= px2-px1;
+        y_diff= py2-py1;
+    
+        if x_diff==0 and y_diff>0:
+            angle = 90
+        elif x_diff==0 and y_diff<0:
+            angle = 270
+        elif y_diff==0 and x_diff>0:
+            angle = 360
+        elif y_diff==0 and x_diff<0:
+            angle = 180
+        elif x_diff>0 and y_diff>0:
+            angle = math.atan(y_diff/x_diff)*180/math.pi
+        elif x_diff<0 and y_diff>0:
+            angle = 180 + math.atan(y_diff/x_diff)*180/math.pi
+        elif x_diff<0 and y_diff<0:
+            angle = 180 + math.atan(y_diff/x_diff)*180/math.pi
+        elif x_diff>0 and y_diff<0:
+            angle = 360 + math.atan(y_diff/x_diff)*180/math.pi
+            
+        return angle
     
     #return distance of center of rectangle r1 and p2
     @staticmethod
@@ -252,6 +282,17 @@ class Utilities():
         cv2.destroyWindow('BlockShow')
         #cv2.destroyAllWindows()
     
+    #check if point stay in boundary of frame
+    @staticmethod
+    def pointInBoundary(_frame, _point, _checkmargin=5): 
+        #get dim of frame
+        height, width, _ = _frame.shape
+        
+        #get point coordinate
+        px, py=_point
+        return px > _checkmargin and px < (width-_checkmargin) and py > _checkmargin and py < (height-_checkmargin)
+        
+        
 if __name__ == "__main__":
 
     userconfig = UserConfig()
@@ -259,6 +300,9 @@ if __name__ == "__main__":
     print(userconfig.getOpencvData()) 
     #userconfig.setOpencvData("D:\ProgramFiles\opencv\sources\data")
     #print(userconfig.getOpencvData()) 
+    p1=(0,0)
+    p2=(-1,-2)
+    print(Utilities.pointAngle(p1,p2))
     
 
     
