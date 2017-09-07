@@ -99,7 +99,7 @@ class ObjDetect(object):
               
         return ret_frame
        
-    def detectBody(self, _frame):
+    def detectBody(self, _frame, _maxArea=15000):
         #new HOGDescriptor and set DefaultPeopleDetector
         hog = cv2.HOGDescriptor()
         hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() ) 
@@ -107,11 +107,48 @@ class ObjDetect(object):
         #get hog.detectMultiScale() result: location and weight
         found, _ = hog.detectMultiScale(_frame, winStride=(8,8), padding=(32,32), scale=1.05)
         
+        found_filtered=[]
+        for x,y,w,h in found:
+            if(MyUtility.Utilities.rectArea((x,y,w,h))<_maxArea):
+                found_filtered.append((x,y,w,h))
+        
         #used for filtered found object to only record father contour's location        
-        found_filtered=MyUtility.Utilities.rect_filter(found)
+        #found_filtered=MyUtility.Utilities.rect_filter(found_rect)
         
         return found_filtered
     
+    def Classifier_Human(self, _regionframe):
+        #new HOGDescriptor and set DefaultPeopleDetector
+        hog = cv2.HOGDescriptor()
+        hog.setSVMDetector( cv2.HOGDescriptor_getDefaultPeopleDetector() ) 
+        
+        #get hog.detectMultiScale() result: location and weight
+        found, _ = hog.detectMultiScale(_regionframe, winStride=(4,4), padding=(8,8), scale=1.05)
+        
+        if(found!=[]):        
+            return True
+        else:
+            return False
+    
+    def detectHuman(self, _frame, _rects):
+        found_filtered = []
+        for ri, r in enumerate(_rects):
+            x, y, w, h = r
+            cen_x, cen_y=MyUtility.Utilities.rectCenter(r)
+            if(MyUtility.Utilities.pointInBoundary(_frame,(cen_x, cen_y),60)):
+                continue
+            '''if(MyUtility.Utilities.rectArea(r)<1000):
+                continue'''
+            #print(x+20, y+30, w+40, h+60, r)
+            px=x+20
+            py=y+30
+            pw=w+40
+            ph=h+60
+            #if(self.Classifier_Human(_frame[py:(py+ph), px:(px+pw)])==True):
+            if(self.Classifier_Human(_frame[y:(y+h), x:(x+w)])):
+                found_filtered.append(r)
+                #print(r)
+        return found_filtered
     '''
     Compare difference between _preframe and _curframe to detect object
     '''    
@@ -176,7 +213,7 @@ class ObjDetect(object):
         
         #get filtered contour rectangles
         found_filtered=MyUtility.Utilities.cont_filter(cnts, _minArea)
-            
+    
         return found_filtered   
 
 def test_fun():

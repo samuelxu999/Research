@@ -196,6 +196,7 @@ class VideoStream(object):
             
         #initialize detect_date
         detect_rate=0
+        frame_id=0
         
         if(_detectmode==DetectionMode.Motion):
             # initialize the first frame in the video stream
@@ -216,10 +217,14 @@ class VideoStream(object):
             
             '''cv2.putText(frame, datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),
                 (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)'''
-           
+            
+            frame_id+=1
+            
+            #=========================== object detect and classification================================
             detect_rate+=1
             #clear found_objects
             found_objects=[]
+            human_objects=[]
             if((detect_rate%int(_detect_freq))==0):                
                 if(_detectmode==DetectionMode.Face):
                     #detect face 
@@ -240,10 +245,12 @@ class VideoStream(object):
                             backgroundFrame,found_objects = myObjDetect.detectMotionDiff(backgroundFrame, frame, _minArea, ObjDetect.MotionType.Static)
                         else:
                             found_objects = myObjDetect.detectMotionMOG(frame, _minArea, _motionmethod)
+                            '''human_objects = myObjDetect.detectHuman(frame,found_objects)
+                            print(human_objects)'''
                             #Apply Lucas-Kanade tracking method
                             #frame = myLkTrack.Run(frame, found_objects)
-                            drawmode=MyUtility.DrawType.LabelText.value|MyUtility.DrawType.PolyLines.value|MyUtility.DrawType.Rect.value|MyUtility.DrawType.Center.value
-                            myObjTrack.Run(frame, found_objects, _minDist, drawmode, 2)
+                            #drawmode=MyUtility.DrawType.LabelText.value|MyUtility.DrawType.PolyLines.value|MyUtility.DrawType.Rect.value|MyUtility.DrawType.Center.value
+                            #myObjTrack.Run(frame, found_objects, _minDist, drawmode, 2)
                             #myMultiTracker.Run(frame, found_objects, _minDist, drawmode, 2)
                             
                             if(len(found_objects)>1):                                
@@ -258,24 +265,37 @@ class VideoStream(object):
                 #reset detect_rate
                 detect_rate=0
             
+            #====================================== object tracking ============================================ 
+            drawmode=MyUtility.DrawType.LabelText.value|MyUtility.DrawType.PolyLines.value|MyUtility.DrawType.Rect.value|MyUtility.DrawType.Center.value
+            #myObjTrack.Run(frame, found_objects, _minDist, drawmode, 2)
+            myMultiTracker.Run(frame, found_objects, _minDist, drawmode, 2)
+            
+            
             object_count=len(found_objects) 
-            track_count=len(myObjTrack.objtracks)           
+            #track_count=len(myObjTrack.objtracks)
+            track_count=len(myMultiTracker.objtracks)           
             
             #draw bounding box for detected objects    
             drawmode=MyUtility.DrawType.Rect.value|MyUtility.DrawType.Center.value
-            MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 2, drawmode)
+            #MyUtility.Utilities.draw_detections(frame, found_objects, (0,255,0), 2, drawmode)
             
-            # draw the detect object count on the frame
-            cv2.putText(frame, "Detect: {}".format(object_count), (10, 30), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)   
+            # draw the surveillance information on the frame
+            cv2.putText(frame, "Frame ID: {}".format(frame_id), (10, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                        
+            cv2.putText(frame, "Detect: {}".format(object_count), (10, 60), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)   
             
-            cv2.putText(frame, "Tracking: {}".format(track_count), (10, 60), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)           
+            cv2.putText(frame, "Tracking: {}".format(track_count), (10, 90), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)          
             
             # Resize image if necessary
             #frame = cv2.resize(frame, (1024, 768))   
             # Display the resulting frame
             cv2.imshow('Stream Detector',frame)
+            '''if(detect_rate==0):
+                cv2.imwrite('./testresult/tracking/'+str(frame_id)+'.png',frame)'''
+            #print('./testresult/'+str(frame_id)+'.png')
             
             #frame refresh rate: cv2.waitKey(1) means 1ms
             #press "q" will quit video show
@@ -301,8 +321,8 @@ def test_fun():
     
     
     #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Face,1,filesrc2)
-    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,1,filesrc0)
-    myVideo.StreamDetection(StreamType.Video,100,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2, 200, 60)
+    myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Body,5,filesrc0, ObjDetect.MotionMethod.MOG2, 100, 50)
+    #myVideo.StreamDetection(StreamType.Video,1,DetectionMode.Motion,1,filesrc0,ObjDetect.MotionMethod.MOG2, 200, 60)
     
     #myVideo.StreamDetection(StreamType.Camera,33,DetectionMode.Motion,1,'',object_detect.MotionMethod.MOG2)
     #myVideo.StreamDetection(StreamType.Camera,1,DetectionMode.Face,1)

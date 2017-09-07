@@ -238,7 +238,7 @@ class MultiTracker(object):
         self.frame_idx = 0
         self.detect_interval = 5
         self.timeout = 10 
-        self.boundlimit=20 
+        self.boundlimit=25 
         
     #create new ObjTracker() instance
     def newObjTracker(self, _frame, _rect):
@@ -280,7 +280,7 @@ class MultiTracker(object):
             
             _objtracker.rect=(int(x), int(y), int(w), int(h))
             
-            if(MyUtility.Utilities.pointDistance((cen_x, cen_y), _objtracker.tracks[-1])>2):
+            if(MyUtility.Utilities.pointDistance((cen_x, cen_y), _objtracker.tracks[-1])>0):
                 #refresh activeTimeout with default value in timeout
                 _objtracker.activeTimeout=self.timeout
             
@@ -315,7 +315,7 @@ class MultiTracker(object):
                 ox, oy = _objtracker.tracks[-1]
                 
                 #check whether current point of rect is in frame boundary
-                if(not MyUtility.Utilities.pointInBoundary(_frame,(cen_x, cen_y), self.boundlimit)):
+                if(not MyUtility.Utilities.pointInBoundary(_frame,(cen_x, cen_y), self.boundlimit*2)):
                     old_tracks.append(rect)
                     continue 
 
@@ -324,6 +324,7 @@ class MultiTracker(object):
                     #add old_tracks list
                     #if(MyUtility.Utilities.rectOverlap(lb_object.rect, rect, 0.1)):
                     old_tracks.append(rect)
+                    #_objtracker.activeTimeout=self.timeout
                     
             #add rect with minimum distance to tracks
             self.updateObjTracker(_frame,_objtracker)
