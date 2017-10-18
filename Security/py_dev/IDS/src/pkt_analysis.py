@@ -13,6 +13,8 @@ Created on Oct.18, 2017
 import sys
 from scapy.all import *
 
+split_layer_tag=['Ether', 'IP', 'IPv6', 'ARP', 'UDP', 'ICMP']
+
 '''
 extract all data from packet and saved as [layer, value] list
     @op_mode: 0-return raw data list; 1-return split options data list
@@ -53,7 +55,7 @@ def extract_data_from_packet(pkt, op_mode=0):
         if(op_mode==1):
             #split options
             layer_options=[]        
-            if(layer_name=='Ether' or layer_name=='IP' or layer_name=='IPv6' or layer_name=='ARP' or layer_name=='UDP'):
+            if(layer_name in split_layer_tag):
                 #split options
                 ls_options=layer_value.split(', ')
                 #seperate [op=value]
@@ -112,7 +114,7 @@ def display_data(ls_data, op_mode=0):
         print layer_tag        
         #print option value based on op_mode
         if(op_mode==0):
-            if(layer_tag=='Ether' or layer_tag=='IP' or layer_tag=='IPv6' or layer_tag=='ARP' or layer_tag=='UDP'):
+            if(layer_tag in split_layer_tag):
                 #split options
                 ls_options=layer_value.split(', ')
                 #seperate [op=value]
