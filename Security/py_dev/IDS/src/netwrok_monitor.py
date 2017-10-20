@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''
 ========================
 network_monitor
@@ -24,9 +26,26 @@ def network_monitor_callback(pkt):
 
     #print pkt_data
     PktAna.display_data(pkt_data,1)
-        
+
+'''
+ARP ping to test alive IP target in Lan
+@dest: "192.168.2.0/24"
+'''
+def ARP_ping(dest):
+	conf.verb=0
+	ans,unans=srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=dest),timeout=2)
+	for s, r in ans :
+		print r.sprintf("%Ether.src% : %ARP.psrc%")
+	'''ans,unans=srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst="192.168.2.0/24"),timeout=2)
+	ans.summary(lambda (s,r): r.sprintf("%Ether.src% %ARP.psrc%") )'''
+
 if __name__ == '__main__':
     #start sniff
-    sniff(prn=network_monitor_callback, filter="", store=0)
+    #sniff(prn=network_monitor_callback, filter="icmp", store=0)
+	
+	if len (sys.argv )!= 2 :
+		print "Usage: arping <net >\n eg :arping 192.168.1.0/24"
+		sys.exit(1)
+	ARP_ping(sys.argv[1]) 
     
     
