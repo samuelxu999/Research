@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import sys
+import subprocess
 from scapy.all import *
+import policy_firewall as FwallPolicy
 
-import iptc
 
 def test_demo():
     p=sr1(IP(dst=sys.argv[1])/ICMP())
@@ -22,25 +23,38 @@ def test_fun():
     #print pkts[0].command()
     for pkt in pkts:
         extract_data_from_packet(pkts[0]);
-        
-def display_iptc_table():
-	table = iptc.Table(iptc.Table.FILTER)
-	for chain in table.chains:
-		print "======================="
-		print "Chain ", chain.name
-		for rule in chain.rules:
-			print "Rule", "proto:", rule.protocol, "src:", rule.src, "dst:", \
-				rule.dst, "in:", rule.in_interface, "out:", rule.out_interface,
-			print "Matches:",
-			for match in rule.matches:
-				print match.name,
-			print "Target:",
-			print rule.target.name
-	print "======================="
 
 if __name__ == '__main__':
     #test_demo()
     #test_fun() 
     #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
-	display_iptc_table() 
-    
+	#FwallPolicy.IPTables.list_iptables()  
+	
+	'''FwallPolicy.IPTables.save('', 'iptables_config/all.rule')
+	FwallPolicy.IPTables.save('nat', 'iptables_config/nat.rule')
+	FwallPolicy.IPTables.save('filter', 'iptables_config/filter.rule')'''
+	
+	#FwallPolicy.IPTables.flush('')
+	#FwallPolicy.IPTables.flush('nat')
+	#FwallPolicy.IPTables.flush('filter')
+	
+	#FwallPolicy.IPTables.restore('iptables_config/nat.rule')
+	#FwallPolicy.IPTables.restore('iptables_config/filter.rule')	
+	#FwallPolicy.IPTables.restore('iptables_config/all.rule')
+	  
+	'''FwallPolicy.IPSets.create('myset1','hash:ip')
+	FwallPolicy.IPSets.add('myset1','172.16.203.2')
+	FwallPolicy.IPSets.create('myset2','hash:net')
+	FwallPolicy.IPSets.add('myset2','172.16.204.0/24')'''
+	#FwallPolicy.IPSets.destroy()
+	#FwallPolicy.IPSets.destroy('myset2')
+	#FwallPolicy.IPSets.flush()
+	#FwallPolicy.IPSets.flush('myset2')
+	#FwallPolicy.IPSets.rename('test', 'myset2')
+	#FwallPolicy.IPSets.add('bkset1','172.16.203.0/24')
+	#FwallPolicy.IPSets.delete('bkset1','172.16.203.2')
+	#FwallPolicy.IPSets.delete('bkset2','172.16.204.0/24')
+	#FwallPolicy.IPSets.save('myset1','ipset_config/all.save')
+	#FwallPolicy.IPSets.restore('ipset_config/all.save')
+	#FwallPolicy.IPSets.list()
+	pass

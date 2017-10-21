@@ -1,10 +1,12 @@
+==========================================================================
 How to setup Scapy environment
-
+Reference:
+	https://scapy.readthedocs.io/en/latest/index.html
+==========================================================================
 Pre:Update pip tools
 	pip install --upgrade setuptools pip
 	
 1) setup virtualenv for python(Optional):
-
 	a) Install virtualenv
 		sudo pip install virtualenv
 
@@ -26,7 +28,7 @@ Pre:Update pip tools
 		sudo python setup.py install
 		
 3) OS special requirement
-	a) Ubuntu
+	a) Ubuntu/Debian
 		(venv)$ sudo apt-get install python-dev tcpdump graphviz imagemagick
 	
 	b) Install python graphic package
@@ -36,6 +38,29 @@ Pre:Update pip tools
 		(venv)$ pip install numpy
 	
 	d) Install GNUPLOT
-	
+		optional
 	e) INSTALL PYCRYPTO
 		(venv)$ pip install pycrypto
+	
+
+	
+	
+==========================================================================
+How to setup python-iptables environment
+Reference: 
+	https://github.com/ldx/python-iptables
+	http://ipset.netfilter.org/iptables.man.html
+==========================================================================
+1) Ubuntu/Debian
+	pip install --upgrade python-iptables
+	
+	
+	
+
+==========================================================================
+How to setup ipset environment
+Reference: 
+	http://ipset.netfilter.org/index.html
+==========================================================================
+1) Ubuntu/Debian
+	sudo apt-get install ipset

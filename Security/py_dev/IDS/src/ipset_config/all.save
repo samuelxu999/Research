@@ -1,0 +1,5 @@
+create myset1 hash:ip family inet hashsize 1024 maxelem 65536
+add myset1 172.16.203.2
+add myset1 172.16.202.5
+create myset2 hash:net family inet hashsize 1024 maxelem 65536
+add myset2 172.16.204.0/24
