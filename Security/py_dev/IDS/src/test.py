@@ -3,9 +3,9 @@
 import sys
 import subprocess
 from scapy.all import *
-import policy_firewall as FwallPolicy
 from wrapper_ipset import IPSets
 from wrapper_iptables import IPTables
+from policy_firewall import *
 
 def test_demo():
     p=sr1(IP(dst=sys.argv[1])/ICMP())
@@ -29,12 +29,11 @@ if __name__ == '__main__':
     #test_demo()
     #test_fun() 
     #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
-	#FwallPolicy.IPTables.list_iptables()  
 	
+	#FwallPolicy.IPTables.list_iptables()  	
 	'''FwallPolicy.IPTables.save('', 'iptables_config/all.rule')
 	FwallPolicy.IPTables.save('nat', 'iptables_config/nat.rule')
-	FwallPolicy.IPTables.save('filter', 'iptables_config/filter.rule')'''
-	
+	FwallPolicy.IPTables.save('filter', 'iptables_config/filter.rule')'''	
 	#FwallPolicy.IPTables.flush('')
 	#FwallPolicy.IPTables.flush('nat')
 	#FwallPolicy.IPTables.flush('filter')
@@ -58,4 +57,8 @@ if __name__ == '__main__':
 	#FwallPolicy.IPSets.save('myset1','ipset_config/all.save')
 	#FwallPolicy.IPSets.restore('ipset_config/all.save')
 	#FwallPolicy.IPSets.list()
+	
+	#PolicyManager.setup_IPset('ipset_config/whitelist.txt')
+	#PolicyManager.update_IPset('ipset_config/whitelist.txt')
+	#PolicyManager.teardown_IPset()
 	pass

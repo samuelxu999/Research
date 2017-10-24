@@ -34,6 +34,20 @@ class FilterList(object):
 			ls_data=line.split('; ')
 			print("%-5s\t %-20s\t %s\t\t %s" %(ls_data[0], ls_data[1],ls_data[2],ls_data[3]))
 	
+	#Read filter list information
+	@staticmethod
+	def getList(f_name):
+		ls_line=FileUtil.ReadLines(f_name)
+		ls_record=[]
+		for line in ls_line:
+			line=line.replace('\n','')	
+			#skip empty line
+			if(line==''):
+				continue			
+			ls_data=line.split('; ')
+			ls_record.append(ls_data)
+		return ls_record
+	
 	#Get selected record in filter list
 	@staticmethod
 	def getRecord(f_name, r_name):
@@ -92,15 +106,7 @@ class FilterList(object):
 		
 		#rewrite updateline to file
 		FileUtil.UpdateLine(f_name,_target,updateline)
-		
-			
-'''starttime=DatetimeUtil.datetime_string(datetime.now())
 
-duration=DatetimeUtil.datetime_duration(0,0,0,5)
-
-endtime = DatetimeUtil.datetime_string(datetime.now()+duration)
-
-print (starttime+';'+ endtime+'\t'+str(DatetimeUtil.IsExpired(endtime)))'''
 			
 '''
 PolicyManager class for manage policy task
@@ -108,10 +114,52 @@ PolicyManager class for manage policy task
 class PolicyManager(object):
 	#new IPset from selected filterlist.txt
 	@staticmethod
-	def newIPset(s_name, s_type):
-		pass
-	
+	def setup_IPset(file_path):
+		#extract ipset name from file path
+		f_name=file_path.split('/')[-1]
+		ipset_name=f_name.split('.')[0]
+
+		#create ipset
+		IPSets.create(ipset_name+'_Net','hash:net')
+		IPSets.create(ipset_name+'_IP','hash:ip')
 		
+		#load filter list from file
+		ls_records=FilterList.getList(file_path)
+		#write net list to ipset
+		for record in ls_records:
+			if(record[0]=='Net'):
+				IPSets.add(ipset_name+'_Net',record[1])
+			elif(record[0]=='IP'):
+				IPSets.add(ipset_name+'_IP',record[1])
+			else:
+				continue
+		
+	#update IPset based on selected filterlist.txt
+	@staticmethod
+	def update_IPset(file_path):
+		#First clear all ipset list
+		IPSets.flush()
+		
+		#extract ipset name from file path
+		f_name=file_path.split('/')[-1]
+		ipset_name=f_name.split('.')[0]
+		
+		#load filter list from file
+		ls_records=FilterList.getList(file_path)
+		#rewrite net list to ipset
+		for record in ls_records:
+			if(record[0]=='Net'):
+				IPSets.add(ipset_name+'_Net',record[1])
+			elif(record[0]=='IP'):
+				IPSets.add(ipset_name+'_IP',record[1])
+			else:
+				continue
+	#update IPset based on selected filterlist.txt
+	@staticmethod
+	def teardown_IPset():
+		#destory all ipset
+		IPSets.destroy()
+
 if __name__ == '__main__':
 	#display_iptc_table() 
 	#FilterList.display('ipset_config/whitelist.txt')
