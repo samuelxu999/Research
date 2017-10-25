@@ -11,7 +11,7 @@ Created on Oct.20, 2017
 @Reference: 
 '''
 
-import os
+import time
 from datetime import datetime
 from utilities import FileUtil, DatetimeUtil
 from wrapper_ipset import IPSets
@@ -154,11 +154,40 @@ class PolicyManager(object):
 				IPSets.add(ipset_name+'_IP',record[1])
 			else:
 				continue
+	
 	#update IPset based on selected filterlist.txt
 	@staticmethod
 	def teardown_IPset():
 		#destory all ipset
 		IPSets.destroy()
+		
+	#setup iptables for policy management
+	@staticmethod
+	def setup_IPTables(file_path):
+		#extract ipset name from file path
+		f_name=file_path.split('/')[-1]
+		ipset_name=f_name.split('.')[0]
+		
+		#setup whitelist network filter for input
+		IPTables.create_Rule('FILTER', 'INPUT', 'DROP')
+		IPTables.create_Rulestate('FILTER', 'INPUT', 'RELATED,ESTABLISHED', 'ACCEPT')
+		IPTables.create_Ruleset('FILTER', 'INPUT', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
+		IPTables.create_Ruleset('FILTER', 'INPUT', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
+		
+		#setup blacklist network filter for output
+		
+		
+	#teardown iptables for policy management
+	@staticmethod
+	def teardown_IPTables(file_path):
+		#extract ipset name from file path
+		f_name=file_path.split('/')[-1]
+		ipset_name=f_name.split('.')[0]
+		
+		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
+		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
+		IPTables.delete_Rules('FILTER', 'INPUT')
+		
 
 if __name__ == '__main__':
 	#display_iptc_table() 

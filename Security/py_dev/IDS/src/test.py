@@ -29,8 +29,7 @@ if __name__ == '__main__':
     #test_demo()
     #test_fun() 
     #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
-	
-	#FwallPolicy.IPTables.list_iptables()  	
+	 	
 	'''FwallPolicy.IPTables.save('', 'iptables_config/all.rule')
 	FwallPolicy.IPTables.save('nat', 'iptables_config/nat.rule')
 	FwallPolicy.IPTables.save('filter', 'iptables_config/filter.rule')'''	
@@ -61,4 +60,9 @@ if __name__ == '__main__':
 	#PolicyManager.setup_IPset('ipset_config/whitelist.txt')
 	#PolicyManager.update_IPset('ipset_config/whitelist.txt')
 	#PolicyManager.teardown_IPset()
+	
+	#PolicyManager.setup_IPTables('ipset_config/whitelist.txt')
+	#PolicyManager.teardown_IPTables('ipset_config/whitelist.txt')
+	
+	IPTables.list_iptables() 
 	pass
