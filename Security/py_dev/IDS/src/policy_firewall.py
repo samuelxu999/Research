@@ -75,7 +75,7 @@ class FilterList(object):
 		newline+=_type+'; '
 		newline+=_target+'; '
 		newline+=starttime+'; '
-		newline+=endtime+'\n'
+		newline+=endtime
 		
 		FileUtil.AddLine(f_name, newline)
 		
@@ -106,6 +106,28 @@ class FilterList(object):
 		
 		#rewrite updateline to file
 		FileUtil.UpdateLine(f_name,_target,updateline)
+	
+		#Read filter list information
+	
+	@staticmethod
+	def removeExpiredRecord(f_name):
+		ls_line=FileUtil.ReadLines(f_name)
+		ls_record=[]
+		for line in ls_line:
+			line=line.replace('\n','')	
+			#skip empty line
+			if(line==''):
+				continue			
+			#split line to get each filed data as 
+			ls_data=line.split('; ')
+			
+			#check if end-time expired
+			if(DatetimeUtil.IsExpired(ls_data[3])):
+				continue
+			ls_record.append(line)
+		#return ls_record
+		#print ls_record
+		FileUtil.AddDataByLine(f_name, ls_record)
 
 			
 '''
@@ -208,7 +230,7 @@ if __name__ == '__main__':
 	#FilterList.updateRecord('ipset_config/whitelist.txt','172.16.203.0/24')
 	#FilterList.deleteRecord('ipset_config/whitelist.txt','172.16.203.0/24')
 	#FilterList.deleteRecord('ipset_config/whitelist.txt','172.16.202.5')
-		
+	#FilterList.removeExpiredRecord('ipset_config/blacklist.txt')
 	#IPSets.create('myset1','hash:ip')
 	#IPSets.list()
 	

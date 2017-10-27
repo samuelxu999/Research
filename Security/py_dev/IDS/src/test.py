@@ -3,6 +3,7 @@
 import sys
 import subprocess
 from scapy.all import *
+from utilities import FileUtil, DatetimeUtil
 from wrapper_ipset import IPSets
 from wrapper_iptables import IPTables
 from policy_firewall import *
@@ -85,5 +86,5 @@ if __name__ == '__main__':
 	#setup_IPtables()
 	#teardown_IPtables()
 	
-	IPTables.list_iptables() 
+	#IPTables.list_iptables() 
 	pass

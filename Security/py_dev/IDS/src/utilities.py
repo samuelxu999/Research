@@ -21,8 +21,8 @@ class FileUtil(object):
 	'''
 	Function:read line contents from file
 	@arguments: 
-	(input)  filepath:   	input file path
-	(out)    ls_lines:   	return line list object
+	(in)  filepath:   	input file path
+	(out) ls_lines:   	return line list object
 	'''
 	@staticmethod
 	def ReadLines(filepath):
@@ -34,17 +34,48 @@ class FileUtil(object):
 		fname.close()
 		return ls_lines
 	
+	'''
+	Function: write line string to file
+	@arguments: 
+	(in)  filepath:   	input file path
+	(in)  linedata:   	line data for writing
+	'''
 	@staticmethod
 	def AddLine(filepath, linedata):
 		#define file handle to open select file for appending data
 		fname = open(filepath, 'a') 
 		
 		#write line data to file
-		fname.write("%s" %(linedata))
+		fname.write("%s\n" %(linedata))
 		
 		#close file
 		fname.close()
 	
+	'''
+	Function: write list data to file by each line
+	@arguments: 
+	(in)  filepath:   	input file path
+	(in)  ls_data:   	list data for writing
+	'''
+	@staticmethod
+	def AddDataByLine(filepath, ls_data):
+		#define file handle to open select file for write data
+		fname = open(filepath, 'w') 
+		
+		#for each lines in data and write to file
+		for linedata in ls_data:
+			#write line data to file
+			fname.write("%s\n" %(linedata))
+		
+		#close file
+		fname.close()
+	
+	'''
+	Function: remove line containing target string from file
+	@arguments: 
+	(in)  filepath:   	input file path
+	(in)  str_target:   target string for delete
+	'''
 	@staticmethod
 	def DeleteLine(filepath, str_target):
 		#First, read all data from file
@@ -63,7 +94,13 @@ class FileUtil(object):
 			fname.write("%s" %(line))
 		#close file
 		fname.close()
-		
+
+	'''
+	Function: update line containing target string in file
+	@arguments: 
+	(in)  filepath:   	input file path
+	(in)  str_target:   target string for delete
+	'''		
 	@staticmethod
 	def UpdateLine(filepath, str_target, str_line):
 		#First, read all data from file
