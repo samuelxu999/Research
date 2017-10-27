@@ -136,13 +136,14 @@ class PolicyManager(object):
 		
 	#update IPset based on selected filterlist.txt
 	@staticmethod
-	def update_IPset(file_path):
-		#First clear all ipset list
-		IPSets.flush()
-		
+	def update_IPset(file_path):		
 		#extract ipset name from file path
 		f_name=file_path.split('/')[-1]
 		ipset_name=f_name.split('.')[0]
+		
+		#First clear all ipset list
+		IPSets.flush(ipset_name+'_Net')
+		IPSets.flush(ipset_name+'_IP')
 		
 		#load filter list from file
 		ls_records=FilterList.getList(file_path)
@@ -163,30 +164,38 @@ class PolicyManager(object):
 		
 	#setup iptables for policy management
 	@staticmethod
-	def setup_IPTables(file_path):
+	def setup_IPTables(file_path, chain_name):
 		#extract ipset name from file path
 		f_name=file_path.split('/')[-1]
 		ipset_name=f_name.split('.')[0]
 		
-		#setup whitelist network filter for input
-		IPTables.create_Rule('FILTER', 'INPUT', 'DROP')
-		IPTables.create_Rulestate('FILTER', 'INPUT', 'RELATED,ESTABLISHED', 'ACCEPT')
-		IPTables.create_Ruleset('FILTER', 'INPUT', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
-		IPTables.create_Ruleset('FILTER', 'INPUT', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
-		
+		#setup network filter for input
+		if(chain_name=='INPUT'):
+			#setup whitelist network filter for input
+			IPTables.create_Rule('FILTER', 'INPUT', 'eth0', 'DROP')
+			IPTables.create_Rulestate('FILTER', 'INPUT', 'eth0', 'RELATED,ESTABLISHED', 'ACCEPT')
+			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
+			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
 		#setup blacklist network filter for output
+		elif(chain_name=='OUTPUT'):
+			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'eth0', [(ipset_name+'_IP'), 'dst'], 'DROP')
+			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'eth0', [(ipset_name+'_Net'), 'dst'], 'DROP')
+			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'wlan0', [(ipset_name+'_IP'), 'dst'], 'DROP')
+			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'wlan0', [(ipset_name+'_Net'), 'dst'], 'DROP')
+		else:
+			pass
 		
 		
 	#teardown iptables for policy management
 	@staticmethod
-	def teardown_IPTables(file_path):
+	def teardown_IPTables(file_path, chain_name):
 		#extract ipset name from file path
 		f_name=file_path.split('/')[-1]
 		ipset_name=f_name.split('.')[0]
 		
 		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
 		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
-		IPTables.delete_Rules('FILTER', 'INPUT')
+		IPTables.delete_Rules('FILTER', chain_name)
 		
 
 if __name__ == '__main__':

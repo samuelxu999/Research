@@ -25,22 +25,7 @@ def test_fun():
     for pkt in pkts:
         extract_data_from_packet(pkts[0]);
 
-if __name__ == '__main__':
-    #test_demo()
-    #test_fun() 
-    #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
-	 	
-	'''FwallPolicy.IPTables.save('', 'iptables_config/all.rule')
-	FwallPolicy.IPTables.save('nat', 'iptables_config/nat.rule')
-	FwallPolicy.IPTables.save('filter', 'iptables_config/filter.rule')'''	
-	#FwallPolicy.IPTables.flush('')
-	#FwallPolicy.IPTables.flush('nat')
-	#FwallPolicy.IPTables.flush('filter')
-	
-	#FwallPolicy.IPTables.restore('iptables_config/nat.rule')
-	#FwallPolicy.IPTables.restore('iptables_config/filter.rule')	
-	#FwallPolicy.IPTables.restore('iptables_config/all.rule')
-	  
+def test_ipset():
 	'''FwallPolicy.IPSets.create('myset1','hash:ip')
 	FwallPolicy.IPSets.add('myset1','172.16.203.2')
 	FwallPolicy.IPSets.create('myset2','hash:net')
@@ -56,13 +41,49 @@ if __name__ == '__main__':
 	#FwallPolicy.IPSets.save('myset1','ipset_config/all.save')
 	#FwallPolicy.IPSets.restore('ipset_config/all.save')
 	#FwallPolicy.IPSets.list()
+	pass
+
+def test_iptables():
+	'''FwallPolicy.IPTables.save('', 'iptables_config/all.rule')
+	FwallPolicy.IPTables.save('nat', 'iptables_config/nat.rule')
+	FwallPolicy.IPTables.save('filter', 'iptables_config/filter.rule')'''	
+	#FwallPolicy.IPTables.flush('')
+	#FwallPolicy.IPTables.flush('nat')
+	#FwallPolicy.IPTables.flush('filter')
 	
-	#PolicyManager.setup_IPset('ipset_config/whitelist.txt')
-	#PolicyManager.update_IPset('ipset_config/whitelist.txt')
+	#FwallPolicy.IPTables.restore('iptables_config/nat.rule')
+	#FwallPolicy.IPTables.restore('iptables_config/filter.rule')	
+	#FwallPolicy.IPTables.restore('iptables_config/all.rule')
+	pass
+
+def setup_IPset():
+	PolicyManager.setup_IPset('ipset_config/whitelist.txt')
+	PolicyManager.setup_IPset('ipset_config/blacklist.txt')
+
+def update_IPset():
+	PolicyManager.update_IPset('ipset_config/whitelist.txt')
+	PolicyManager.update_IPset('ipset_config/blacklist.txt')
+	
+def setup_IPtables():
+	PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'INPUT')
+	PolicyManager.setup_IPTables('ipset_config/blacklist.txt', 'OUTPUT')
+	
+def teardown_IPtables():
+	#PolicyManager.teardown_IPTables('ipset_config/whitelist.txt','INPUT')
+	#PolicyManager.teardown_IPTables('ipset_config/blacklist.txt','OUTPUT')
+	IPTables.restore('/etc/iptables.ipv4.nat')
+	
+if __name__ == '__main__':
+    #test_demo()
+    #test_fun() 
+    #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
+	
+	#setup_IPset()
+	#update_IPset()
 	#PolicyManager.teardown_IPset()
 	
-	#PolicyManager.setup_IPTables('ipset_config/whitelist.txt')
-	#PolicyManager.teardown_IPTables('ipset_config/whitelist.txt')
+	#setup_IPtables()
+	#teardown_IPtables()
 	
 	IPTables.list_iptables() 
 	pass

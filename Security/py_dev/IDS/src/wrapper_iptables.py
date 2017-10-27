@@ -82,7 +82,7 @@ class IPTables(object):
 	
 	#Create ipset based rule under [table-chain]
 	@staticmethod
-	def create_Ruleset(tb_name, chain_name, ipset_arg, target_name):	
+	def create_Ruleset(tb_name, chain_name, io_interface, ipset_arg, target_name):	
 		#get table
 		if(tb_name=='NAT'):
 			table = iptc.Table(iptc.Table.NAT)
@@ -101,7 +101,13 @@ class IPTables(object):
 		
 		#new rule
 		rule = iptc.Rule()
-		
+		if(chain_name=='INPUT'):
+			rule.in_interface = io_interface
+		elif(chain_name=='OUTPUT'):
+			rule.out_interface = io_interface
+		else:
+			pass
+
 		#create match for set
 		match = rule.create_match("set")
 		match.match_set = [ipset_arg[0], ipset_arg[1]]
@@ -114,7 +120,7 @@ class IPTables(object):
 		
 	#Create ipset based rule under [table-chain]
 	@staticmethod
-	def create_Rulestate(tb_name, chain_name, state_arg, target_name):	
+	def create_Rulestate(tb_name, chain_name, io_interface, state_arg, target_name):	
 		#get table
 		if(tb_name=='NAT'):
 			table = iptc.Table(iptc.Table.NAT)
@@ -133,6 +139,12 @@ class IPTables(object):
 		
 		#new rule
 		rule = iptc.Rule()
+		if(chain_name=='INPUT'):
+			rule.in_interface = io_interface
+		elif(chain_name=='OUTPUT'):
+			rule.out_interface = io_interface
+		else:
+			pass
 		
 		#create match for state
 		match = rule.create_match("state")
@@ -146,7 +158,7 @@ class IPTables(object):
 		
 	#Create ipset based rule under [table-chain]
 	@staticmethod
-	def create_Rule(tb_name, chain_name, target_name):	
+	def create_Rule(tb_name, chain_name, io_interface, target_name):	
 		#get table
 		if(tb_name=='NAT'):
 			table = iptc.Table(iptc.Table.NAT)
@@ -165,6 +177,12 @@ class IPTables(object):
 		
 		#new rule
 		rule = iptc.Rule()
+		if(chain_name=='INPUT'):
+			rule.in_interface = io_interface
+		elif(chain_name=='OUTPUT'):
+			rule.out_interface = io_interface
+		else:
+			pass
 		
 		#create target
 		target = rule.create_target(target_name)
