@@ -7,6 +7,7 @@ from utilities import FileUtil, DatetimeUtil
 from wrapper_ipset import IPSets
 from wrapper_iptables import IPTables
 from policy_firewall import *
+from vtAPI import vtAPI
 
 def test_demo():
     p=sr1(IP(dst=sys.argv[1])/ICMP())
@@ -43,7 +44,25 @@ def test_ipset():
 	#FwallPolicy.IPSets.restore('ipset_config/all.save')
 	#FwallPolicy.IPSets.list()
 	pass
-
+def test_vtAPI():
+	#print vtAPI.url_Scan('http://www.virustotal.com')
+	#vtAPI.url_Scan('http://www.virustotal.com')
+	#response=vtAPI.url_Report('http://www.baidu.com')
+	#print(vtAPI.file_Scan('number.txt'))
+	#print(vtAPI.file_Rescan('721250fc401e820a662fc76720b9f63a'))
+	#print(vtAPI.file_Report('721250fc401e820a662fc76720b9f63a'))
+	#response=vtAPI.file_Report('721250fc401e820a662fc76720b9f63a')
+	#print(vtAPI.getPositiveRate(response))
+	json_data = vtAPI.url_Report('http://wwww.google.com')
+	for e in json_data:
+		print e+' : '+str(json_data[e])
+	'''json_scans=json_data['scans']
+	for e in json_scans:
+		print e+' : '+str(json_scans[e])
+	#print json_data['scans'][0]'''
+	'''if(json_data['response_code']==1):
+		print(vtAPI.getPositiveRate(json_data))'''
+	pass
 def test_iptables():
 	'''FwallPolicy.IPTables.save('', 'iptables_config/all.rule')
 	FwallPolicy.IPTables.save('nat', 'iptables_config/nat.rule')
@@ -87,4 +106,6 @@ if __name__ == '__main__':
 	#teardown_IPtables()
 	
 	#IPTables.list_iptables() 
+	
+	test_vtAPI()
 	pass
