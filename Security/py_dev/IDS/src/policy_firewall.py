@@ -219,22 +219,106 @@ class PolicyManager(object):
 			IPTables.create_PostRouting('eth0', 'MASQUERADE')
 		else:
 			pass
-		
-		
+			
 	#teardown iptables for policy management
 	@staticmethod
-	def teardown_IPTables(file_path, chain_name):
+	def teardown_IPTables():
+		#extract ipset name from file path
+		#f_name=file_path.split('/')[-1]
+		#ipset_name=f_name.split('.')[0]
+		
+		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
+		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
+		#IPTables.delete_Rules('FILTER', chain_name)
+		
+		IPTables.flush('nat')
+		IPTables.flush('filter')
+	
+	#setup iptables for policy management
+	@staticmethod
+	def setup_PreRouting(file_path, in_interface, dport, to_dst):
 		#extract ipset name from file path
 		f_name=file_path.split('/')[-1]
 		ipset_name=f_name.split('.')[0]
 		
-		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
-		#IPTables.delete_Ruleset('FILTER', 'INPUT', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
-		IPTables.delete_Rules('FILTER', chain_name)
+		IPTables.create_PreRouting(in_interface, dport, [(ipset_name+'_IP'), 'src'], to_dst)
+		IPTables.create_PreRouting(in_interface, dport, [(ipset_name+'_Net'), 'src'], to_dst)
 		
+	#teardown iptables for policy management
+	@staticmethod
+	def teardown_PreRouting(to_dst):
+		IPTables.delete_PreRouting(to_dst)
 
-if __name__ == '__main__':
-	#display_iptc_table() 
+'''
+PolicyTask class for executing policy rule
+'''
+class PolicyTask(object):
+	
+	@staticmethod
+	def setup_IPset():
+		PolicyManager.setup_IPset('ipset_config/whitelist.txt')
+		PolicyManager.setup_IPset('ipset_config/blacklist.txt')
+	
+	@staticmethod
+	def update_IPset():
+		PolicyManager.update_IPset('ipset_config/whitelist.txt')
+		PolicyManager.update_IPset('ipset_config/blacklist.txt')
+	
+	@staticmethod
+	def teardown_IPset():
+		PolicyManager.teardown_IPset()
+	
+	@staticmethod	
+	def setup_IPtables():
+		PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'PREROUTING')
+		PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'INPUT')
+		PolicyManager.setup_IPTables('', 'FORWARD')
+		PolicyManager.setup_IPTables('ipset_config/blacklist.txt', 'OUTPUT')
+		PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'POSTROUTING')
+	@staticmethod
+	def teardown_IPtables():
+		PolicyManager.teardown_IPTables()
+	
+	@staticmethod
+	def restore_IPtables():
+		#PolicyManager.teardown_IPTables('ipset_config/whitelist.txt','INPUT')
+		#PolicyManager.teardown_IPTables('ipset_config/blacklist.txt','OUTPUT')
+		IPTables.restore('/etc/iptables.ipv4.nat')
+
+def test_ipset():
+	'''IPSets.create('myset1','hash:ip')
+	IPSets.add('myset1','172.16.203.2')
+	IPSets.create('myset2','hash:net')
+	IPSets.add('myset2','172.16.204.0/24')'''
+	#IPSets.destroy()
+	#IPSets.destroy('myset2')
+	#IPSets.flush()
+	#IPSets.flush('myset2')
+	#IPSets.rename('test', 'myset2')
+	#IPSets.add('bkset1','172.16.203.0/24')
+	#IPSets.delete('bkset1','172.16.203.2')
+	#IPSets.delete('bkset2','172.16.204.0/24')
+	#IPSets.save('myset1','ipset_config/all.save')
+	#IPSets.restore('ipset_config/all.save')
+	#IPSets.list()
+	pass
+		
+def test_iptables():
+	'''IPTables.save('', 'iptables_config/all.rule')
+	IPTables.save('nat', 'iptables_config/nat.rule')
+	IPTables.save('filter', 'iptables_config/filter.rule')'''	
+	#IPTables.flush('')
+	#IPTables.flush('nat')
+	#IPTables.flush('filter')
+	
+	#IPTables.restore('iptables_config/nat.rule')
+	#IPTables.restore('iptables_config/filter.rule')	
+	#IPTables.restore('iptables_config/all.rule')
+	
+	#IPTables.list_iptables('NAT') 
+	pass	
+
+def test_FileList():
 	#FilterList.display('ipset_config/whitelist.txt')
 	#print(FilterList.getRecord('ipset_config/whitelist.txt','172.16.201.0/24'))
 	#FilterList.addRecord('ipset_config/whitelist.txt','Net','172.16.203.0/24',[0,0,0,10])
@@ -244,8 +328,10 @@ if __name__ == '__main__':
 	#FilterList.deleteRecord('ipset_config/whitelist.txt','172.16.203.0/24')
 	#FilterList.deleteRecord('ipset_config/whitelist.txt','172.16.202.5')
 	#FilterList.removeExpiredRecord('ipset_config/blacklist.txt')
-	#IPSets.create('myset1','hash:ip')
-	#IPSets.list()
+	pass
 	
-	#IPTables.list_iptables() 
+if __name__ == '__main__': 
+	test_FileList()
+	test_ipset()
+	test_iptables()
 	pass

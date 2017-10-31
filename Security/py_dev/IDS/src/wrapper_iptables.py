@@ -252,7 +252,7 @@ class IPTables(object):
 		#insert rule to chain
 		chain.insert_rule(rule)
 		
-	#Create ipset based rule under [table-chain]
+	#Create ipset based Forward rule under [table-chain]
 	@staticmethod
 	def create_Forward( in_interface, out_interface, state_arg, target_name):	
 		#get table
@@ -278,6 +278,28 @@ class IPTables(object):
 		
 		#insert rule to chain
 		chain.insert_rule(rule)
+	
+	#Delete prerouting policy based on specified target [address:port]
+	@staticmethod
+	def delete_PreRouting(target_arg):	
+		#get table
+		table = iptc.Table(iptc.Table.NAT)			
+		
+		#get chain
+		chain = iptc.Chain(table, 'PREROUTING')
+		
+		#disable autocommit
+		table.autocommit = False
+
+		for rule in chain.rules:
+			#delete rule
+			if(rule.target.name=='DNAT' and rule.target.to_destination==target_arg):
+				chain.delete_rule(rule)
+		
+		#commit change
+		table.commit()
+		#enable autocommit
+		table.autocommit = True
 		
 	#Delete ipset based rule under [table-chain]
 	@staticmethod
