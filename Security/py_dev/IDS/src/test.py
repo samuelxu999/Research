@@ -85,6 +85,7 @@ def update_IPset():
 	PolicyManager.update_IPset('ipset_config/blacklist.txt')
 	
 def setup_IPtables():
+	PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'PREROUTING')
 	PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'INPUT')
 	PolicyManager.setup_IPTables('ipset_config/blacklist.txt', 'OUTPUT')
 	
@@ -99,13 +100,13 @@ if __name__ == '__main__':
     #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
 	
 	#setup_IPset()
-	#update_IPset()
+	update_IPset()
 	#PolicyManager.teardown_IPset()
 	
 	#setup_IPtables()
 	#teardown_IPtables()
 	
-	#IPTables.list_iptables() 
+	#IPTables.list_iptables('NAT') 
 	
-	test_vtAPI()
+	#test_vtAPI()
 	pass

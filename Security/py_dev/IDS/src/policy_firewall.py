@@ -191,14 +191,20 @@ class PolicyManager(object):
 		f_name=file_path.split('/')[-1]
 		ipset_name=f_name.split('.')[0]
 		
+		#setup network filter for prerouting
+		if(chain_name=='PREROUTING'):
+			IPTables.create_PreRouting('eth0', '9080', [(ipset_name+'_IP'), 'src'], '172.16.202.8:80')
+			IPTables.create_PreRouting('eth0', '9080', [(ipset_name+'_Net'), 'src'], '172.16.202.8:80')
+			IPTables.create_PreRouting('eth0', '9022', [(ipset_name+'_IP'), 'src'], '172.16.202.8:22')
+			IPTables.create_PreRouting('eth0', '9022', [(ipset_name+'_Net'), 'src'], '172.16.202.8:22')
 		#setup network filter for input
-		if(chain_name=='INPUT'):
+		elif(chain_name=='INPUT'):
 			#setup whitelist network filter for input
 			IPTables.create_Rule('FILTER', 'INPUT', 'eth0', 'DROP')
 			IPTables.create_Rulestate('FILTER', 'INPUT', 'eth0', 'RELATED,ESTABLISHED', 'ACCEPT')
 			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
 			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
-		#setup blacklist network filter for output
+		#setup network filter for output
 		elif(chain_name=='OUTPUT'):
 			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'eth0', [(ipset_name+'_IP'), 'dst'], 'DROP')
 			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'eth0', [(ipset_name+'_Net'), 'dst'], 'DROP')

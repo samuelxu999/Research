@@ -49,11 +49,16 @@ class IPTables(object):
 						print match.name, '-', match.state
 					elif(match.name=='set'):
 						print match.name, '-', match.match_set
+					elif(match.name=='tcp'):
+						print match.name, '-', match.dport
 					else:
 						print match.name
 				print "\tTarget:",
-				print rule.target.name
-				table = iptc.Table(iptc.Table.FILTER)
+				if(rule.target.name=='DNAT'):
+					print rule.target.name, '-', rule.target.to_destination
+				else:
+					print rule.target.name
+				#table = iptc.Table(iptc.Table.FILTER)
 		print "======================="
 		
 	#Save iptables to file
@@ -189,6 +194,42 @@ class IPTables(object):
 		
 		#insert rule to chain
 		chain.insert_rule(rule)
+	
+	#Create ipset based PreRouting rule under [table-chain]
+	@staticmethod
+	def create_PreRouting(in_interface, dst_port, ipset_arg, to_dst):	
+		'''cmdline="iptables -A PREROUTING -t nat -i " + in_interface + \
+				" -p tcp -m tcp --dport " +  dst_port + \
+				" -m set --match-set " + ipset_arg[0] + " " + ipset_arg[1] + \
+				" -j DNAT --to-destination " + to_dst
+		os.system(cmdline)'''
+		#get table
+		table = iptc.Table(iptc.Table.NAT)
+		
+		#get chain
+		chain = iptc.Chain(table, 'PREROUTING')
+		
+		#new rule
+		rule = iptc.Rule()
+		rule.in_interface = in_interface
+		#set protocol: -p tcp
+		rule.protocol = "tcp"
+		
+		#create match for tcp: -m tcp --dport 9080
+		match = rule.create_match("tcp")
+		match.dport = dst_port
+		
+		#create match for set: -m set --match-set whitelist_IP src
+		match = rule.create_match("set")
+		match.match_set = [ipset_arg[0], ipset_arg[1]]
+		
+		#create target: -j DNAT --to-destination 172.16.202.8:80
+		target = rule.create_target("DNAT")
+		target.to_destination=to_dst
+		
+		#insert rule to chain
+		chain.insert_rule(rule)
+		
 		
 	#Delete ipset based rule under [table-chain]
 	@staticmethod
