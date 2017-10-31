@@ -44,6 +44,7 @@ def test_ipset():
 	#FwallPolicy.IPSets.restore('ipset_config/all.save')
 	#FwallPolicy.IPSets.list()
 	pass
+	
 def test_vtAPI():
 	#print vtAPI.url_Scan('http://www.virustotal.com')
 	#vtAPI.url_Scan('http://www.virustotal.com')
@@ -87,12 +88,16 @@ def update_IPset():
 def setup_IPtables():
 	PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'PREROUTING')
 	PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'INPUT')
+	PolicyManager.setup_IPTables('', 'FORWARD')
 	PolicyManager.setup_IPTables('ipset_config/blacklist.txt', 'OUTPUT')
+	PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'POSTROUTING')
 	
 def teardown_IPtables():
 	#PolicyManager.teardown_IPTables('ipset_config/whitelist.txt','INPUT')
 	#PolicyManager.teardown_IPTables('ipset_config/blacklist.txt','OUTPUT')
-	IPTables.restore('/etc/iptables.ipv4.nat')
+	#IPTables.restore('/etc/iptables.ipv4.nat')
+	IPTables.flush('nat')
+	IPTables.flush('filter')
 	
 if __name__ == '__main__':
     #test_demo()
@@ -100,13 +105,13 @@ if __name__ == '__main__':
     #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
 	
 	#setup_IPset()
-	update_IPset()
+	#update_IPset()
 	#PolicyManager.teardown_IPset()
 	
-	#setup_IPtables()
-	#teardown_IPtables()
+	'''teardown_IPtables()
+	setup_IPtables()'''	
 	
-	#IPTables.list_iptables('NAT') 
+	IPTables.list_iptables('NAT') 
 	
 	#test_vtAPI()
 	pass

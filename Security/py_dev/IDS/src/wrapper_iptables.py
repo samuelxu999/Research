@@ -229,7 +229,55 @@ class IPTables(object):
 		
 		#insert rule to chain
 		chain.insert_rule(rule)
+	
+	#Create ipset based PostRouting rule under [table-chain]
+	@staticmethod
+	def create_PostRouting(out_interface, target_name):	
+		'''cmdline="iptables -A POSTROUTING -t nat -o " + out_interface + \
+				" -j " + target_name
+		os.system(cmdline)'''
+		#get table
+		table = iptc.Table(iptc.Table.NAT)	
 		
+		#get chain
+		chain = iptc.Chain(table, 'POSTROUTING')
+		
+		#new rule
+		rule = iptc.Rule()
+		rule.out_interface = out_interface
+		
+		#create target: -j MASQUERADE
+		target = rule.create_target(target_name)
+		
+		#insert rule to chain
+		chain.insert_rule(rule)
+		
+	#Create ipset based rule under [table-chain]
+	@staticmethod
+	def create_Forward( in_interface, out_interface, state_arg, target_name):	
+		#get table
+		table = iptc.Table(iptc.Table.FILTER)			
+		
+		#get chain
+		chain = iptc.Chain(table, 'FORWARD')
+		
+		#new rule
+		rule = iptc.Rule()
+		if(in_interface!=''):
+			rule.in_interface = in_interface
+		if(out_interface!=''):
+			rule.out_interface = out_interface
+		
+		if(state_arg!=''):
+			#create match for state
+			match = rule.create_match("state")
+			match.state = state_arg
+		
+		#create target
+		target = rule.create_target(target_name)
+		
+		#insert rule to chain
+		chain.insert_rule(rule)
 		
 	#Delete ipset based rule under [table-chain]
 	@staticmethod

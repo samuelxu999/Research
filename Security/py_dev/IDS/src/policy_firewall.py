@@ -204,12 +204,19 @@ class PolicyManager(object):
 			IPTables.create_Rulestate('FILTER', 'INPUT', 'eth0', 'RELATED,ESTABLISHED', 'ACCEPT')
 			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
 			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_Net'), 'src'], 'ACCEPT')
+		#setup network filter for forward
+		elif(chain_name=='FORWARD'):
+			IPTables.create_Forward( 'wlan0', 'eth0', '', 'ACCEPT')
+			IPTables.create_Forward( 'eth0', 'wlan0', 'RELATED,ESTABLISHED', 'ACCEPT')
 		#setup network filter for output
 		elif(chain_name=='OUTPUT'):
 			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'eth0', [(ipset_name+'_IP'), 'dst'], 'DROP')
 			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'eth0', [(ipset_name+'_Net'), 'dst'], 'DROP')
 			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'wlan0', [(ipset_name+'_IP'), 'dst'], 'DROP')
 			IPTables.create_Ruleset('FILTER', 'OUTPUT', 'wlan0', [(ipset_name+'_Net'), 'dst'], 'DROP')
+		#setup network filter for postrouting
+		elif(chain_name=='POSTROUTING'):
+			IPTables.create_PostRouting('eth0', 'MASQUERADE')
 		else:
 			pass
 		
