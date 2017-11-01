@@ -201,6 +201,7 @@ class PolicyManager(object):
 		elif(chain_name=='INPUT'):
 			#setup whitelist network filter for input
 			IPTables.create_Rule('FILTER', 'INPUT', 'eth0', 'DROP')
+			IPTables.create_RulePort('FILTER', 'INPUT','eth0', '80', 'NEW,ESTABLISHED', 'ACCEPT')
 			IPTables.create_Rulestate('FILTER', 'INPUT', 'eth0', 'RELATED,ESTABLISHED', 'ACCEPT')
 			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_IP'), 'src'], 'ACCEPT')
 			IPTables.create_Ruleset('FILTER', 'INPUT', 'eth0', [(ipset_name+'_Net'), 'src'], 'ACCEPT')

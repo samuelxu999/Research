@@ -58,8 +58,8 @@ if __name__ == '__main__':
 	#PolicyTask.update_IPset()
 	#PolicyTask.teardown_IPset()
 	
-	#PolicyTask.teardown_IPtables()
-	#PolicyTask.setup_IPtables()
+	'''PolicyTask.teardown_IPtables()
+	PolicyTask.setup_IPtables()'''
 	#PolicyTask.restore_IPtables()
 	
 	#PolicyManager.setup_PreRouting('ipset_config/whitelist.txt', 'eth0', '9080', '172.16.202.8:80')

@@ -160,7 +160,58 @@ class IPTables(object):
 		
 		#insert rule to chain
 		chain.insert_rule(rule)
+
+	#Create rule for opening port
+	@staticmethod
+	def create_RulePort(tb_name, chain_name, io_interface, port, state_arg, target_name):	
+		#get table
+		if(tb_name=='NAT'):
+			table = iptc.Table(iptc.Table.NAT)
+		elif(tb_name=='FILTER'):
+			table = iptc.Table(iptc.Table.FILTER)
+		elif(tb_name=='MANGLE'):
+			table = iptc.Table(iptc.Table.MANGLE)
+		elif(tb_name=='RAW'):
+			table = iptc.Table(iptc.Table.RAW)
+		else:
+			print("Not supported table.")
+			return
+			
+		#get chain
+		chain = iptc.Chain(table, chain_name)
 		
+		#new rule
+		rule = iptc.Rule()
+		
+		#set protocol: -p tcp
+		rule.protocol = "tcp"
+		
+		if(chain_name=='INPUT'):
+			rule.in_interface = io_interface
+		elif(chain_name=='OUTPUT'):
+			rule.out_interface = io_interface
+		else:
+			pass
+		
+		#create match for tcp: -m tcp --dport 80
+		match = rule.create_match("tcp")
+		if(chain_name=='INPUT'):
+			match.dport = port
+		elif(chain_name=='OUTPUT'):
+			match.sport = port
+		else:
+			pass		
+		
+		#create match for state: -m state New,Established
+		match = rule.create_match("state")
+		match.state = state_arg
+		
+		#create target: -j Accept
+		target = rule.create_target(target_name)
+		
+		#insert rule to chain
+		chain.insert_rule(rule)
+	
 	#Create ipset based rule under [table-chain]
 	@staticmethod
 	def create_Rule(tb_name, chain_name, io_interface, target_name):	
