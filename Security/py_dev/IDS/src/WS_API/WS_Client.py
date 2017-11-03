@@ -39,7 +39,7 @@ class WSClient(object):
     @staticmethod
     def Get_DataByID(api_url, params):          
         
-        response = requests.get(api_url,params)
+        response = requests.get(api_url,params=params)
         
         #get response json
         json_response = response.json()      
