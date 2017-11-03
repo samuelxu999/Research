@@ -64,3 +64,22 @@ Reference:
 ==========================================================================
 1) Ubuntu/Debian
 	sudo apt-get install ipset
+	
+	
+	
+==========================================================================
+How to setup sqlite environment
+Reference: 
+	https://www.sqlite.org/index.html
+==========================================================================
+1) Ubuntu/Debian
+	sudo apt-get install sqlite3 libsqlite3-dev
+	
+	
+==========================================================================
+How to setup flask environment
+Reference: 
+	http://flask.pocoo.org/
+==========================================================================
+1) Ubuntu/Debian
+	sudo pip install Flask

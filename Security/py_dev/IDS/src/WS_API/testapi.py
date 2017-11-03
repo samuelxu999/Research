@@ -77,7 +77,7 @@ def update_project(project_id):
     if 'date' in request.json and type(request.json['date']) is not unicode:
         abort(400)
     if 'time' in request.json and type(request.json['time']) is not unicode:
-	abort(400)
+		abort(400)
     project[0]['title'] = request.json.get('title', project[0]['title'])
     project[0]['description'] = request.json.get('description', project[0]['description'])
     project[0]['date'] = request.json.get('date', project[0]['date'])
