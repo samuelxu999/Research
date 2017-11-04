@@ -7,7 +7,7 @@ filter_list.py
 Created on Nov.3, 2017
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
-@TaskDescription: This module provide filter list management by using SQLite.
+@TaskDescription: This module provide filter list management.
 @Reference: https://www.sqlite.org/
 '''
 
@@ -17,7 +17,7 @@ from datetime import datetime
 from utilities import FileUtil, DatetimeUtil
 
 '''
-FilterList class for manage filter list files
+FilterList class for manage filter list by using file I/O API
 '''
 class FilterList(object):
 	#Display filter list information
@@ -127,7 +127,7 @@ class FilterList(object):
 		FileUtil.AddDataByLine(f_name, ls_record)
 
 '''
-FilterList class for manage filter list files
+FilterList class for manage filter list by using SQLite
 '''
 class FilterManager(object):
 	
