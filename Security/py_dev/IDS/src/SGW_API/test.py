@@ -8,6 +8,7 @@ from wrapper_ipset import IPSets
 from wrapper_iptables import IPTables
 from policy_firewall import *
 from vtAPI import vtAPI
+from filter_list import FilterManager
 
 def test_demo():
     p=sr1(IP(dst=sys.argv[1])/ICMP())
@@ -54,12 +55,13 @@ if __name__ == '__main__':
     #test_fun() 
     #pkts = sniff(prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
 	
-	#PolicyTask.setup_IPset()
-	#PolicyTask.update_IPset()
+	#PolicyTask.setup_Filter()
+	#PolicyTask.setup_IPset(0)
+	PolicyTask.update_IPset(0)
 	#PolicyTask.teardown_IPset()
 	
 	'''PolicyTask.teardown_IPtables()
-	PolicyTask.setup_IPtables()'''
+	PolicyTask.setup_IPtables(0)'''
 	#PolicyTask.restore_IPtables()
 	
 	#PolicyManager.setup_PreRouting('ipset_config/whitelist.txt', 'eth0', '9080', '172.16.202.8:80')

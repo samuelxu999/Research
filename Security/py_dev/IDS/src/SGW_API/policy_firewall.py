@@ -16,137 +16,35 @@ from datetime import datetime
 from utilities import FileUtil, DatetimeUtil
 from wrapper_ipset import IPSets
 from wrapper_iptables import IPTables
-		
-'''
-FilterList class for manage filter list files
-'''
-class FilterList(object):
-	#Display filter list information
-	@staticmethod
-	def display(f_name):
-		ls_line=FileUtil.ReadLines(f_name)
-		print("Type\t Target\t\t\t Start from\t\t\t Valid before")
-		for line in ls_line:
-			line=line.replace('\n','')	
-			#skip empty line
-			if(line==''):
-				continue			
-			ls_data=line.split('; ')
-			print("%-5s\t %-20s\t %s\t\t %s" %(ls_data[0], ls_data[1],ls_data[2],ls_data[3]))
-	
-	#Read filter list information
-	@staticmethod
-	def getList(f_name):
-		ls_line=FileUtil.ReadLines(f_name)
-		ls_record=[]
-		for line in ls_line:
-			line=line.replace('\n','')	
-			#skip empty line
-			if(line==''):
-				continue			
-			ls_data=line.split('; ')
-			ls_record.append(ls_data)
-		return ls_record
-	
-	#Get selected record in filter list
-	@staticmethod
-	def getRecord(f_name, r_name):
-		ls_line=FileUtil.ReadLines(f_name)
-		ls_record=[]
-		for line in ls_line:
-			line=line.replace('\n','')			
-			ls_data=line.split('; ')
-			if(ls_data[1]==r_name):
-				ls_record=ls_data
-				break
-		return ls_record
-		
-	#add record to filter list
-	@staticmethod
-	def addRecord(f_name, _type, _target, _duration=[0,0,1,0]):
-		ls_record=[]
-		
-		#calculate start time and end time
-		starttime=DatetimeUtil.datetime_string(datetime.now())
-		duration=DatetimeUtil.datetime_duration(_duration[0],_duration[1],_duration[2],_duration[3])
-		endtime = DatetimeUtil.datetime_string(datetime.now()+duration)
-		
-		newline=''
-		newline+=_type+'; '
-		newline+=_target+'; '
-		newline+=starttime+'; '
-		newline+=endtime
-		
-		FileUtil.AddLine(f_name, newline)
-		
-	#remove selected record from filter list
-	@staticmethod
-	def deleteRecord(f_name, target):
-		#remove ls_data from the file
-		FileUtil.DeleteLine(f_name,target)
-		
-	#update selected record from filter list
-	@staticmethod
-	def updateRecord(f_name, _target, _duration=[0,0,1,0]):
-		ls_data=FilterList.getRecord(f_name,_target)
-		if(ls_data==[]):
-			print("Target:%s is not exist, update fail1" %(_target))
-			return
-	
-		#calculate start time and end time
-		starttime=DatetimeUtil.datetime_string(datetime.now())
-		duration=DatetimeUtil.datetime_duration(_duration[0],_duration[1],_duration[2],_duration[3])
-		endtime = DatetimeUtil.datetime_string(datetime.now()+duration)
-		
-		updateline=''
-		updateline+=ls_data[0]+'; '
-		updateline+=ls_data[1]+'; '
-		updateline+=starttime+'; '
-		updateline+=endtime+'\n'
-		
-		#rewrite updateline to file
-		FileUtil.UpdateLine(f_name,_target,updateline)
-	
-		#Read filter list information
-	
-	@staticmethod
-	def removeExpiredRecord(f_name):
-		ls_line=FileUtil.ReadLines(f_name)
-		ls_record=[]
-		for line in ls_line:
-			line=line.replace('\n','')	
-			#skip empty line
-			if(line==''):
-				continue			
-			#split line to get each filed data as 
-			ls_data=line.split('; ')
-			
-			#check if end-time expired
-			if(DatetimeUtil.IsExpired(ls_data[3])):
-				continue
-			ls_record.append(line)
-		#return ls_record
-		#print ls_record
-		FileUtil.AddDataByLine(f_name, ls_record)
+from filter_list import FilterManager, FilterList
 
 			
 '''
 PolicyManager class for manage policy task
 '''
-class PolicyManager(object):
+class PolicyManager(object):	
 	#new IPset from selected filterlist.txt
+	#src_type: 0-DB; 1-file
 	@staticmethod
-	def setup_IPset(file_path):
-		#extract ipset name from file path
-		f_name=file_path.split('/')[-1]
-		ipset_name=f_name.split('.')[0]
-
+	def setup_IPset(db_path, tb_name, src_type=0):
+		if(src_type==1):
+			#extract ipset name from file path
+			f_name=db_path.split('/')[-1]
+			ipset_name=f_name.split('.')[0]
+		else:
+			ipset_name=tb_name
+		
 		#create ipset
 		IPSets.create(ipset_name+'_Net','hash:net')
 		IPSets.create(ipset_name+'_IP','hash:ip')
 		
-		#load filter list from file
-		ls_records=FilterList.getList(file_path)
+		if(src_type==1):
+			#load filter list from file
+			ls_records=FilterList.getList(db_path)
+		else:
+			#load filter list from db
+			ls_records=FilterManager.select_entry(db_path, tb_name)
+		
 		#write net list to ipset
 		for record in ls_records:
 			if(record[0]=='Net'):
@@ -158,17 +56,25 @@ class PolicyManager(object):
 		
 	#update IPset based on selected filterlist.txt
 	@staticmethod
-	def update_IPset(file_path):		
-		#extract ipset name from file path
-		f_name=file_path.split('/')[-1]
-		ipset_name=f_name.split('.')[0]
+	def update_IPset(db_path, tb_name, src_type=0):		
+		if(src_type==1):
+			#extract ipset name from file path
+			f_name=db_path.split('/')[-1]
+			ipset_name=f_name.split('.')[0]
+		else:
+			ipset_name=tb_name
 		
 		#First clear all ipset list
 		IPSets.flush(ipset_name+'_Net')
 		IPSets.flush(ipset_name+'_IP')
 		
-		#load filter list from file
-		ls_records=FilterList.getList(file_path)
+		if(src_type==1):
+			#load filter list from file
+			ls_records=FilterList.getList(db_path)
+		else:
+			#load filter list from db
+			ls_records=FilterManager.select_entry(db_path, tb_name)
+		
 		#rewrite net list to ipset
 		for record in ls_records:
 			if(record[0]=='Net'):
@@ -186,10 +92,13 @@ class PolicyManager(object):
 		
 	#setup iptables for policy management
 	@staticmethod
-	def setup_IPTables(file_path, chain_name):
-		#extract ipset name from file path
-		f_name=file_path.split('/')[-1]
-		ipset_name=f_name.split('.')[0]
+	def setup_IPTables(db_path, chain_name, tb_name, src_type):
+		if(src_type==1):
+			#extract ipset name from file path
+			f_name=db_path.split('/')[-1]
+			ipset_name=f_name.split('.')[0]
+		else:
+			ipset_name=tb_name
 		
 		#setup network filter for prerouting
 		if(chain_name=='PREROUTING'):
@@ -254,28 +163,73 @@ class PolicyManager(object):
 PolicyTask class for executing policy rule
 '''
 class PolicyTask(object):
+	filter_db='ipset_config/ipset_filter.db'
+	tb_name=['Whitelist','Blacklist']
 	
 	@staticmethod
-	def setup_IPset():
-		PolicyManager.setup_IPset('ipset_config/whitelist.txt')
-		PolicyManager.setup_IPset('ipset_config/blacklist.txt')
+	def setup_Filter():
+		#new filter databased *.db and create table
+		for tb in PolicyTask.tb_name:
+			FilterManager.create_table(PolicyTask.filter_db, tb)
+		
+		#add default list in Whitelist
+		FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[0], 'Net', '172.16.201.0/24', [0,1,0,10])
+		FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[0], 'IP', '128.226.79.117', [0,0,1,10])
+		FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[0], 'IP', '128.226.79.11', [0,0,1,10])
+		
+			
+		#add default list in Blacklist
+		#FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[1], 'Net', '172.16.201.0/24', [0,1,0,10])
+		FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[1], 'IP', '128.226.88.147', [0,0,1,10])
+		#FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[1], 'IP', '128.226.79.117', [0,0,1,10])
+		
+		#list all
+		print(FilterManager.select_entry(PolicyTask.filter_db, PolicyTask.tb_name[0]))
+		print(FilterManager.select_entry(PolicyTask.filter_db, PolicyTask.tb_name[1]))
 	
 	@staticmethod
-	def update_IPset():
-		PolicyManager.update_IPset('ipset_config/whitelist.txt')
-		PolicyManager.update_IPset('ipset_config/blacklist.txt')
+	def setup_IPset(op_type):
+		#setup using file
+		if(op_type==1):
+			PolicyManager.setup_IPset('ipset_config/Whitelist.txt', '', 1)
+			PolicyManager.setup_IPset('ipset_config/Blacklist.txt', '', 1)
+		#setup using db
+		else:
+			for tb in PolicyTask.tb_name:
+				PolicyManager.setup_IPset(PolicyTask.filter_db, tb)
+	
+	@staticmethod
+	def update_IPset(op_type):
+		#setup using file
+		if(op_type==1):
+			PolicyManager.update_IPset('ipset_config/Whitelist.txt', '', 1)
+			PolicyManager.update_IPset('ipset_config/Blacklist.txt', '', 1)
+		#setup using db
+		else:
+			for tb in PolicyTask.tb_name:
+				PolicyManager.update_IPset(PolicyTask.filter_db, tb)
 	
 	@staticmethod
 	def teardown_IPset():
 		PolicyManager.teardown_IPset()
 	
 	@staticmethod	
-	def setup_IPtables():
-		PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'PREROUTING')
-		PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'INPUT')
-		PolicyManager.setup_IPTables('', 'FORWARD')
-		PolicyManager.setup_IPTables('ipset_config/blacklist.txt', 'OUTPUT')
-		PolicyManager.setup_IPTables('ipset_config/whitelist.txt', 'POSTROUTING')
+	def setup_IPtables(op_type):
+		#setup using file
+		if(op_type==1):		
+			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'PREROUTING', '', 1)
+			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'INPUT', '', 1)
+			PolicyManager.setup_IPTables('', 'FORWARD', '', 1)
+			PolicyManager.setup_IPTables('ipset_config/Blacklist.txt', 'OUTPUT', '', 1)
+			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'POSTROUTING', '', 1)
+		else:		
+			PolicyManager.setup_IPTables('', 'PREROUTING', PolicyTask.tb_name[0], 0)
+			PolicyManager.setup_IPTables('', 'INPUT', PolicyTask.tb_name[0], 0)
+			PolicyManager.setup_IPTables('', 'FORWARD', '', 0)
+			PolicyManager.setup_IPTables('', 'OUTPUT', PolicyTask.tb_name[1], 0)
+			PolicyManager.setup_IPTables('', 'POSTROUTING', PolicyTask.tb_name[0], 0)
+			
+	
 	@staticmethod
 	def teardown_IPtables():
 		PolicyManager.teardown_IPTables()
@@ -320,7 +274,7 @@ def test_iptables():
 	pass	
 
 def test_FileList():
-	#FilterList.display('ipset_config/whitelist.txt')
+	FilterList.display('ipset_config/Whitelist.txt')
 	#print(FilterList.getRecord('ipset_config/whitelist.txt','172.16.201.0/24'))
 	#FilterList.addRecord('ipset_config/whitelist.txt','Net','172.16.203.0/24',[0,0,0,10])
 	#FilterList.addRecord('ipset_config/whitelist.txt','IP','172.16.202.5',[0,0,0,10])
@@ -331,8 +285,26 @@ def test_FileList():
 	#FilterList.removeExpiredRecord('ipset_config/blacklist.txt')
 	pass
 	
+def test_Filter():	
+	#new filter databased *.db and create table
+	'''for tb in PolicyTask.tb_name:
+		FilterManager.create_table(PolicyTask.filter_db, tb)'''
+	
+	#FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[0], 'Net', '172.16.201.0/24', [0,1,0,10])	
+	#FilterManager.addRecord(PolicyTask.filter_db, PolicyTask.tb_name[1], 'Net', '172.16.202.0/24', [0,0,1,10])
+	
+	#FilterManager.updateRecord(PolicyTask.filter_db, PolicyTask.tb_name[0], '172.16.201.0/24', [0,0,0,10])
+	
+	#FilterManager.delete_ByAddress(PolicyTask.filter_db, PolicyTask.tb_name[1], '172.16.201.0/24')
+	#FilterManager.delete_ByType(PolicyTask.filter_db, PolicyTask.tb_name[0], 'IP')
+	
+	#list all
+	print(FilterManager.select_entry(PolicyTask.filter_db, PolicyTask.tb_name[0]))
+	print(FilterManager.select_entry(PolicyTask.filter_db, PolicyTask.tb_name[1]))
+	
 if __name__ == '__main__': 
 	test_FileList()
+	test_Filter()
 	test_ipset()
 	test_iptables()
 	pass
