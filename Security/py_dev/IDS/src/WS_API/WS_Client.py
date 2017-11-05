@@ -87,8 +87,8 @@ class WSClient(object):
 
 def test_search():
     params = {'project_id':'1'}
-    print(WSClient.Get_Datasets('http://128.226.76.37/test/api/v1.0/dt'))
-    print(WSClient.Get_DataByID('http://128.226.76.37/test/api/v1.0/dt/project',params))
+    print(WSClient.Get_Datasets('http://128.226.78.217/test/api/v1.0/dt'))
+    print(WSClient.Get_DataByID('http://128.226.78.217/test/api/v1.0/dt/project',params))
     
 def test_add():
     project = {
@@ -98,7 +98,7 @@ def test_add():
         'time': timestr
     }
     project_data = {'project_data':project}
-    json_response=WSClient.Create_Data('http://128.226.76.37/test/api/v1.0/dt/create',project_data)
+    json_response=WSClient.Create_Data('http://128.226.78.217/test/api/v1.0/dt/create',project_data)
     print(json_response['project_data'])
     
 def test_update():
@@ -110,12 +110,12 @@ def test_update():
         'time': timestr
     }
     project_data = {'project_data':project}
-    json_response=WSClient.Update_Data('http://128.226.76.37/test/api/v1.0/dt/update',project_data)
+    json_response=WSClient.Update_Data('http://128.226.78.217/test/api/v1.0/dt/update',project_data)
     print(json_response)
     
 def test_delete():
     param = {'id': 2}
-    json_response=WSClient.Delete_Data('http://128.226.76.37/test/api/v1.0/dt/delete',param)
+    json_response=WSClient.Delete_Data('http://128.226.78.217/test/api/v1.0/dt/delete',param)
     print(json_response)
     
 if __name__ == "__main__":
