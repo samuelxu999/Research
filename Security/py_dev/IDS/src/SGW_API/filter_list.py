@@ -22,9 +22,14 @@ FilterList class for manage filter list by using file I/O API
 class FilterList(object):
 	#Display filter list information
 	@staticmethod
-	def display(f_name):
-		ls_line=FileUtil.ReadLines(f_name)
+	def display(db_path):
+		ls_line=FileUtil.ReadLines(db_path)
 		print("Type\t Target\t\t\t Start from\t\t\t Valid before")
+		#extract ipset name from file path
+		f_name=db_path.split('/')[-1]
+		ipset_name=f_name.split('.')[0]
+		print('================================= %s ==========================================' \
+			%(ipset_name))
 		for line in ls_line:
 			line=line.replace('\n','')	
 			#skip empty line
@@ -35,8 +40,8 @@ class FilterList(object):
 	
 	#Read filter list information
 	@staticmethod
-	def getList(f_name):
-		ls_line=FileUtil.ReadLines(f_name)
+	def getList(db_path):
+		ls_line=FileUtil.ReadLines(db_path)
 		ls_record=[]
 		for line in ls_line:
 			line=line.replace('\n','')	
@@ -49,8 +54,8 @@ class FilterList(object):
 	
 	#Get selected record in filter list
 	@staticmethod
-	def getRecord(f_name, r_name):
-		ls_line=FileUtil.ReadLines(f_name)
+	def getRecord(db_path, r_name):
+		ls_line=FileUtil.ReadLines(db_path)
 		ls_record=[]
 		for line in ls_line:
 			line=line.replace('\n','')			
@@ -62,7 +67,7 @@ class FilterList(object):
 		
 	#add record to filter list
 	@staticmethod
-	def addRecord(f_name, _type, _target, _duration=[0,0,1,0]):
+	def addRecord(db_path, _type, _target, _duration=[0,0,1,0]):
 		ls_record=[]
 		
 		#calculate start time and end time
@@ -76,18 +81,18 @@ class FilterList(object):
 		newline+=starttime+'; '
 		newline+=endtime
 		
-		FileUtil.AddLine(f_name, newline)
+		FileUtil.AddLine(db_path, newline)
 		
 	#remove selected record from filter list
 	@staticmethod
-	def deleteRecord(f_name, target):
+	def deleteRecord(db_path, target):
 		#remove ls_data from the file
-		FileUtil.DeleteLine(f_name,target)
+		FileUtil.DeleteLine(db_path,target)
 		
 	#update selected record from filter list
 	@staticmethod
-	def updateRecord(f_name, _target, _duration=[0,0,1,0]):
-		ls_data=FilterList.getRecord(f_name,_target)
+	def updateRecord(db_path, _target, _duration=[0,0,1,0]):
+		ls_data=FilterList.getRecord(db_path,_target)
 		if(ls_data==[]):
 			print("Target:%s is not exist, update fail1" %(_target))
 			return
@@ -104,11 +109,11 @@ class FilterList(object):
 		updateline+=endtime+'\n'
 		
 		#rewrite updateline to file
-		FileUtil.UpdateLine(f_name,_target,updateline)
+		FileUtil.UpdateLine(db_path,_target,updateline)
 	
 	@staticmethod
-	def removeExpiredRecord(f_name):
-		ls_line=FileUtil.ReadLines(f_name)
+	def removeExpiredRecord(db_path):
+		ls_line=FileUtil.ReadLines(db_path)
 		ls_record=[]
 		for line in ls_line:
 			line=line.replace('\n','')	
@@ -283,6 +288,15 @@ class FilterManager(object):
 		
 		#rewrite updateline to file
 		FilterManager.update_entry(path_db, tb_name, ls_arg)
+		
+	#print records in table
+	@staticmethod
+	def DisplayByTable(path_db, tb_name):
+		print('================================= %s ==========================================' \
+				%(tb_name))
+		print("Type\t Target\t\t\t Start from\t\t\t Valid before")
+		for ls_data in FilterManager.select_entry(path_db, tb_name):
+			print("%-5s\t %-20s\t %s\t\t %s" %(ls_data[0], ls_data[1],ls_data[2],ls_data[3]))
 
 def test_FilterManager():		
 	path_db='ipset_config/ipset_filter.db'
@@ -300,6 +314,7 @@ def test_FilterManager():
 	#print(FilterManager.select_entry(path_db, tb_name1))
 	#print(FilterManager.select_ByType(path_db, tb_name1, 'Net'))
 	#print(FilterManager.select_ByAddress(path_db, tb_name1, '128.226.79.117'))
+	FilterManager.DisplayByTable(path_db, 'Whitelist')
 	
 if __name__ == '__main__': 
 	test_FilterManager()

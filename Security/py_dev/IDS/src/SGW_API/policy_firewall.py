@@ -18,32 +18,43 @@ from wrapper_ipset import IPSets
 from wrapper_iptables import IPTables
 from filter_list import FilterManager, FilterList
 
+
+# Define IP set source type 
+class IPSetSRC(object): 
+	Unknown = 0
+	Database = 1
+	File = 2 
 			
 '''
 PolicyManager class for manage policy task
 '''
 class PolicyManager(object):	
-	#new IPset from selected filterlist.txt
-	#src_type: 0-DB; 1-file
+	#new IPset based on specified src_type
 	@staticmethod
-	def setup_IPset(db_path, tb_name, src_type=0):
-		if(src_type==1):
+	def setup_IPset(db_path, tb_name, src_type=IPSetSRC.Unknown):
+		if(src_type==IPSetSRC.File):
 			#extract ipset name from file path
 			f_name=db_path.split('/')[-1]
 			ipset_name=f_name.split('.')[0]
-		else:
+		elif(src_type==IPSetSRC.Database):
 			ipset_name=tb_name
+		else:
+			print('Not supported ipset source')
+			return
 		
 		#create ipset
 		IPSets.create(ipset_name+'_Net','hash:net')
 		IPSets.create(ipset_name+'_IP','hash:ip')
 		
-		if(src_type==1):
+		if(src_type==IPSetSRC.File):
 			#load filter list from file
 			ls_records=FilterList.getList(db_path)
-		else:
+		elif(src_type==IPSetSRC.Database):
 			#load filter list from db
 			ls_records=FilterManager.select_entry(db_path, tb_name)
+		else:
+			print('Not supported ipset source')
+			return
 		
 		#write net list to ipset
 		for record in ls_records:
@@ -54,26 +65,32 @@ class PolicyManager(object):
 			else:
 				continue
 		
-	#update IPset based on selected filterlist.txt
+	#update IPset based on specified src_type and condition
 	@staticmethod
-	def update_IPset(db_path, tb_name, src_type=0):		
-		if(src_type==1):
+	def update_IPset(db_path, tb_name, src_type=IPSetSRC.Unknown):		
+		if(src_type==IPSetSRC.File):
 			#extract ipset name from file path
 			f_name=db_path.split('/')[-1]
 			ipset_name=f_name.split('.')[0]
-		else:
+		elif(src_type==IPSetSRC.Database):
 			ipset_name=tb_name
+		else:
+			print('Not supported ipset source')
+			return
 		
 		#First clear all ipset list
 		IPSets.flush(ipset_name+'_Net')
 		IPSets.flush(ipset_name+'_IP')
 		
-		if(src_type==1):
+		if(src_type==IPSetSRC.File):
 			#load filter list from file
 			ls_records=FilterList.getList(db_path)
-		else:
+		elif(src_type==IPSetSRC.Database):
 			#load filter list from db
 			ls_records=FilterManager.select_entry(db_path, tb_name)
+		else:
+			print('Not supported ipset source')
+			return
 		
 		#rewrite net list to ipset
 		for record in ls_records:
@@ -84,21 +101,25 @@ class PolicyManager(object):
 			else:
 				continue
 	
-	#update IPset based on selected filterlist.txt
+	#teardown IPset by using 'ipset destroy'
 	@staticmethod
 	def teardown_IPset():
 		#destory all ipset
 		IPSets.destroy()
-		
+	
+	
 	#setup iptables for policy management
 	@staticmethod
-	def setup_IPTables(db_path, chain_name, tb_name, src_type):
-		if(src_type==1):
+	def setup_IPTables(db_path, chain_name, tb_name, src_type=IPSetSRC.Unknown):
+		if(src_type==IPSetSRC.File):
 			#extract ipset name from file path
 			f_name=db_path.split('/')[-1]
 			ipset_name=f_name.split('.')[0]
-		else:
+		elif(src_type==IPSetSRC.Database):
 			ipset_name=tb_name
+		else:
+			print('Not supported ipset source')
+			return
 		
 		#setup network filter for prerouting
 		if(chain_name=='PREROUTING'):
@@ -190,24 +211,31 @@ class PolicyTask(object):
 	@staticmethod
 	def setup_IPset(op_type):
 		#setup using file
-		if(op_type==1):
-			PolicyManager.setup_IPset('ipset_config/Whitelist.txt', '', 1)
-			PolicyManager.setup_IPset('ipset_config/Blacklist.txt', '', 1)
+		if(op_type==IPSetSRC.File):
+			PolicyManager.setup_IPset('ipset_config/Whitelist.txt', '', op_type)
+			PolicyManager.setup_IPset('ipset_config/Blacklist.txt', '', op_type)
 		#setup using db
-		else:
+		elif(op_type==IPSetSRC.Database):
 			for tb in PolicyTask.tb_name:
-				PolicyManager.setup_IPset(PolicyTask.filter_db, tb)
+				PolicyManager.setup_IPset(PolicyTask.filter_db, tb, op_type)
+		else:
+			print('Not supported ipset source')
+			return
+
 	
 	@staticmethod
 	def update_IPset(op_type):
 		#setup using file
-		if(op_type==1):
-			PolicyManager.update_IPset('ipset_config/Whitelist.txt', '', 1)
-			PolicyManager.update_IPset('ipset_config/Blacklist.txt', '', 1)
+		if(op_type==IPSetSRC.File):
+			PolicyManager.update_IPset('ipset_config/Whitelist.txt', '', op_type)
+			PolicyManager.update_IPset('ipset_config/Blacklist.txt', '', op_type)
 		#setup using db
-		else:
+		elif(op_type==IPSetSRC.Database):
 			for tb in PolicyTask.tb_name:
-				PolicyManager.update_IPset(PolicyTask.filter_db, tb)
+				PolicyManager.update_IPset(PolicyTask.filter_db, tb, op_type)
+		else:
+			print('Not supported ipset source')
+			return
 	
 	@staticmethod
 	def teardown_IPset():
@@ -216,18 +244,21 @@ class PolicyTask(object):
 	@staticmethod	
 	def setup_IPtables(op_type):
 		#setup using file
-		if(op_type==1):		
-			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'PREROUTING', '', 1)
-			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'INPUT', '', 1)
-			PolicyManager.setup_IPTables('', 'FORWARD', '', 1)
-			PolicyManager.setup_IPTables('ipset_config/Blacklist.txt', 'OUTPUT', '', 1)
-			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'POSTROUTING', '', 1)
-		else:		
-			PolicyManager.setup_IPTables('', 'PREROUTING', PolicyTask.tb_name[0], 0)
-			PolicyManager.setup_IPTables('', 'INPUT', PolicyTask.tb_name[0], 0)
-			PolicyManager.setup_IPTables('', 'FORWARD', '', 0)
-			PolicyManager.setup_IPTables('', 'OUTPUT', PolicyTask.tb_name[1], 0)
-			PolicyManager.setup_IPTables('', 'POSTROUTING', PolicyTask.tb_name[0], 0)
+		if(op_type==IPSetSRC.File):		
+			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'PREROUTING', '', op_type)
+			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'INPUT', '', op_type)
+			PolicyManager.setup_IPTables('', 'FORWARD', '', op_type)
+			PolicyManager.setup_IPTables('ipset_config/Blacklist.txt', 'OUTPUT', '', op_type)
+			PolicyManager.setup_IPTables('ipset_config/Whitelist.txt', 'POSTROUTING', '', op_type)
+		elif(op_type==IPSetSRC.Database):		
+			PolicyManager.setup_IPTables('', 'PREROUTING', PolicyTask.tb_name[0], op_type)
+			PolicyManager.setup_IPTables('', 'INPUT', PolicyTask.tb_name[0], op_type)
+			PolicyManager.setup_IPTables('', 'FORWARD', '', op_type)
+			PolicyManager.setup_IPTables('', 'OUTPUT', PolicyTask.tb_name[1], op_type)
+			PolicyManager.setup_IPTables('', 'POSTROUTING', PolicyTask.tb_name[0], op_type)
+		else:
+			print('Not supported ipset source')
+			return
 			
 	
 	@staticmethod
@@ -299,8 +330,8 @@ def test_Filter():
 	#FilterManager.delete_ByType(PolicyTask.filter_db, PolicyTask.tb_name[0], 'IP')
 	
 	#list all
-	print(FilterManager.select_entry(PolicyTask.filter_db, PolicyTask.tb_name[0]))
-	print(FilterManager.select_entry(PolicyTask.filter_db, PolicyTask.tb_name[1]))
+	FilterManager.DisplayByTable(PolicyTask.filter_db, PolicyTask.tb_name[0])
+	FilterManager.DisplayByTable(PolicyTask.filter_db, PolicyTask.tb_name[1])
 	
 if __name__ == '__main__': 
 	test_FileList()
