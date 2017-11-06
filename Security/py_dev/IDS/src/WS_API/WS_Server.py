@@ -13,7 +13,7 @@ Created on Nov.2, 2017
 from flask import Flask, jsonify
 from flask import abort,make_response,request
 import datetime
-
+from CapAC_Policy import CapToken, CapPolicy
 
 app = Flask(__name__)
 
@@ -39,6 +39,7 @@ projects = [
     }
 ]
 
+#========================================== Error handler ===============================================
 #Error handler for abort(400) 
 @app.errorhandler(404)
 def not_found(error):
@@ -49,10 +50,17 @@ def not_found(error):
 def type_error(error):
     return make_response(jsonify({'error': 'type error'}), 400)
 
+	
+#========================================== Request handler ===============================================
 #GET req
 @app.route('/test/api/v1.0/dt', methods=['GET'])
 def get_projects():
-    return jsonify({'projects': projects})
+	'''print(request.url)
+	print(request.method)'''
+	token_data=request.args
+	if(not CapPolicy.is_valid_access_request(token_data)):
+		abort(404)
+	return jsonify({'projects': projects})
 	
 #GET req for specific ID
 @app.route('/test/api/v1.0/dt/project', methods=['GET'])
