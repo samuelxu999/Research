@@ -135,7 +135,7 @@ class DatetimeUtil(object):
 	#switch format string to datatime object
 	@staticmethod
 	def string_datetime(_strtime, _format="%Y-%m-%d %H:%M:%S"):
-		_datetime=datetime.strptime(_strtime, "%Y-%m-%d %H:%M:%S")
+		_datetime=datetime.strptime(_strtime, _format)
 		return _datetime
 		
 	#get datatime duration from format input
