@@ -18,7 +18,8 @@ from CapAC_Policy import CapToken
 
 import sys
 sys.path.append('../SGW_API/')
-from utilities import DatetimeUtil
+from utilities import DatetimeUtil, TypesUtil
+from wrapper_pyca import Crypto_DSA
 
 now = datetime.datetime.now()
 datestr=now.strftime("%Y-%m-%d")
@@ -166,7 +167,7 @@ def generate_token():
 	#define condition
 	cond_data1={}
 	cond_data1['type']='Timespan'
-	cond_data1['value']={'start':'10:12:32','end':'18:32:32'}
+	cond_data1['value']={'start':'8:12:32','end':'12:32:32'}
 	ac_data.append(CapToken.new_access('GET', '/test/api/v1.0/dt', cond_data1))
 	
 	cond_data2={}
@@ -194,18 +195,32 @@ def generate_token():
 	_duration=[0,1,0,10]
 	duration=DatetimeUtil.datetime_duration(_duration[0],_duration[1],_duration[2],_duration[3])
 	endtime = DatetimeUtil.datetime_string(now+duration)'''
-	starttime='2017-11-05 18:12:32'
-	endtime='2017-11-07 16:12:32'
+	starttime='2017-11-09 18:12:32'
+	endtime='2017-11-12 16:12:32'
 	#issuetime=DatetimeUtil.datetime_string(now)
-	issuetime='2017-11-05 20:12:32'
+	issuetime='2017-11-09 20:12:32'
+	
+	'''===================================set issuer and issuer_sign==================================='''
+	issuer=TypesUtil.bytes_to_string(Crypto_DSA.load_key_bytes('public_key_file'))
+	
+	#get private_key
+	private_key=Crypto_DSA.load_private_key_bytes(Crypto_DSA.load_key_bytes('private_key_file'))
+	
+	#sign data
+	sign_data=b"This is some data I'd like to sign"
+	issuer_sign=Crypto_DSA.sign(private_key, sign_data)
+	#switch signature to hex string format for transmitting
+	signature_hex=TypesUtil.string_to_hex(issuer_sign)
 	
 	#generate token
-	token_data=CapToken.new_token('edere0129', 'Admin', issuetime, 'signature_code', \
+	token_data=CapToken.new_token('edere0129', issuer, issuetime, signature_hex, \
 				'Samuel:128.226.76.37', 'http://128.226.78.217', [starttime, endtime], ac_data) 
 	return token_data
 	
 def test_CapAC():
-	token_data=generate_token()
+	'''token_data=generate_token()
+	CapToken.save_token(token_data, 'token_data.dat')'''
+	token_data=CapToken.load_token('token_data.dat')
 	#CapToken.display_token(token_data)
 	
 	#params = {'project_id':'2'}

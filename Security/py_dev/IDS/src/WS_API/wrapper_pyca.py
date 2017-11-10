@@ -210,6 +210,7 @@ class Crypto_DSA(object):
 		fname.close()
 		return key_bytes
 		
+		
 '''
 Get all dataset
 '''
@@ -272,7 +273,7 @@ def test_DSA():
 	load_public_key_bytes=Crypto_DSA.load_key_bytes('public_key_file')
 	print(load_public_key_bytes)
 		
-	#load public_key_byte
+	#load public_key
 	load_public_key=Crypto_DSA.load_public_key_bytes(load_public_key_bytes)
 	print(load_public_key.public_numbers())
 	
@@ -282,18 +283,37 @@ def test_DSA():
 	
 	#save key bytes to key_file
 	Crypto_DSA.save_key_bytes(private_key_bytes, 'private_key_file')
-	#load key bytes
+	#load private_key_bytes
 	load_private_key_bytes=Crypto_DSA.load_key_bytes('private_key_file')
 	print(load_private_key_bytes)
 	
-	#load private_key_byte
+	#load private_key
 	load_private_key=Crypto_DSA.load_private_key_bytes(load_private_key_bytes)
 	print(load_private_key.private_numbers().x)
 	
+def test_Crypto():
+	#load public_key_byte
+	load_public_key_bytes=Crypto_DSA.load_key_bytes('public_key_file')
+	#get public_key
+	public_key=Crypto_DSA.load_public_key_bytes(load_public_key_bytes)
+	
+	#load private_key_byte
+	load_private_key_bytes=Crypto_DSA.load_key_bytes('private_key_file')
+	#get private_key
+	private_key=Crypto_DSA.load_private_key_bytes(load_private_key_bytes)
+	
+	#sign data
+	sign_data=b"This is some data I'd like to sign"
+	signature=Crypto_DSA.sign(private_key, sign_data)
+	
+	#verify signature
+	verify_sign=Crypto_DSA.verify(public_key,signature,sign_data)
+	print(verify_sign)
 	
 if __name__ == "__main__":
 	#test_func()
 	#test_ecc()
-	test_DSA()
+	#test_DSA()
+	test_Crypto()
 	pass
 

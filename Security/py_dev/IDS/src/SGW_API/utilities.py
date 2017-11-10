@@ -12,6 +12,7 @@ Created on Oct.23, 2017
 '''
 
 from datetime import datetime, timedelta
+import json
 
 '''
 FileUtil class for handling file data
@@ -154,3 +155,43 @@ class DatetimeUtil(object):
 			return False
 		else:
 			return True
+			
+'''
+TypesUtil class for data type format transfer
+'''
+class TypesUtil(object):
+	#string to hex
+	@staticmethod
+	def string_to_hex(str_data):
+		hex_data=str_data.hex()
+		return hex_data
+		
+	#hex to string
+	@staticmethod
+	def hex_to_string(hex_data):
+		str_data=bytes.fromhex(hex_data)
+		return str_data
+		
+	#string to bytes
+	@staticmethod
+	def string_to_bytes(str_data):
+		bytes_data=str_data.encode(encoding='UTF-8')
+		return bytes_data
+		
+	#bytes to string
+	@staticmethod
+	def bytes_to_string(byte_data):
+		str_data=byte_data.decode(encoding='UTF-8')
+		return str_data
+		
+	#string to json
+	@staticmethod
+	def string_to_json(json_str):
+		json_data = json.loads(json_str)
+		return json_data
+		
+	#json to string
+	@staticmethod
+	def json_to_string(json_data):
+		json_str = json.dumps(json_data)
+		return json_str
