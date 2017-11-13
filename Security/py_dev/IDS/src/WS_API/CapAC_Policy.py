@@ -82,7 +82,7 @@ class CapToken(object):
 		#Print access right
 		print("access_right:")
 		for ar in token_data['access_right']:
-			print("\t\t%s" %(ar))
+			print("%s" %(ar))
 	
 	#Save token data to file
 	@staticmethod
@@ -136,8 +136,8 @@ class CapPolicy(object):
 	@staticmethod
 	def is_access_valid(token_data, acess_args):
 		for ar in token_data['access_right']:
-			#print ar['action'] + ":" + ar['resource'] 
-			#print acess_args['method'] + ":" + str(acess_args['url_rule']) 
+			#print(ar['action'] + ":" + ar['resource']) 
+			#print(acess_args['method'] + ":" + str(acess_args['url_rule'])) 
 			if(ar['action']==acess_args['method'] and ar['resource']==str(acess_args['url_rule']) \
 				and CapPolicy.is_condition_valid(ar['conditions'])):
 				return True
@@ -209,7 +209,8 @@ class CapPolicy(object):
 		access_data['method']=req_args.method
 		#print access_data
 		
-		if(token_data=='{}'):
+		if(token_data=={}):
+			print('token not exist!')
 			return False
 		
 		start_time=time.time()
