@@ -15,7 +15,7 @@ import datetime
 import json
 import sys
 sys.path.append('../SGW_API/')
-from utilities import DatetimeUtil, TypesUtil
+from utilities import DatetimeUtil, TypesUtil, FileUtil
 from flask import request
 from wrapper_pyca import Crypto_DSA
 
@@ -209,6 +209,9 @@ class CapPolicy(object):
 		access_data['method']=req_args.method
 		#print access_data
 		
+		#Define ls_time_exec to save executing time to log
+		ls_time_exec=[]
+		
 		if(token_data=={}):
 			print('token not exist!')
 			return False
@@ -217,14 +220,16 @@ class CapPolicy(object):
 		if(not CapPolicy.is_token_valid(token_data)):
 			print('token valid fail')
 			return False
-		exec_time=time.time()-start_time		
+		exec_time=time.time()-start_time
+		ls_time_exec.append(format(exec_time*1000, '.3f'))	
 		print("Execution time of is_token_valid is:%2.6f" %(exec_time))
 		
 		start_time=time.time()
 		if(not CapPolicy.is_access_valid(token_data, access_data)):
 			print('access valid fail')
 			return False
-		exec_time=time.time()-start_time		
+		exec_time=time.time()-start_time
+		ls_time_exec.append(format(exec_time*1000, '.3f'))		
 		print("Execution time of is_access_valid is:%2.6f" %(exec_time))
 		
 		start_time=time.time()
@@ -232,6 +237,13 @@ class CapPolicy(object):
 			print('signature valid fail')
 			return False
 		exec_time=time.time()-start_time		
+		ls_time_exec.append(format(exec_time*1000, '.3f'))
 		print("Execution time of is_signature_valid is:%2.6f" %(exec_time))
+		
+		#transfer list to string
+		str_time_exec=" ".join(ls_time_exec)
+		#print(str_time_exec)
+		FileUtil.AddLine('exec_time_server.log', str_time_exec)
+		
 		return True
 	
