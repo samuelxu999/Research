@@ -49,7 +49,8 @@ disp(ret);
 
 function RET = test_validation()
     close all;
-    
+
+%==================== Group test ==========================
     % get all datafile name
     listfiles = dir('dataset/*.xlsx');
     allNames = {listfiles.name};
@@ -60,21 +61,10 @@ function RET = test_validation()
         [pathstr, fname, ext] = fileparts(allNames{i});
         datafile_list{i} = strcat('dataset/', fname);
     end
-    %disp(datafile_list);
-    
-    %return
-%     datafile_list = cell(1, 8);
-%     datafile_list{1} = 'dataset/reconstruction1';
-%     datafile_list{2} = 'dataset/reconstruction2';
-%     datafile_list{3} = 'dataset/cropland_urban1';
-%     datafile_list{4} = 'dataset/demo1';
-%     datafile_list{5} = 'dataset/flood_urban1';
-%     datafile_list{6} = 'dataset/forest_urban1';
-%     datafile_list{7} = 'dataset/grass_urban1';
-%     datafile_list{8} = 'dataset/nochangeCrop';
+    disp(datafile_list);
     
     RMSE_list = {};
-%==================== Group test ==========================
+
     for i=1:length(datafile_list)
         %disp(datafile_list{i});    
         RMSE_list{i,1} = datafile_list{i};
@@ -110,7 +100,18 @@ function RET = test_validation()
     end
 
 % ==================== Single test ==========================
-%         test_fileid = 1;
+%     datafile_list = cell(1, 8);
+%     datafile_list{1} = 'dataset/reconstruction1';
+%     datafile_list{2} = 'dataset/reconstruction2';
+%     datafile_list{3} = 'dataset/cropland_urban1';
+%     datafile_list{4} = 'dataset/demo1';
+%     datafile_list{5} = 'dataset/flood_urban1';
+%     datafile_list{6} = 'dataset/forest_urban1';
+%     datafile_list{7} = 'dataset/grass_urban1';
+%     datafile_list{8} = 'dataset/nochangeCrop';
+% 
+%         RMSE_list = {};
+%         test_fileid = 4;
 %         RMSE_list{1,1} = datafile_list{test_fileid};
 %         
 %         tmp_rmst = {};
@@ -122,7 +123,7 @@ function RET = test_validation()
 %         tmp_rmst{2, 1} = 'gaussfit';
 %         tmp_rmst{2, 2} =  RMSE_Fit;
 %         
-%         [ Fit , RMSE_Fit ] = myValidation.valid_sigmfit( datafile_list{test_fileid}, false, false);
+%         [ Fit , RMSE_Fit ] = myValidation.valid_sigmfit( datafile_list{test_fileid}, true, false);
 %         tmp_rmst{3, 1} = 'sigmfit';
 %         tmp_rmst{3, 2} =  RMSE_Fit;
 %         

@@ -145,16 +145,25 @@ classdef mylib
 
 
         function [estimated_params]=sigmfit_test()
-            x = linspace(-10.0,10.0);
-            y=mylib.my_sigmoid(x, 1.0, 1.0) + 0.05*randn(size(x)); 
+            xdata = linspace(-10.0,10.0);
+            ydata=mylib.my_sigmoid(xdata, 1.0, 1.0) + 0.05*randn(size(xdata)); 
+            ydata_n=1-(mylib.my_sigmoid(xdata, 1.0, 1.0) + 0.05*randn(size(xdata))); 
             % standard parameter estimation 
-            [estimated_params]=sigm_fit(x,y); 
+            %[estimated_params]=sigm_fit(x,y); 
+            % Fit using polyfit
+            [estimated_params, stat, Fit, x_vector, y_vector] = sigm_fit(xdata, ydata);
 
             % parameter estimation with forced 0.5 fixed min 
             %[estimated_params]=sigm_fit(x,y,[0.5 NaN NaN NaN]) 
 
             % parameter estimation without plotting 
             %[estimated_params]=sigm_fit(x,y,[],[],0)
+            
+            % plot figure
+            fig = figure;
+            plot( xdata, ydata, '*', x_vector, y_vector, '-' );
+            ylim([-0.05 1.05]);
+            title(strcat('Sigmoid fitting curve'));
         end
 
         function p=polyfit_test()

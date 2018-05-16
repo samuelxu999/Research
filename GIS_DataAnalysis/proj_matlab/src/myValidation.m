@@ -61,7 +61,7 @@ classdef myValidation
                 if(isPlot==false)
                     set(fig, 'Visible', 'off');
                 end
-                plot( xdata, ydata, '*', xdata, Fit, '-' );
+                plot( xdata, ydata, '*',xdata_opt, ydata_opt, 'o', xdata, Fit, '-' );
                 ylim([-0.05 1.05]);
                 title(strcat('Poly fitting curve: ', datafile));
 
@@ -166,7 +166,7 @@ classdef myValidation
             [estimated_params, stat, Fit, x_vector, y_vector] = sigm_fit(xdata, ydata);
             
             % Output RMSE 
-            if((estimated_params(2)-estimated_params(1))<0.1)
+            if((abs(estimated_params(2)-estimated_params(1)))<0.1)
                 RMSE_Fit = 1.0;
             else
                 % calculate rmse
@@ -202,7 +202,7 @@ classdef myValidation
                 if(isPlot==false)
                     set(fig, 'Visible', 'off');
                 end
-                plot( xdata_opt, ydata_opt, '*', x_vector, y_vector, '-' );
+                plot( xdata_opt, ydata_opt, '*', xdata_opt, ydata_opt, 'o', x_vector, y_vector, '-' );
                 ylim([-0.05 1.05]);
                 title(strcat('Sigmoid fitting curve: ', datafile));
 
@@ -213,6 +213,7 @@ classdef myValidation
                     saveas(fig, figname);
                 end          
             end
-        end
+       end
+    
     end
 end
