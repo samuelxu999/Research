@@ -22,7 +22,7 @@ tt=0;
 %disp(p);
 
 %estimated_params=mylib.sigmfit_test();
-%disp(estimated_params);
+%disp(estimated_params)
 
 ret = test_validation();
 disp(ret);
@@ -49,15 +49,29 @@ disp(ret);
 
 function RET = test_validation()
     close all;
-    datafile_list = cell(1, 8);
-    datafile_list{1} = 'dataset/reconstruction1';
-    datafile_list{2} = 'dataset/reconstruction2';
-    datafile_list{3} = 'dataset/cropland_urban1';
-    datafile_list{4} = 'dataset/demo1';
-    datafile_list{5} = 'dataset/flood_urban1';
-    datafile_list{6} = 'dataset/forest_urban1';
-    datafile_list{7} = 'dataset/grass_urban1';
-    datafile_list{8} = 'dataset/nochangeCrop';
+    
+    % get all datafile name
+    listfiles = dir('dataset/*.xlsx');
+    allNames = {listfiles.name};
+    %disp(datafile_list{1});
+    
+    datafile_list = {};
+    for i=1:length(allNames)
+        [pathstr, fname, ext] = fileparts(allNames{i});
+        datafile_list{i} = strcat('dataset/', fname);
+    end
+    %disp(datafile_list);
+    
+    %return
+%     datafile_list = cell(1, 8);
+%     datafile_list{1} = 'dataset/reconstruction1';
+%     datafile_list{2} = 'dataset/reconstruction2';
+%     datafile_list{3} = 'dataset/cropland_urban1';
+%     datafile_list{4} = 'dataset/demo1';
+%     datafile_list{5} = 'dataset/flood_urban1';
+%     datafile_list{6} = 'dataset/forest_urban1';
+%     datafile_list{7} = 'dataset/grass_urban1';
+%     datafile_list{8} = 'dataset/nochangeCrop';
     
     RMSE_list = {};
 %==================== Group test ==========================
