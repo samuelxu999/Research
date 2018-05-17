@@ -27,25 +27,28 @@ tt=0;
 ret = test_validation();
 disp(ret);
 
-% % data
-% x=1:100;
-% sigma=15; mu=40; A=3;
-% y=A*exp(-(x-mu).^2/(2*sigma^2))+rand(size(x))*0.3;
-% plot(x,y,'.');
-% 
-% % fitting
-% [sigmaNew,muNew,Anew]=gaussian_fit(x,y);
-% y=Anew*exp(-(x-muNew).^2/(2*sigmaNew^2));
-% hold on; plot(x,y,'.r');
+function test_demo()
+    % data
+    x=1:100;
+    sigma=15; mu=40; A=3;
+    y=A*exp(-(x-mu).^2/(2*sigma^2))+rand(size(x))*0.3;
+    plot(x,y,'.');
+    
+    % fitting
+    [sigmaNew,muNew,Anew]=gaussian_fit(x,y);
+    y=Anew*exp(-(x-muNew).^2/(2*sigmaNew^2));
+    hold on; plot(x,y,'.r');
 
-% x = -10:1:10;
-% s = 2;
-% m = 3;
-% y = 1/(sqrt(2*pi)* s ) * exp( - (x-m).^2 / (2*s^2)) + 0.02*randn( 1, 21 );
-% [sigma,mu] = gaussfit( x, y )
-% xp = -10:0.1:10;
-% yp = 1/(sqrt(2*pi)* sigma ) * exp( - (xp-mu).^2 / (2*sigma^2));
-% plot( x, y, 'o', xp, yp, '-' );
+    x = -10:1:10;
+    s = 2;
+    m = 3;
+    y = 1/(sqrt(2*pi)* s ) * exp( - (x-m).^2 / (2*s^2)) + 0.02*randn( 1, 21 );
+    [sigma,mu] = gaussfit( x, y )
+    xp = -10:0.1:10;
+    yp = 1/(sqrt(2*pi)* sigma ) * exp( - (xp-mu).^2 / (2*sigma^2));
+    plot( x, y, 'o', xp, yp, '-' );
+end
+
 
 function RET = test_validation()
     close all;
@@ -79,8 +82,14 @@ function RET = test_validation()
         tmp_rmst{2, 1} = 'gaussfit';
         tmp_rmst{2, 2} =  RMSE_Fit;
         
-        [ Fit , RMSE_Fit ] = myValidation.valid_sigmfit( datafile_list{i}, false, false);
-        tmp_rmst{3, 1} = 'sigmfit';
+        [ Fit , RMSE_Fit, Polarity ] = myValidation.valid_sigmfit( datafile_list{i}, false, false);
+        if(Polarity==1)
+            tmp_rmst{3, 1} = 'Pos_sigmfit';
+        elseif (Polarity==-1)
+            tmp_rmst{3, 1} = 'Neg_sigmfit';
+        else
+            tmp_rmst{3, 1} = 'sigmfit';
+        end
         tmp_rmst{3, 2} =  RMSE_Fit;
         
         sorted_rmst = sortrows(tmp_rmst, 2);
@@ -104,7 +113,7 @@ function RET = test_validation()
 %     datafile_list{1} = 'dataset/reconstruction1';
 %     datafile_list{2} = 'dataset/reconstruction2';
 %     datafile_list{3} = 'dataset/cropland_urban1';
-%     datafile_list{4} = 'dataset/demo1';
+%     datafile_list{4} = 'dataset/demo3';
 %     datafile_list{5} = 'dataset/flood_urban1';
 %     datafile_list{6} = 'dataset/forest_urban1';
 %     datafile_list{7} = 'dataset/grass_urban1';
@@ -123,8 +132,14 @@ function RET = test_validation()
 %         tmp_rmst{2, 1} = 'gaussfit';
 %         tmp_rmst{2, 2} =  RMSE_Fit;
 %         
-%         [ Fit , RMSE_Fit ] = myValidation.valid_sigmfit( datafile_list{test_fileid}, true, false);
-%         tmp_rmst{3, 1} = 'sigmfit';
+%         [ Fit , RMSE_Fit, Polarity ] = myValidation.valid_sigmfit( datafile_list{test_fileid}, true, false);
+%         if(Polarity==1)
+%             tmp_rmst{3, 1} = 'Pos_sigmfit';
+%         elseif (Polarity==-1)
+%             tmp_rmst{3, 1} = 'Neg_sigmfit';
+%         else
+%             tmp_rmst{3, 1} = 'sigmfit';
+%         end
 %         tmp_rmst{3, 2} =  RMSE_Fit;
 %         
 %         sorted_rmst = sortrows(tmp_rmst, 2)

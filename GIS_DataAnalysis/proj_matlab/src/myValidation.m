@@ -145,7 +145,7 @@ classdef myValidation
             
        end
         
-       function [Fit, RMSE_Fit] = valid_sigmfit(datafile, isPlot, isSavefig)
+       function [Fit, RMSE_Fit, Polarity] = valid_sigmfit(datafile, isPlot, isSavefig)
             % Extract data from excel file
             %sheet = 1;
             dataRange = 'A2:C500';
@@ -166,9 +166,17 @@ classdef myValidation
             [estimated_params, stat, Fit, x_vector, y_vector] = sigm_fit(xdata, ydata);
             
             % Output RMSE 
+            Polarity = 0;
             if((abs(estimated_params(2)-estimated_params(1)))<0.1)
                 RMSE_Fit = 1.0;
             else
+                % get polarity of sigmoid 1 or -1
+                if(estimated_params(2)-estimated_params(1)>0)
+                    Polarity = 1;
+                else
+                    Polarity = -1;
+                end
+                
                 % calculate rmse
                 RMSE_Fit = sqrt(mean((ydata-Fit).^2));
                 %disp(RMSE_Fit);
@@ -192,6 +200,7 @@ classdef myValidation
                     RMSE_Fit = sqrt(mean((ydata_opt-Fit_opt).^2));
                 else
                     RMSE_Fit = 1.0;
+                    Polarity = 0;
                 end
             end
             
