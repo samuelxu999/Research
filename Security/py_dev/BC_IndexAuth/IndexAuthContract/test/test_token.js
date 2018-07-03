@@ -11,7 +11,7 @@ var web3 = new Web3();
 web3.setProvider(new web3.providers.HttpProvider('http://localhost:8042'));
 
 // The contract address that we are going to interact with
-var contractAddress = '0xb71e920f014cddc0064ed166e10a0126ef76f537';
+var contractAddress = '0xb7e549d21afa4c6fc672a37ef00bfab0ca6d81a8';
 
 // Load node addresses data from SmartToken.json
 var config = require('../build/contracts/IndexToken.json');
@@ -27,13 +27,14 @@ str_index = '1';
 
 //read token data before transaction
 get_token(str_index);
+get_authorizedNode();
 
 
 // set token test
-//setToken_test();
+setToken_test();
 
 //bind event onChange
-account_onValueChanged(str_index);
+//account_onValueChanged(str_index);
 
 
 //====================================== function for test ==================================
@@ -64,6 +65,17 @@ function get_token(str_index) {
 	}
 }
 
+function get_authorizedNode() {
+
+	// get token status
+	var nodeData = contract.getAuthorizedNodes();
+
+	for (var i = 0; i <nodeData.length; i++) {
+		console.log(nodeData[i]);
+	}
+}
+
+
 // launch depositToken transaction
 function setToken_test() {
 	var ret = 0;
@@ -71,7 +83,13 @@ function setToken_test() {
 	//ret=contract.initIndexToken( web3.eth.coinbase, '1', {from: web3.eth.coinbase} );
 
 	// change hashed value in token
-	ret=contract.setIndexToken(web3.eth.coinbase, '1', 'samuel', {from: web3.eth.coinbase});
+	//ret=contract.setIndexToken(web3.eth.coinbase, '1', 'samuel', {from: web3.eth.coinbase});
+
+	// add nodes
+	var test_node = "sam_miner_win7_0";
+	var node_address = getAddress(test_node);
+	//ret=contract.addAuthorizedNodes(node_address, {from: web3.eth.coinbase});
+	//ret=contract.removeAuthorizedNodes(node_address, {from: web3.eth.coinbase});
 
 	console.log(ret);
 }

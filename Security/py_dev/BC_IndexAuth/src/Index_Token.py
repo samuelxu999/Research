@@ -61,6 +61,20 @@ class IndexToken(object):
 
 		return token_data
 
+	#get token data by call getIndexToken()
+	def getAuthorizedNodes(self):
+
+		node_data = []
+		'''
+		Call a contract function, executing the transaction locally using the eth_call API. 
+		This will not create a new public transaction.
+		'''
+
+		# get token status
+		node_data=self.contract.call({'from': self.web3.eth.coinbase}).getAuthorizedNodes()
+
+		return node_data
+
 	#initialized token by sending transact to call initIndexToken()
 	def initIndexToken(self, str_index):
 
@@ -72,6 +86,18 @@ class IndexToken(object):
 
 		# Execute the specified function by sending a new public transaction.	
 		ret=self.contract.transact({'from': self.web3.eth.coinbase}).setIndexToken(self.web3.eth.coinbase, str_index, hash_index)
+
+	# set authorizaed nodes
+	def addAuthorizedNodes(self, node_addr):
+		checksumAddr=Web3.toChecksumAddress(node_addr)
+		# Execute the specified function by sending a new public transaction.	
+		ret=self.contract.transact({'from': self.web3.eth.coinbase}).addAuthorizedNodes(checksumAddr)
+
+	# remove authorizaed nodes
+	def removeAuthorizedNodes(self, node_addr):
+		checksumAddr=Web3.toChecksumAddress(node_addr)
+		# Execute the specified function by sending a new public transaction.	
+		ret=self.contract.transact({'from': self.web3.eth.coinbase}).removeAuthorizedNodes(checksumAddr)
 
 	# Print token date
 	@staticmethod
@@ -90,7 +116,7 @@ class IndexToken(object):
 
 if __name__ == "__main__":
 	http_provider = 'http://localhost:8042'
-	contract_addr = '0xb71e920f014cddc0064ed166e10a0126ef76f537'
+	contract_addr = '0xb7e549d21afa4c6fc672a37ef00bfab0ca6d81a8'
 	contract_config = '../IndexAuthContract/build/contracts/IndexToken.json'
 
 	#Get account address
@@ -109,11 +135,19 @@ if __name__ == "__main__":
 	print(balance)
 
 	#Read token data using call
-	token_data=mytoken.getIndexToken('1');
+	token_data=mytoken.getIndexToken('1')
 	IndexToken.print_tokendata(token_data)
+
+	#read node data using call
+	token_data=mytoken.getAuthorizedNodes()
+	print(token_data)
 
 	#Send transact
 	#mytoken.initIndexToken('1');
 	#mytoken.setIndexToken('1', 'dave')
+
+	node_address = IndexToken.getAddress('sam_miner_ubuntu_0', '../IndexAuthContract/test/addr_list.json')
+	#mytoken.addAuthorizedNodes(node_address)
+	#mytoken.removeAuthorizedNodes(node_address)
 
 	pass
