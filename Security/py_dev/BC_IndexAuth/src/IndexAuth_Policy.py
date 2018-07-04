@@ -10,6 +10,7 @@ Created on July.2, 2018
 @TaskDescription: This module provide index authentication policy for Event-Oriented Surveillance Video Query using Blockchain
 '''
 
+import time
 from utilities import DatetimeUtil, TypesUtil, FileUtil
 from wrapper_pyca import Crypto_Hash
 from Index_Token import IndexToken
@@ -44,17 +45,47 @@ class IndexPolicy(object):
 	# verify index by comparing index data in smart contract and calculated data block.
 	@staticmethod
 	def verify_indexToken(str_index, str_value):
+		# Define ls_time_exec to save executing time to log
+		ls_time_exec=[]
+
+		# mark the start time
+		start_time=time.time()
+
 		#1) read index data in contract
 		token_data=mytoken.getIndexToken(str_index);
 		#print(token_data)
+
+		# calculate computational cost
+		exec_time=time.time()-start_time
+		exec_time=time.time()-start_time
+		ls_time_exec.append(format(exec_time*1000, '.3f'))	
+		print("Execution time of getIndexToken is:%2.6f" %(exec_time))
+
+
+		# mark the start time
+		start_time=time.time()
 
 		#2) calculate hash value of str_value
 		# transfer string data to bytes block
 		bytes_block = TypesUtil.string_to_bytes(str_value);
 		hash_value = Crypto_Hash.generate_hash(bytes_block)
 
+		# compare 
+		ret_indexAuth = (str(hash_value)==token_data[1])
+
+		# calculate computational cost
+		exec_time=time.time()-start_time
+		exec_time=time.time()-start_time
+		ls_time_exec.append(format(exec_time*1000, '.3f'))	
+		print("Execution time of verifyIndex is:%2.6f" %(exec_time))
+
+		#transfer list to string
+		str_time_exec=" ".join(ls_time_exec)
+		#print(str_time_exec)
+		FileUtil.AddLine('exec_time_server.log', str_time_exec)
+
 		#return index authentication result
-		return str(hash_value)==token_data[1]
+		return ret_indexAuth
 
 
 
