@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.5
 
 '''
 ========================
 WS_Server module
 ========================
-Created on Nov.2, 2017
+Created on Sep.16, 2018
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide encapsulation of server API that handle and response client's request.
@@ -14,7 +14,7 @@ import datetime
 import json
 from flask import Flask, jsonify
 from flask import abort,make_response,request
-from CapAC_Policy import CapToken, CapPolicy
+from Auth_Policy import AuthPolicy
 
 app = Flask(__name__)
 
@@ -26,16 +26,16 @@ timestr=now.strftime("%H:%M:%S")
 projects = [
     {
         'id': 1,
-		'title':u'test',
-		'description':u'Hello World',
-		'date':u'04-28-2017',
+		'title':u'test record',
+		'description':u'This is test record to demonstrate access control mechanism!',
+		'date':u'08-28-2018',
         'time': u'Morning'
     },
     {
         'id': 2,
-        'title':u'GET',
-        'description':u'test GET APIs',
-		'date':u'4-29-2017',
+        'title':u'data record sample',
+        'description':u'You can read the record if you have access right!',
+		'date':u'8-29-2018',
 		'time': u'12:00 am'
     }
 ]
@@ -74,7 +74,9 @@ def get_projects():
 		abort(401, {'message': 'Token missing, deny access'})
 		
 	#Authorization process
-	if(not CapPolicy.is_valid_access_request(request)):
+	#if(not CapPolicy.is_valid_access_request(request)):
+	#if(not RBACPolicy.is_valid_access_request(request)):
+	if(not ABACPolicy.is_valid_access_request(request)):
 		abort(401, {'message': 'Authorization fail, deny access'})
 	return jsonify({'result': 'Succeed', 'projects': projects}), 201
 	
@@ -86,7 +88,9 @@ def get_project():
 		abort(401, {'message': 'Token missing, deny access'})
 		
 	#Authorization process
-	if(not CapPolicy.is_valid_access_request(request)):
+	#if(not CapPolicy.is_valid_access_request(request)):
+	#if(not RBACPolicy.is_valid_access_request(request)):
+	if(not ABACPolicy.is_valid_access_request(request)):
 		abort(401, {'message': 'Authorization fail, deny access'})
 	#print request.data
 	project_id = request.args.get('project_id', default = 1, type = int)
@@ -106,8 +110,8 @@ def create_project():
 		abort(401, {'message': 'Token missing, deny access'})
 	
 	#Authorization process
-	if(not CapPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})
+	'''if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Authorization fail, deny access'})'''
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
@@ -133,8 +137,8 @@ def update_project():
 		abort(401, {'message': 'Token missing, deny access'})
 	
 	#Authorization process
-	if(not CapPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})
+	'''if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Authorization fail, deny access'})'''
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
@@ -180,8 +184,8 @@ def delete_project():
 		abort(401, {'message': 'Token missing, deny access'})
 	
 	#Authorization process
-	if(not CapPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})
+	'''if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Authorization fail, deny access'})'''
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
