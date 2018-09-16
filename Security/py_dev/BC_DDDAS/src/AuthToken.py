@@ -187,8 +187,8 @@ if __name__ == "__main__":
 
 	#read Vnode data using call
 	node_address = AuthToken.getAddress('sam_miner_ubuntu_0', '../Contracts/test/addr_list.json')
-	token_data=myAuthToken.getNode(node_address)
-	#token_data=myAuthToken.getNode(accounts[0])
+	#token_data=myAuthToken.getNode(node_address)
+	token_data=myAuthToken.getNode(accounts[0])
 	print(token_data)
 	print("--------------------------------------------------------------------")
 
