@@ -22,6 +22,14 @@ from utilities import DatetimeUtil, TypesUtil, FileUtil
 now = datetime.datetime.now()
 datestr=now.strftime("%Y-%m-%d")
 timestr=now.strftime("%H:%M:%S")
+
+#global variable
+http_provider = 'http://localhost:8042'
+contract_addr = '0x7d2a0199bc5ce701f21c94f8b80219bbfe33258e'
+contract_config = '../Contracts/build/contracts/AuthToken.json'
+
+#new AuthToken object
+myAuthToken=AuthToken(http_provider, contract_addr, contract_config)
     
 class WSClient(object):
     
@@ -142,9 +150,14 @@ def test_delete(data_args={}):
 
 	
 def test_CapAC():
-	
+	# get host account
+	accounts = myAuthToken.getAccounts()
+
 	#params = {'project_id':'2'}
-	data_args = {'project_id':'2'}
+	data_args = {}
+	data_args ['project_id'] = '2'
+	data_args ['host_address'] = accounts[0]
+	print(data_args)
 	
 	start_time=time.time()
 	

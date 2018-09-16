@@ -76,7 +76,7 @@ def get_projects():
 	#Authorization process
 	#if(not CapPolicy.is_valid_access_request(request)):
 	#if(not RBACPolicy.is_valid_access_request(request)):
-	if(not ABACPolicy.is_valid_access_request(request)):
+	if(not AuthPolicy.verify_AuthToken(request)):
 		abort(401, {'message': 'Authorization fail, deny access'})
 	return jsonify({'result': 'Succeed', 'projects': projects}), 201
 	
@@ -90,7 +90,7 @@ def get_project():
 	#Authorization process
 	#if(not CapPolicy.is_valid_access_request(request)):
 	#if(not RBACPolicy.is_valid_access_request(request)):
-	if(not ABACPolicy.is_valid_access_request(request)):
+	if(not ABACPolicy.verify_AuthToken(request)):
 		abort(401, {'message': 'Authorization fail, deny access'})
 	#print request.data
 	project_id = request.args.get('project_id', default = 1, type = int)

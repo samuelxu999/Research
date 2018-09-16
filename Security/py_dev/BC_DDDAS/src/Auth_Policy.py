@@ -57,7 +57,12 @@ class AuthPolicy(object):
 
 	# verify authToken by comparing Vzone data in smart contract.
 	@staticmethod
-	def verify_AuthToken(addr_client):
+	def verify_AuthToken(req_args):
+		# extract client address from req_args
+		#addr_client = req_args['host_address']
+		addr_client = req_args.json['host_address']
+		print(addr_client)
+
 		# Define ls_time_exec to save executing time to log
 		ls_time_exec=[]
 
@@ -108,17 +113,23 @@ def test_Auth():
 	#VZone = AuthPolicy.get_VTrustZone(VZoneID)
 	#print(VZone)
 
+	# get host account
+	accounts = myAuthToken.getAccounts()
 	node1_address = myAuthToken.getAddress('sam_miner_ubuntu_0', '../Contracts/test/addr_list.json')
 	node2_address = myAuthToken.getAddress('RPi2_node_0', '../Contracts/test/addr_list.json')
 	VNode1 = AuthPolicy.get_VNodeInfo(node1_address)
 	VNode2 = AuthPolicy.get_VNodeInfo(node2_address)
 	#print(VNode1)
 	#print(VNode2)
+
+	data_args = {}
+	data_args ['project_id'] = '2'
+	data_args ['host_address'] = accounts[0]
 	
-	print(AuthPolicy.verify_AuthToken(node1_address))
+	print(AuthPolicy.verify_AuthToken(data_args))
 	
 	
 if __name__ == "__main__":
-	test_Auth()
+	#test_Auth()
 	#test_pyca()
 	pass
