@@ -157,12 +157,9 @@ class AuthToken(object):
 
 if __name__ == "__main__":
 	http_provider = 'http://localhost:8042'
-	contract_addr = '0x9673bad5e1c174055d070f96c33c92464777e22a'
+	contract_addr = '0x7d2a0199bc5ce701f21c94f8b80219bbfe33258e'
 	contract_config = '../Contracts/build/contracts/AuthToken.json'
 
-	#Get account address
-	accountAddr=AuthToken.getAddress('sam_miner_win7_0', '../Contracts/test/addr_list.json')
-	print("Account: " + accountAddr)
 	#new ABACToken object
 	myAuthToken=AuthToken(http_provider, contract_addr, contract_config)
 	#mytoken.Show_ContractInfo()
@@ -171,40 +168,44 @@ if __name__ == "__main__":
 	#------------------------- test contract API ---------------------------------
 	#getAccounts
 	accounts = myAuthToken.getAccounts()
-	balance = myAuthToken.getBalance('0x950d8eb4825c597534027638c862496ea0d7cf43')
-	print(accounts)
-	print(balance)
+	balance = myAuthToken.getBalance(accounts[0])
+	print("Host accounts: %s" %(accounts))
+	print("coinbase balance:%d" %(balance))
+	print("--------------------------------------------------------------------")
 
 	#------------------------------ call functions test -------------------------
 	#Read valid master data using call
 	token_data=myAuthToken.getValidMaster()
 	AuthToken.print_tokendata(token_data)
+	print("--------------------------------------------------------------------")
 
 	#read Vzone data using call
-	token_data=myAuthToken.getVTrustZone('AF')
+	VZone_ID = 'AF1'
+	token_data=myAuthToken.getVTrustZone(VZone_ID)
 	print(token_data)
+	print("--------------------------------------------------------------------")
 
 	#read Vnode data using call
 	node_address = AuthToken.getAddress('sam_miner_ubuntu_0', '../Contracts/test/addr_list.json')
 	token_data=myAuthToken.getNode(node_address)
 	#token_data=myAuthToken.getNode(accounts[0])
 	print(token_data)
-
+	print("--------------------------------------------------------------------")
 
 	#---------------------------------- Send transact test ----------------------
-	#myAuthToken.initVTrustZone('AF');
+	#myAuthToken.initVTrustZone(VZone_ID);
 
-	node_address = AuthToken.getAddress('sam_miner_ubuntu_0', '../Contracts/test/addr_list.json')
+	node_address = AuthToken.getAddress('RPi1_node_0', '../Contracts/test/addr_list.json')
 	#myAuthToken.addMasterNode(node_address)
 	#myAuthToken.removeMasterNode(node_address)
 
 	
-	#myAuthToken.createVZone('AF')
-	#myAuthToken.changeVZoneMaster('AF', node_address)
-	#myAuthToken.removeVZone('AF')
+	#myAuthToken.createVZone(VZone_ID)
+	#myAuthToken.changeVZoneMaster(VZone_ID, node_address)
+	#myAuthToken.removeVZone(VZone_ID)
 
-	node_address = AuthToken.getAddress('lab1_miner_0', '../Contracts/test/addr_list.json')
-	#myAuthToken.joinVZone('AF', node_address)
-	#myAuthToken.leaveVZone('AF', node_address)
+	node_address = AuthToken.getAddress('RPi2_node_0', '../Contracts/test/addr_list.json')
+	#myAuthToken.joinVZone(VZone_ID, node_address)
+	#myAuthToken.leaveVZone(VZone_ID, node_address)
 
 	pass

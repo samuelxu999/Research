@@ -252,13 +252,15 @@ contract AuthToken {
 	function joinVZone(string Vzone_ID, address node_addr) public returns (bool) {
 		// only allow for supervisor or master who creates Vzone
 		if((supervisor == msg.sender) || (Vzone[Vzone_ID].master == msg.sender)) {
-
+			// check if node has never joined any Vzone
+			if(Vnode[node_addr].node_type == 0) {
 				// set follower node data
 				Vnode[node_addr].node_type = 2;
 				Vnode[node_addr].VZoneID = Vzone_ID;
 
 				return true;
-
+			}
+			return false;
 		}
 		else {
 			return false;
@@ -271,13 +273,15 @@ contract AuthToken {
 	function leaveVZone(string Vzone_ID, address node_addr) public returns (bool) {
 		// only allow for supervisor or master who creates Vzone
 		if((supervisor == msg.sender) || (Vzone[Vzone_ID].master == msg.sender)) {
-
+			// check if node is fellower of zone. Master cannot leave Vzone.
+			if(Vnode[node_addr].node_type == 2) {
 				// clear follower node data
 				Vnode[node_addr].node_type = 0;
 				Vnode[node_addr].VZoneID = '';
 
 				return true;
-
+			}
+			return false;
 		}
 		else {
 			return false;
