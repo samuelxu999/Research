@@ -72,13 +72,11 @@ def get_projects():
 	#Token missing, deny access
 	if(request.data=='{}'):
 		abort(401, {'message': 'Token missing, deny access'})
-		
+
 	#Authorization process
-	#if(not CapPolicy.is_valid_access_request(request)):
-	#if(not RBACPolicy.is_valid_access_request(request)):
 	if(not AuthPolicy.verify_AuthToken(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})
-	return jsonify({'result': 'Succeed', 'projects': projects}), 201
+		abort(401, {'message': 'Identity Authentication fail, deny access'})
+	return jsonify({'result': 'Succeed', 'data': projects}), 201
 	
 #GET req for specific ID
 @app.route('/test/api/v1.0/dt/project', methods=['GET'])
@@ -86,12 +84,10 @@ def get_project():
 	#Token missing, deny access
 	if(request.data=='{}'):
 		abort(401, {'message': 'Token missing, deny access'})
-		
+
 	#Authorization process
-	#if(not CapPolicy.is_valid_access_request(request)):
-	#if(not RBACPolicy.is_valid_access_request(request)):
-	if(not ABACPolicy.verify_AuthToken(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})
+	if(not AuthPolicy.verify_AuthToken(request)):
+		abort(401, {'message': 'Identity Authentication fail, deny access'})
 	#print request.data
 	project_id = request.args.get('project_id', default = 1, type = int)
 	#project_id = int(request.args['project_id'])
@@ -99,19 +95,19 @@ def get_project():
 	project = [project for project in projects if project['id'] == project_id]
 	if len(project) == 0:
 		abort(404, {'message': 'No data found'})
-	return jsonify({'result': 'Succeed', 'project': project[0]}), 201
+	return jsonify({'result': 'Succeed', 'data': project[0]}), 201
 	
 #POST req. add title,description , date-time will be taken current fron system. id will be +1
 @app.route('/test/api/v1.0/dt/create', methods=['POST'])
 def create_project():
 	#Token missing, deny access
-	req_data=json.loads(request.data)
-	if('token_data' not in req_data):
-		abort(401, {'message': 'Token missing, deny access'})
-	
+	req_data=request.json
+	'''if('token_data' not in req_data):
+		abort(401, {'message': 'Token missing, deny access'})'''
+	print(req_data)
 	#Authorization process
-	'''if(not CapPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})'''
+	if(not AuthPolicy.verify_AuthToken(request)):
+		abort(401, {'message': 'Identity Authentication fail, deny access'})
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
@@ -132,13 +128,13 @@ def create_project():
 @app.route('/test/api/v1.0/dt/update', methods=['PUT'])
 def update_project():
 	#Token missing, deny access
-	req_data=json.loads(request.data)
-	if('token_data' not in req_data):
-		abort(401, {'message': 'Token missing, deny access'})
+	req_data=request.json
+	'''if('token_data' not in req_data):
+		abort(401, {'message': 'Token missing, deny access'})'''
 	
 	#Authorization process
-	'''if(not CapPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})'''
+	if(not AuthPolicy.verify_AuthToken(request)):
+		abort(401, {'message': 'Identity Authentication fail, deny access'})
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
@@ -179,13 +175,13 @@ def update_project():
 @app.route('/test/api/v1.0/dt/delete', methods=['DELETE'])
 def delete_project():
 	#Token missing, deny access
-	req_data=json.loads(request.data)
-	if('token_data' not in req_data):
-		abort(401, {'message': 'Token missing, deny access'})
+	req_data=request.json
+	'''if('token_data' not in req_data):
+		abort(401, {'message': 'Token missing, deny access'})'''
 	
 	#Authorization process
-	'''if(not CapPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})'''
+	if(not AuthPolicy.verify_AuthToken(request)):
+		abort(401, {'message': 'Identity Authentication fail, deny access'})
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})

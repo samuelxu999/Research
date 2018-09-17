@@ -30,7 +30,8 @@ contract_config = '../Contracts/build/contracts/AuthToken.json'
 
 #new AuthToken object
 myAuthToken=AuthToken(http_provider, contract_addr, contract_config)
-    
+
+ 
 class WSClient(object):
     
     '''
@@ -105,8 +106,9 @@ def test_search(data_args={}):
 	else:
 		params['project_id']=0
 
-	print(WSClient.Get_Datasets('http://128.226.78.89/test/api/v1.0/dt', data_args))
-	#print(WSClient.Get_DataByID('http://128.226.78.89/test/api/v1.0/dt/project', params, data_args))
+	SP_ipaddress = data_args['host_ip']
+	print(WSClient.Get_Datasets('http://' + SP_ipaddress + '/test/api/v1.0/dt', data_args))
+	#print(WSClient.Get_DataByID('http://' + SP_ipaddress + '/test/api/v1.0/dt/project', params, data_args))
     
 def test_add(data_args={}):
 	project = {
@@ -116,52 +118,56 @@ def test_add(data_args={}):
 		'time': timestr
 	}
 	project_data = {'project_data':project}
-	
-	if(bool(data_args)):
-		project_data['token_data']=data_args['token_data']
-	json_response=WSClient.Create_Data('http://128.226.78.217/test/api/v1.0/dt/create',project_data)
-	#print(json_response['project_data'])
+	project_data['host_address'] = data_args['host_address']	
+
+	SP_ipaddress = data_args['host_ip']
+	json_response=WSClient.Create_Data('http://' + SP_ipaddress + '/test/api/v1.0/dt/create',project_data)
+
 	print(json_response)
     
 def test_update(data_args={}):
 	project = {
-		'id': 2,
 		'title': 'update_test',
 		'description': 'update_description',
 		'date': datestr,
 		'time': timestr
-	}		
+	}	
+	project['id'] = data_args['project_id']
 	project_data = {'project_data':project}
+	project_data['host_address'] = data_args['host_address']
 
-	if(bool(data_args)):
-		project_data['token_data']=data_args['token_data']
-		
-	json_response=WSClient.Update_Data('http://128.226.78.217/test/api/v1.0/dt/update',project_data)
+	SP_ipaddress = data_args['host_ip']
+	json_response=WSClient.Update_Data('http://' + SP_ipaddress + '/test/api/v1.0/dt/update',project_data)
 	print(json_response)
     
 def test_delete(data_args={}):
-	project_data = {'id': 3}
+	#project_data = {'id': 5}
+	project_data = {}
+	project_data['id'] = data_args['project_id']
+	project_data['host_address'] = data_args['host_address']
 
-	if(bool(data_args)):
-		project_data['token_data']=data_args['token_data']
-
-	json_response=WSClient.Delete_Data('http://128.226.78.217/test/api/v1.0/dt/delete',project_data)
+	SP_ipaddress = data_args['host_ip']
+	json_response=WSClient.Delete_Data('http://' + SP_ipaddress + '/test/api/v1.0/dt/delete',project_data)
 	print(json_response)
 
 	
 def test_CapAC():
+	# set host id address
+	host_ip = '128.226.78.89'
 	# get host account
 	accounts = myAuthToken.getAccounts()
+	# set project id
+	project_id = 3
 
-	#params = {'project_id':'2'}
+	# construct data argument
 	data_args = {}
-	data_args ['project_id'] = '2'
+	data_args ['project_id'] = project_id
+	data_args ['host_ip'] = host_ip
 	data_args ['host_address'] = accounts[0]
-	print(data_args)
 	
 	start_time=time.time()
 	
-	#print token_data	
+	#------------------ test data access service API ------------------	
 	#test_add(data_args)
 	#test_update(data_args)
 	#test_delete(data_args)	
@@ -173,15 +179,8 @@ def test_CapAC():
 	time_exec=format(exec_time*1000, '.3f')
 	print("Execution time is:%2.6f" %(exec_time))
 
-	FileUtil.AddLine('exec_time_client.log', time_exec)
-	'''print WSClient.Get_Datasets('http://128.226.78.217/test/api/v1.0/dt', data_args)
-	print WSClient.Get_DataByID('http://128.226.78.217/test/api/v1.0/dt/project',params, data_args)'''
+	#FileUtil.AddLine('exec_time_client.log', time_exec)
 
 if __name__ == "__main__":
-	'''test_search()
-	test_add()
-	test_update()
-	test_delete()
-	test_token()'''
 	test_CapAC()
 	pass
