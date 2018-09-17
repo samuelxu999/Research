@@ -77,6 +77,7 @@ class AuthPolicy(object):
 		json_VNode_client=AuthPolicy.get_VNodeInfo(addr_client);
 		#print(json_VNode_host)
 		#print(json_VNode_client)
+		print("localhost: %s | client: %s" %(json_VNode_host, json_VNode_client))
 
 		#2) authicate identity based on token
 		# compare 
