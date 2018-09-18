@@ -15,6 +15,7 @@ import json
 from flask import Flask, jsonify
 from flask import abort,make_response,request
 from Auth_Policy import AuthPolicy
+from BlendCapAC_Policy import CapPolicy
 
 app = Flask(__name__)
 
@@ -73,9 +74,13 @@ def get_projects():
 	if(request.data=='{}'):
 		abort(401, {'message': 'Token missing, deny access'})
 
-	#Authorization process
+	#Authentication process
 	if(not AuthPolicy.verify_AuthToken(request)):
 		abort(401, {'message': 'Identity Authentication fail, deny access'})
+	#Access control process
+	if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Access right validation fail, deny projects querying'})
+
 	return jsonify({'result': 'Succeed', 'data': projects}), 201
 	
 #GET req for specific ID
@@ -85,9 +90,13 @@ def get_project():
 	if(request.data=='{}'):
 		abort(401, {'message': 'Token missing, deny access'})
 
-	#Authorization process
+	#Authentication process
 	if(not AuthPolicy.verify_AuthToken(request)):
 		abort(401, {'message': 'Identity Authentication fail, deny access'})
+	#Access control process
+	if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Access right validation fail, deny project querying'})
+
 	#print request.data
 	project_id = request.args.get('project_id', default = 1, type = int)
 	#project_id = int(request.args['project_id'])
@@ -105,9 +114,13 @@ def create_project():
 	'''if('token_data' not in req_data):
 		abort(401, {'message': 'Token missing, deny access'})'''
 	print(req_data)
-	#Authorization process
+
+	#Authentication process
 	if(not AuthPolicy.verify_AuthToken(request)):
 		abort(401, {'message': 'Identity Authentication fail, deny access'})
+	#Access control process
+	if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Access right validation fail, deny create action'})
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
@@ -132,9 +145,12 @@ def update_project():
 	'''if('token_data' not in req_data):
 		abort(401, {'message': 'Token missing, deny access'})'''
 	
-	#Authorization process
+	#Authentication process
 	if(not AuthPolicy.verify_AuthToken(request)):
 		abort(401, {'message': 'Identity Authentication fail, deny access'})
+	#Access control process
+	if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Access right validation fail, deny update action'})
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
@@ -179,9 +195,12 @@ def delete_project():
 	'''if('token_data' not in req_data):
 		abort(401, {'message': 'Token missing, deny access'})'''
 	
-	#Authorization process
+	#Authentication process
 	if(not AuthPolicy.verify_AuthToken(request)):
 		abort(401, {'message': 'Identity Authentication fail, deny access'})
+	#Access control process
+	if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Access right validation fail, deny delete action'})
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})

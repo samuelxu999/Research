@@ -71,18 +71,21 @@ class CapPolicy(object):
 	@staticmethod
 	def is_access_valid(token_data, acess_args=''):
 		ret = True
-
-		#token_authorization = token_data[2][1]
-		ac_data=TypesUtil.string_to_json(token_data['authorization'])
-		#print(ac_data)
-
-		if(ac_data['action']!=acess_args['method'] or 
-			ac_data['resource']!=str(acess_args['url_rule']) or 
-			not CapPolicy.is_condition_valid(ac_data['conditions'])):
-			'''print(ac_data['action']!=acess_args['method'])
-			print(ac_data['resource']==str(acess_args['url_rule']))
-			print(CapPolicy.is_condition_valid(ac_data['conditions']))'''
+		if(token_data['authorization'] == ''):
 			ret = False
+		else:
+			#token_authorization = token_data[2][1]
+			ac_data=TypesUtil.string_to_json(token_data['authorization'])
+			#print(ac_data)
+
+			if(ac_data['action']!=acess_args['method'] or 
+				ac_data['resource']!=str(acess_args['url_rule']) or 
+				not CapPolicy.is_condition_valid(ac_data['conditions'])):
+				'''print(ac_data['action']!=acess_args['method'])
+				print(ac_data['resource']==str(acess_args['url_rule']))
+				print(CapPolicy.is_condition_valid(ac_data['conditions']))'''
+				ret = False
+
 		return ret
 
 	# check condition status to verify context requirement
@@ -121,6 +124,7 @@ class CapPolicy(object):
 
 		# 1) get token from smart contract, high overload
 		token_data=CapPolicy.get_token(addr_client)
+		#print(token_data)
 
 		# 2) Save token data to local token.dat
 		#FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
@@ -159,7 +163,7 @@ class CapPolicy(object):
 		#transfer list to string
 		str_time_exec=" ".join(ls_time_exec)
 		#print(str_time_exec)
-		FileUtil.AddLine('exec_time_server.log', str_time_exec)
+		#FileUtil.AddLine('exec_time_server.log', str_time_exec)
 
 		return True
 
