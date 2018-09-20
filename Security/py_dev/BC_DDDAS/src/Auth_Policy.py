@@ -66,20 +66,20 @@ class AuthPolicy(object):
 		# Define ls_time_exec to save executing time to log
 		ls_time_exec=[]
 
-		# get host Vnode data
-		accounts = myAuthToken.getAccounts()
-		json_VNode_host = AuthPolicy.get_VNodeInfo(accounts[0])
-
 		# mark the start time
 		start_time=time.time()
 
-		#1) read data in contract\
+		# 1) get host Vnode data in contract
+		accounts = myAuthToken.getAccounts()
+		json_VNode_host = AuthPolicy.get_VNodeInfo(accounts[0])
+
+		#2) get client Vnode in contract
 		json_VNode_client=AuthPolicy.get_VNodeInfo(addr_client);
 		#print(json_VNode_host)
 		#print(json_VNode_client)
 		print("localhost: %s | client: %s" %(json_VNode_host, json_VNode_client))
 
-		#2) authicate identity based on token
+		#3) authicate identity based on token
 		# compare 
 		ret_indexAuth = (json_VNode_host['VZoneID']==json_VNode_client['VZoneID'])
 
@@ -91,7 +91,7 @@ class AuthPolicy(object):
 		#transfer list to string
 		str_time_exec=" ".join(ls_time_exec)
 		#print(str_time_exec)
-		FileUtil.AddLine('exec_time_server.log', str_time_exec)
+		FileUtil.AddLine('auth_exec_time_server.log', str_time_exec)
 
 		#return index authentication result
 		return ret_indexAuth

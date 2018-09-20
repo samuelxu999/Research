@@ -154,6 +154,7 @@ def test_delete(data_args={}):
 def test_CapAC():
 	# set host id address
 	host_ip = '128.226.78.89'
+	#host_ip = '128.226.77.51'
 	# get host account
 	accounts = myAuthToken.getAccounts()
 	# set project id
@@ -179,8 +180,12 @@ def test_CapAC():
 	time_exec=format(exec_time*1000, '.3f')
 	print("Execution time is:%2.6f" %(exec_time))
 
-	#FileUtil.AddLine('exec_time_client.log', time_exec)
+	FileUtil.AddLine('exec_time_client.log', time_exec)
 
 if __name__ == "__main__":
-	test_CapAC()
+	test_run = 100
+	wait_interval = 1
+	for x in range(test_run):
+		test_CapAC()
+		time.sleep(wait_interval)
 	pass

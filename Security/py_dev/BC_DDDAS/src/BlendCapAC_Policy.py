@@ -134,9 +134,9 @@ class CapPolicy(object):
 		token_data=TypesUtil.string_to_json(read_token[0])'''
 		#print(token_data)
 
-		exec_time=time.time()-start_time
+		'''exec_time=time.time()-start_time
 		ls_time_exec.append(format(exec_time*1000, '.3f'))	
-		print("Execution time of get_token is:%2.6f" %(exec_time))
+		print("Execution time of get_token is:%2.6f" %(exec_time))'''
 
 		#extract access action from request
 		access_data={}
@@ -144,15 +144,15 @@ class CapPolicy(object):
 		access_data['method']=req_args.method
 		#print(access_data)
 
-		start_time=time.time()
+		#start_time=time.time()
 		if(not CapPolicy.is_token_valid(token_data)):
 			print('token valid fail')
 			return False
-		exec_time=time.time()-start_time
+		'''exec_time=time.time()-start_time
 		ls_time_exec.append(format(exec_time*1000, '.3f'))	
-		print("Execution time of is_token_valid is:%2.6f" %(exec_time))
+		print("Execution time of is_token_valid is:%2.6f" %(exec_time))'''
 
-		start_time=time.time()
+		#start_time=time.time()
 		if(not CapPolicy.is_access_valid(token_data, access_data)):
 			print('access valid fail')
 			return False
@@ -163,7 +163,7 @@ class CapPolicy(object):
 		#transfer list to string
 		str_time_exec=" ".join(ls_time_exec)
 		#print(str_time_exec)
-		#FileUtil.AddLine('exec_time_server.log', str_time_exec)
+		FileUtil.AddLine('capac_exec_time_server.log', str_time_exec)
 
 		return True
 
