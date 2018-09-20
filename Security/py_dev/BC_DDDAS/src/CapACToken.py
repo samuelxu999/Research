@@ -147,8 +147,8 @@ if __name__ == "__main__":
 	#------------------------------ call functions test -------------------------
 	#Read token data using call
 	node_address = CapACToken.getAddress('sam_miner_ubuntu_0', '../Contracts/test/addr_list.json')
-	token_data=myCapACtoken.getCapTokenStatus(node_address)
-	#token_data=myCapACtoken.getCapTokenStatus(accounts[0]);
+	#token_data=myCapACtoken.getCapTokenStatus(node_address)
+	token_data=myCapACtoken.getCapTokenStatus(accounts[0]);
 	CapACToken.print_tokendata(token_data)	
 	print("--------------------------------------------------------------------")
 

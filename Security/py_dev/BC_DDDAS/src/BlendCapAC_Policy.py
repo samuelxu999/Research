@@ -119,20 +119,26 @@ class CapPolicy(object):
 		#Define ls_time_exec to save executing time to log
 		ls_time_exec=[]
 
+		# define branch control flag
+		query_src = 0 # smart contract:0, local cache:1 
+		is_cachetoken = 0 # cache data:1, not cache data:0
+
 		#get token data
 		start_time=time.time()
+		
+		if(query_src == 0):
+			# ----------a) query token from smart contract ------------
+			token_data=CapPolicy.get_token(addr_client)
+			#print(token_data)
 
-		# 1) get token from smart contract, high overload
-		token_data=CapPolicy.get_token(addr_client)
-		#print(token_data)
-
-		# 2) Save token data to local token.dat
-		#FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
-
-		# 3) read token from local data, low overload
-		'''read_token=FileUtil.ReadLines('token.dat')
-		token_data=TypesUtil.string_to_json(read_token[0])'''
-		#print(token_data)
+			if(is_cachetoken == 1):				
+				# 2) Save token data to local token.dat
+				FileUtil.AddLine('ACtoken.dat', TypesUtil.json_to_string(token_data))
+		else:
+			# ----------b) read authToken from local cached file ------------
+			read_token=FileUtil.ReadLines('ACtoken.dat')
+			token_data=TypesUtil.string_to_json(read_token[0])
+			#print(token_data)
 
 		'''exec_time=time.time()-start_time
 		ls_time_exec.append(format(exec_time*1000, '.3f'))	

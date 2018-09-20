@@ -66,17 +66,40 @@ class AuthPolicy(object):
 		# Define ls_time_exec to save executing time to log
 		ls_time_exec=[]
 
+		# define branch control flag
+		query_src = 0 # smart contract:0, local cache:1 
+		is_cachetoken = 0 # cache data:1, not cache data:0
+
 		# mark the start time
 		start_time=time.time()
 
-		# 1) get host Vnode data in contract
-		accounts = myAuthToken.getAccounts()
-		json_VNode_host = AuthPolicy.get_VNodeInfo(accounts[0])
+		if(query_src == 0):
+			# ----------a) query token from smart contract ------------
+			# 1) get host Vnode data in contract
+			accounts = myAuthToken.getAccounts()
+			json_VNode_host = AuthPolicy.get_VNodeInfo(accounts[0])
 
-		#2) get client Vnode in contract
-		json_VNode_client=AuthPolicy.get_VNodeInfo(addr_client);
-		#print(json_VNode_host)
-		#print(json_VNode_client)
+			#2) get client Vnode in contract
+			json_VNode_client=AuthPolicy.get_VNodeInfo(addr_client);
+			#print(json_VNode_host)
+			#print(json_VNode_client)
+
+			if(is_cachetoken == 1):
+				json_authToken = {}
+				json_authToken['host'] = json_VNode_host
+				json_authToken['client'] = json_VNode_client
+				#print(json_authToken)
+
+				# 2) Save token data to local token.dat
+				FileUtil.AddLine('authToken.dat', TypesUtil.json_to_string(json_authToken))
+		else:
+			# ----------b) read authToken from local cached file ------------
+			# 3) read token from local data, low overload
+			read_token=FileUtil.ReadLines('authToken.dat')
+			token_data=TypesUtil.string_to_json(read_token[0])
+			json_VNode_host = token_data['host']
+			json_VNode_client = token_data['client']
+
 		print("localhost: %s | client: %s" %(json_VNode_host, json_VNode_client))
 
 		#3) authicate identity based on token
