@@ -57,8 +57,10 @@ class ExecTime(object):
     calculate execution time by using average
     '''
     @staticmethod
-    def calc_exec_time(ls_exec_time):    
-        ave_exec_time=[0.0, 0.0, 0.0]
+    def calc_exec_time(ls_exec_time):  
+        ave_exec_time = []
+        for i in range(len(ls_exec_time[0])):  
+            ave_exec_time.append(0.0)
         
         for exec_time in ls_exec_time:
             for i in range(len(exec_time)):
@@ -221,10 +223,11 @@ class VisualizeData(object):
 
 def plot_bar():
     #exec_time_data=ExecTime.read_exec_time('test_results/exec_time_edge.log')
-    merged_data = ExecTime.merge_exec_time('results/edge/exec_time_client_ac.log', 
-                                           'results/edge/auth_exec_time_server.log', 
-                                           'results/edge/capac_exec_time_server.log')
+    merged_data = ExecTime.merge_exec_time('results/nocache/edge/exec_time_client_ac.log', 
+                                           'results/nocache/edge/auth_exec_time_server.log', 
+                                           'results/nocache/edge/capac_exec_time_server.log')
     #print(merged_data)
+    ave_tmp=[0.0, 0.0, 0.0]
     ave_exec_time=ExecTime.calc_exec_time(merged_data)
     
     obj_label=['Identity Authentication', 'Capability-based Access Control', 'Total Delay']
@@ -237,17 +240,18 @@ def plot_groupbar_Platform():
     
     #prepare data
     ls_exec_time=[]
-    edge_exec_time = ExecTime.merge_exec_time('results/edge/exec_time_client_ac.log', 
-                                              'results/edge/auth_exec_time_server.log', 
-                                              'results/edge/capac_exec_time_server.log')
-    
-    edge_ave_exec_time=ExecTime.calc_exec_time(edge_exec_time)
 
-    fog_exec_time = ExecTime.merge_exec_time('results/fog/exec_time_client_ac.log', 
-                                             'results/fog/auth_exec_time_server.log', 
-                                             'results/fog/capac_exec_time_server.log')
+    edge_exec_time = ExecTime.merge_exec_time('results/nocache/edge/exec_time_client_ac.log', 
+                                              'results/nocache/edge/auth_exec_time_server.log', 
+                                              'results/nocache/edge/capac_exec_time_server.log')
     
-    fog_ave_exec_time=ExecTime.calc_exec_time(fog_exec_time)
+    edge_ave_exec_time = ExecTime.calc_exec_time(edge_exec_time)
+
+    fog_exec_time = ExecTime.merge_exec_time('results/nocache/fog/exec_time_client_ac.log', 
+                                             'results/nocache/fog/auth_exec_time_server.log', 
+                                             'results/nocache/fog/capac_exec_time_server.log')
+    
+    fog_ave_exec_time = ExecTime.calc_exec_time(fog_exec_time)
     
     #append data to list
     ls_exec_time.append(edge_ave_exec_time)
@@ -257,19 +261,32 @@ def plot_groupbar_Platform():
     
 def plot_lines():
     #exec_time_data=ExecTime.merge_data('BlendCapAC_optimized/exec_time_client.log', 'CapVsNoCap/exec_time_client_NoCap.log')
-    file_list=['results/edge/exec_time_client_ac.log']
-    file_list.append('results/edge/exec_time_client_noac.log')
-    file_list.append('results/fog/exec_time_client_ac.log')
-    file_list.append('results/fog/exec_time_client_noac.log')
+    file_list=['results/cache/edge/exec_time_client_ac.log']
+    file_list.append('results/cache/edge/exec_time_client_noac.log')
+    file_list.append('results/cache/fog/exec_time_client_ac.log')
+    file_list.append('results/cache/fog/exec_time_client_noac.log')
     exec_time_data=ExecTime.merge_files(file_list)
     
     #print(exec_time_data)
     obj_label=['BlendCAC on edge', 'No Access Control on edge', 'BlendCAC on fog', 'No Access Control on fog']
     VisualizeData.plot_ACVsNoAC("", obj_label, 'Time (ms)', exec_time_data)
+
+def ave_Totaldelay():
+    #exec_time_data=ExecTime.merge_data('BlendCapAC_optimized/exec_time_client.log', 'CapVsNoCap/exec_time_client_NoCap.log')
+    file_list=['results/cache/edge/exec_time_client_ac.log']
+    file_list.append('results/cache/edge/exec_time_client_noac.log')
+    file_list.append('results/cache/fog/exec_time_client_ac.log')
+    file_list.append('results/cache/fog/exec_time_client_noac.log')
+    exec_time_data=ExecTime.merge_files(file_list)
+    
+    ave_exec_time=ExecTime.calc_exec_time(exec_time_data)
+    
+    print(ave_exec_time)
     
 if __name__ == "__main__":
     #matplotlib.rcParams.update({'font.size': 16})
     #plot_bar()
     #plot_groupbar_Platform()
-    plot_lines()
+    #plot_lines()
+    ave_Totaldelay()
     pass
