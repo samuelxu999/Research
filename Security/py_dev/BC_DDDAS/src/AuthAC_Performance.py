@@ -236,7 +236,7 @@ def plot_bar():
     
 def plot_groupbar_Platform():
     xtick_label=['Identity Authentication', 'Capability-based Access Control', 'Total Delay']
-    legend_label=['Edge', 'Fog']
+    legend_label=['Satellites', 'Ground communication']
     
     #prepare data
     ls_exec_time=[]
@@ -268,7 +268,7 @@ def plot_lines():
     exec_time_data=ExecTime.merge_files(file_list)
     
     #print(exec_time_data)
-    obj_label=['BlendCAC on edge', 'No Access Control on edge', 'BlendCAC on fog', 'No Access Control on fog']
+    obj_label=['BlendCAC on satellites', 'No Access Control on satellites', 'BlendCAC on ground communication', 'No Access Control on ground communication']
     VisualizeData.plot_ACVsNoAC("", obj_label, 'Time (ms)', exec_time_data)
 
 def ave_Totaldelay():
