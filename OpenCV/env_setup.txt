@@ -12,15 +12,15 @@ A) This document introduce how to setup opencv develoment environment on Ubuntu-
 	git clone https://github.com/opencv/opencv_contrib.git
     
     --- Install required packages:
-	[compiler] 		sudo apt-get install build-essential
-	[required] 		sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
-	[python2]  		sudo apt-get install python-tk python-pip python-dev python2-setuptools
-	[python3]  		sudo apt-get install python3-tk python3-pip python3-dev python3-setuptools
-	[pip]			sudo python -m pip install --upgrade pip & sudo python3.5 -m pip install --upgrade pip
-	[numpy]    		sudo python2.7 -m pip install numpy & sudo python3.5 -m pip install numpy
-	[matplotlib] 	sudo python2.7 -m pip install matplotlib & sudo python3.5 -m pip install matplotlib
-	[qt]       		sudo apt-get install libqt4-dev libvtk5-qt4-dev
-	[optional] 		sudo apt-get install libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
+	[compiler] 		sudo apt-get install -y build-essential
+	[required] 		sudo apt-get install -y cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
+	[python2]  		sudo apt-get install -y python-tk python-pip python-dev python2-setuptools
+	[python3]  		sudo apt-get install -y python3-tk python3-pip python3-dev python3-setuptools
+	[pip]			sudo python -m pip install --upgrade pip && sudo python3.5 -m pip install --upgrade pip
+	[numpy]    		sudo python2.7 -m pip install numpy && sudo python3.5 -m pip install numpy
+	[matplotlib] 	sudo python2.7 -m pip install matplotlib && sudo python3.5 -m pip install matplotlib
+	[qt]       		sudo apt-get -y install libqt4-dev libvtk5-qt4-dev
+	[optional] 		sudo apt-get -y install libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
     
     --- Building OpenCV from Source Using CMake
 	a) Create a temporary directory, which we denote as <cmake_build_dir>, where you want to put the generated Makefiles, project files as well the object files and output binaries and enter there.
