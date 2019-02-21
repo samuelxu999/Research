@@ -1,0 +1,19 @@
+{
+	"lenovo_miner1_0": "0x3d40fad73c91aed74ffbc1f09f4cde7cce533671",
+	"lenovo_miner1_1": "0x62c7db36889cf94288f8bc567f3d32a4aa8f90a0",
+	"lenovo_miner2_0": "0x13b126c92d0fc254c4a8bf414b60953d3fdcd9cb",
+	"lenovo_miner2_1": "0x2315f8459dad537954e1b61064f3fc870b6bcf14",
+	"lenovo_docker": "0x7e16a0165e2000b0b1d4e62d892b8fdef6554e7a",
+	"sam_ubuntu": "0xdcbe88e1ba58cd7eae1ec9cc9149b5788c7b6485",
+	"ussc2104-lab1": "0x7881d778cc85ff7b385e72cd960b456e1ab22f95",
+	"ussc2104-lab2": "0x7d0b094d23799467622c0f37488f8e272b1bbbc1",
+	"ussc2104-lab3": "0x2299e61539cff6d840826fedc4dcf238eeb38754",
+	"ussc2104-lab4": "0xd67b57e6ae47623f875979f203c4c8d510efe5ea",
+	"PI_Node_1": "0x9c21f42667cd2e9be8f9b18dff1fcd4fd4d9e5d5",
+	"PI_Node_2": "0x64de565621625c4783cf5cdcf2f00a8c3db83e1c",
+	"PI_Node_3": "0x8c432dad57e9a3d382edc8efb2150a4085745032",
+	"TKB1_node1": "0xbde8af54550e226ae573391d590a76c9a0daa53e",
+	"RegisterToken": "0xce449ca741a8a28dc53d6900d00aa8293e2170be",
+	"SummaryToken": "0x67b82d3c12a4d5a2cf34b0636cc2e8e1fd5121dd",
+	"PatientACToken": "0x56978670d986d383e1009aefba0c5d9b12502e52"
+}
