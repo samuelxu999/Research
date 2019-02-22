@@ -166,7 +166,7 @@ def test_CapAC():
 	data_args = {}
 	data_args ['project_id'] = project_id
 	data_args ['host_ip'] = host_ip
-	data_args ['host_address'] = accounts[0]
+	data_args ['host_address'] = test_address
 	
 	start_time=time.time()
 	
@@ -185,7 +185,7 @@ def test_CapAC():
 	FileUtil.AddLine('exec_time_client.log', time_exec)
 
 if __name__ == "__main__":
-	test_run = 100
+	test_run = 1
 	wait_interval = 1
 	for x in range(test_run):
 		test_CapAC()

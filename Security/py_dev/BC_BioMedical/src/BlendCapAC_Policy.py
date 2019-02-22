@@ -14,6 +14,8 @@ import time
 import datetime
 import json
 import sys
+from RegisterToken import RegisterToken
+from SummaryToken import SummaryToken
 from PatientACToken import PatientACToken
 from utilities import DatetimeUtil, TypesUtil, FileUtil
 from flask import request
@@ -23,24 +25,54 @@ datestr=now.strftime("%Y-%m-%d")
 timestr=now.strftime("%H:%M:%S")
 
 #global variable
-http_provider = 'http://localhost:8042'
-contract_addr = PatientACToken.getAddress('PatientACToken', './addr_list.json')
-contract_config = '../contracts/build/contracts/PatientACToken.json'
 
-#new PatientACToken object
-myPatientACtoken=PatientACToken(http_provider, contract_addr, contract_config)
+global_config = {}
+global_config['http_provider'] = 'http://localhost:8042'
+global_config['Register_addr'] = RegisterToken.getAddress('RegisterToken', './addr_list.json')
+global_config['Register_contract'] = '../contracts/build/contracts/RegisterToken.json'
+global_config['Summary_addr'] = SummaryToken.getAddress('SummaryToken', './addr_list.json')
+global_config['Summary_contract'] = '../contracts/build/contracts/SummaryToken.json'
+global_config['Patient_addr'] = PatientACToken.getAddress('PatientACToken', './addr_list.json')
+global_config['Patient_contract'] = '../contracts/build/contracts/PatientACToken.json'
+global_config['address_0'] = '0x0000000000000000000000000000000000000000'
+
 
 '''
-Capability access control policy management
+Identity information management
 '''
-class CapPolicy(object):
+class IdentityInfo(object):
+	# New IdentityInfo object
+	def __init__(self, config_json):
+		self.global_config = config_json
+		self.myUserToken = RegisterToken(self.global_config['http_provider'], self.global_config['Register_addr'], self.global_config['Register_contract'])
+		self.mySummaryToken=SummaryToken(self.global_config['http_provider'], self.global_config['Summary_addr'], self.global_config['Summary_contract'])
+		self.myPatientACToken=PatientACToken(self.global_config['http_provider'], self.global_config['Patient_addr'], self.global_config['Patient_contract'])
 
-	# get token data from smart contract, return json fromat
-	@staticmethod
-	def get_token(accountAddr):
-		token_data=myPatientACtoken.getCapTokenStatus(accountAddr);
+	def ShowIdentity(self, user_address):
+		#new RegisterToken object
+		self.myUserToken=RegisterToken(self.global_config['http_provider'], self.global_config['Register_addr'], self.global_config['Register_contract'])
+		user_data=self.myUserToken.getUserInfo(user_address)
+
+		user_info={}
+		user_info['UserID'] = user_data[0] 
+		user_info['User_address'] = user_address
+		user_info['SummaryAddress'] = user_data[1] 
+
+		if(user_info['SummaryAddress']!= self.global_config['address_0']):
+			#new SummaryToken object
+			self.mySummaryToken=SummaryToken(self.global_config['http_provider'], user_info['SummaryAddress'], self.global_config['Summary_contract'])
+			summary_data=self.mySummaryToken.getSummaryInfo(user_address)
+			user_info['PatientACAddress'] = summary_data[0] 
+		else:
+			user_info['PatientACAddress'] = self.global_config['address_0']
+
+		if(user_info['PatientACAddress']!= self.global_config['address_0']):
+			#new SummaryToken object
+			self.myPatientACToken=PatientACToken(self.global_config['http_provider'], user_info['PatientACAddress'], self.global_config['Patient_contract'])			
+		
+		token_data=self.myPatientACToken.getCapTokenStatus(user_address)
+
 		json_token={}
-
 		#Add status information
 		tokenStatus = token_data
 		json_token['id'] = tokenStatus[0]
@@ -51,7 +83,39 @@ class CapPolicy(object):
 		json_token['expireddate'] = tokenStatus[5]
 		json_token['authorization'] = tokenStatus[6]
 
+		user_info['CapACToken'] = json_token
+
+
+		return user_info
+
+
+
+'''
+Capability access control policy management
+'''
+class CapPolicy(object):
+
+	# get token data from smart contract, return json fromat
+	@staticmethod
+	def get_token(accountAddr):
+		myIdentityInfo=IdentityInfo(global_config)
+		User_data = myIdentityInfo.ShowIdentity(accountAddr)
+		# get CapACToken data
+		json_token = User_data['CapACToken'] 
+		
 		return json_token
+
+	# check identity status
+	@staticmethod
+	def is_identity_valid(user_data):
+		ret = True
+		#check enable flag
+		if(user_data['UserID']=='' or 
+			user_data['SummaryAddress']==global_config['address_0'] or
+			user_data['PatientACAddress']==global_config['address_0']):
+			ret = False
+
+		return ret
 
 	# check token status, like status flag, issue and expire time.
 	@staticmethod
@@ -123,26 +187,32 @@ class CapPolicy(object):
 		query_src = 0 # smart contract:0, local cache:1 
 		is_cachetoken = 0 # cache data:1, not cache data:0
 
-		#get token data
+		# ======================= get smart contract data =======================
 		start_time=time.time()
 		
 		if(query_src == 0):
 			# ----------a) query token from smart contract ------------
-			token_data=CapPolicy.get_token(addr_client)
+			myIdentityInfo=IdentityInfo(global_config)
+			User_data = myIdentityInfo.ShowIdentity(addr_client)
+			# get CapACToken data
+			#token_data = User_data['CapACToken'] 
+			#token_data=CapPolicy.get_token(addr_client)
 			#print(token_data)
 
 			if(is_cachetoken == 1):				
 				# 2) Save token data to local token.dat
-				FileUtil.AddLine('ACtoken.dat', TypesUtil.json_to_string(token_data))
+				FileUtil.AddLine('IdentityInfo.dat', TypesUtil.json_to_string(User_data))
 		else:
 			# ----------b) read authToken from local cached file ------------
-			read_token=FileUtil.ReadLines('ACtoken.dat')
-			token_data=TypesUtil.string_to_json(read_token[0])
-			#print(token_data)
+			read_token=FileUtil.ReadLines('IdentityInfo.dat')
+			User_data = TypesUtil.string_to_json(read_token[0])
+		
+		token_data=User_data['CapACToken'] 
+		#print(token_data)
 
-		'''exec_time=time.time()-start_time
+		exec_time=time.time()-start_time
 		ls_time_exec.append(format(exec_time*1000, '.3f'))	
-		print("Execution time of get_token is:%2.6f" %(exec_time))'''
+		print("Execution time of get UserData is:%2.6f" %(exec_time))
 
 		#extract access action from request
 		access_data={}
@@ -150,10 +220,17 @@ class CapPolicy(object):
 		access_data['method']=req_args.method
 		#print(access_data)
 
-		#start_time=time.time()
-		if(not CapPolicy.is_token_valid(token_data)):
-			print('token valid fail')
+		# ======================= AC process =======================
+		start_time=time.time()
+
+		if(not CapPolicy.is_identity_valid(User_data)):
+			print('Identity valid fail')
 			return False
+
+		if(not CapPolicy.is_token_valid(token_data)):
+			print('Token valid fail')
+			return False
+
 		'''exec_time=time.time()-start_time
 		ls_time_exec.append(format(exec_time*1000, '.3f'))	
 		print("Execution time of is_token_valid is:%2.6f" %(exec_time))'''
@@ -175,27 +252,30 @@ class CapPolicy(object):
 
 def test_CapACToken():
 
+	myIdentityInfo=IdentityInfo(global_config)
+
+	myUserToken=myIdentityInfo.myUserToken
 	# ========== get host account =========
-	accounts = myPatientACtoken.getAccounts()
-	balance = myPatientACtoken.getBalance(accounts[0])
+	accounts = myUserToken.getAccounts()
+	balance = myUserToken.getBalance(accounts[0])
 	print("Host accounts: %s" %(accounts))
 	print("coinbase balance:%d" %(balance))
 	print("--------------------------------------------------------------------")
 
 	# ========== Get account address =========
-	user_address = PatientACToken.getAddress('sam_ubuntu', '../contracts/test/addr_list.json')
-	patientACToken_address = PatientACToken.getAddress('PatientACToken', '../contracts/test/addr_list.json')
+	user_address = PatientACToken.getAddress('sam_ubuntu', './addr_list.json')
+	#patientACToken_address = PatientACToken.getAddress('PatientACToken', '../contracts/test/addr_list.json')
 	print("User Account: " + user_address)
 
-	# ============== Read token data using CapACToken call getCapTokenStatus() ========
-	'''token_data=myCapACToken.getCapTokenStatus(node1_address);
-	CapACToken.print_tokendata(token_data)'''
+	# ============== Read token data using ShowIdentity  ========
+	User_data = myIdentityInfo.ShowIdentity(user_address)
+	print(User_data)
 
 	# =========  Read token data using CapPolicy function get_token() =============
-	token_data=CapPolicy.get_token(user_address)
-	print(token_data['VZone_master'])
+	token_data=User_data['CapACToken']
+	'''print(token_data['VZone_master'])
 	ac = TypesUtil.string_to_json(token_data['authorization'])
-	print(ac['resource'])
+	print(ac['resource'])'''
 
 	# =========  Write token data to 'token.dat' =============
 	#FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
@@ -206,7 +286,11 @@ def test_CapACToken():
 	print(json_token['initialized'])
 	print(json_token['issuedate'])'''
 
-	print(CapPolicy.is_token_valid(token_data))
+	if(token_data!={}):
+		print(CapPolicy.is_token_valid(token_data))		
+	else:
+		print(False)
+
 
 	#ret=CapPolicy.is_valid_access_request()
 	
