@@ -185,7 +185,7 @@ def test_CapAC():
 	FileUtil.AddLine('exec_time_client.log', time_exec)
 
 if __name__ == "__main__":
-	test_run = 1
+	test_run = 100
 	wait_interval = 1
 	for x in range(test_run):
 		test_CapAC()

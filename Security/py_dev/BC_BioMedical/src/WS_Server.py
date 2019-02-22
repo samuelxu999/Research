@@ -23,21 +23,23 @@ now = datetime.datetime.now()
 datestr=now.strftime("%Y-%m-%d")
 timestr=now.strftime("%H:%M:%S")
 
+Secirity_ENABLE = 0
+
 #Defining dictionary dataset model
 projects = [
     {
         'id': 1,
 		'title':u'patient 1 test record',
-		'description':u'This is test record to demonstrate access control mechanism!',
-		'date':u'08-28-2018',
-        'time': u'Morning'
+		'description':u'Patient 1 dummy record to test access control mechanism!',
+		'date':u'11-28-2018',
+        'time': u'13:00 pm'
     },
     {
         'id': 2,
         'title':u'patient 2 test record',
-        'description':u'You can read the record if you have access right!',
-		'date':u'8-29-2018',
-		'time': u'12:00 am'
+        'description':u'Patient 2 dummy record to test access control mechanism!',
+		'date':u'02-14-2019',
+		'time': u'10:00 am'
     }
 ]
 
@@ -74,9 +76,10 @@ def get_projects():
 	if(request.data=='{}'):
 		abort(401, {'message': 'Token missing, deny access'})
 
-	#Access control process
-	if(not CapPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Access right validation fail, deny projects querying'})
+	if(Secirity_ENABLE==1):
+		#Access control process
+		if(not CapPolicy.is_valid_access_request(request)):
+			abort(401, {'message': 'Access right validation fail, deny projects querying'})
 
 	return jsonify({'result': 'Succeed', 'data': projects}), 201
 	
