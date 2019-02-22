@@ -21,18 +21,13 @@ class ExecTime(object):
     merge execution time from client and server
     '''
     @staticmethod
-    def merge_exec_time(client_log, server_auth_log, server_ac_log):
+    def merge_exec_time(client_log, server_ac_log):
         #------------ read data from log file -------------
         f_client = open(client_log, 'r')
         ls_client=f_client.readlines()
         #close file
-        f_client.close()
-        
-        f_auth_server = open(server_auth_log, 'r')
-        ls_auth_server=f_auth_server.readlines()
-        #close file
-        f_auth_server.close()
-        
+        f_client.close()        
+       
         f_ac_server = open(server_ac_log, 'r')
         ls_ac_server=f_ac_server.readlines()
         #close file
@@ -44,11 +39,10 @@ class ExecTime(object):
         
         for i in range(line_len):
             ls_client[i]=ls_client[i].replace('\n','')
-            ls_auth_server[i]=ls_auth_server[i].replace('\n','')
             ls_ac_server[i]=ls_ac_server[i].replace('\n','')
-            if(ls_client[i]=='' or ls_auth_server[i]=='' or ls_ac_server[i]==''):
+            if(ls_client[i]=='' or ls_ac_server[i]==''):
                 continue
-            tmp_str=ls_auth_server[i] +" " + ls_ac_server[i] +" " + ls_client[i]
+            tmp_str = ls_ac_server[i] + " " + ls_client[i]
             exec_time_data.append(tmp_str.split())
         
         return exec_time_data
@@ -131,7 +125,7 @@ class VisualizeData(object):
         #plt.xticks(x_pos, x_label)
         plt.xticks(x_pos, [])
         plt.ylabel(y_label)
-        plt.ylim(0, 300)
+        plt.ylim(0, 90)
         plt.title(title_name)
         
         #handles, labels = ax.get_legend_handles_labels()
@@ -193,29 +187,24 @@ class VisualizeData(object):
     @staticmethod
     def plot_ACVsNoAC(title_name, x_label, y_label, ls_data):
         x=[]
-        AC_edge_delay=[]
-        NoAC_edge_delay=[]
         AC_fog_delay=[]  
         NoAC_fog_delay=[]      
         #prepare data for plot
         i=1
         for record in ls_data:
             x.append(i)
-            AC_edge_delay.append(record[0])
-            NoAC_edge_delay.append(record[1])
-            AC_fog_delay.append(record[2])
-            NoAC_fog_delay.append(record[3])
+            AC_fog_delay.append(record[0])
+            NoAC_fog_delay.append(record[1])
             i+=1
             
         line_list=[]
-        line_list.append(plt.plot(x, AC_edge_delay, lw=1.0, color='orange'))
-        line_list.append(plt.plot(x, NoAC_edge_delay, lw=1.0, color='g'))
-        line_list.append(plt.plot(x, AC_fog_delay, lw=1.0, color='r'))
-        line_list.append(plt.plot(x, NoAC_fog_delay, lw=1.0, color='b'))
+        line_list.append(plt.plot(x, AC_fog_delay, lw=1.0, color='orange'))
+        line_list.append(plt.plot(x, NoAC_fog_delay, lw=1.0, color='g'))
+
         plt.xlabel('Run cycles', fontsize=14)
         plt.ylabel(y_label, fontsize=14)
         plt.title(title_name)
-        #plt.ylim(0, 300)
+        plt.ylim(0, 120)
         plt.legend(x_label, loc='upper right', fontsize=14)
         
         #show plot
@@ -223,60 +212,31 @@ class VisualizeData(object):
 
 def plot_bar():
     #exec_time_data=ExecTime.read_exec_time('test_results/exec_time_edge.log')
-    merged_data = ExecTime.merge_exec_time('results/nocache/edge/exec_time_client_ac.log', 
-                                           'results/nocache/edge/auth_exec_time_server.log', 
-                                           'results/nocache/edge/capac_exec_time_server.log')
+    merged_data = ExecTime.merge_exec_time('results/exec_time_client_ac.log', 
+                                           'results/capac_exec_time_server.log')
     #print(merged_data)
     ave_tmp=[0.0, 0.0, 0.0]
     ave_exec_time=ExecTime.calc_exec_time(merged_data)
     
-    obj_label=['Identity Authentication', 'Capability-based Access Control', 'Total Delay']
+    obj_label=['Identity Querying', 'Access Control', 'Total Delay']
     
     VisualizeData.plot_bar("", obj_label, 'Time (ms)', ave_exec_time)
     
-def plot_groupbar_Platform():
-    xtick_label=['Identity Authentication', 'Capability-based Access Control', 'Total Delay']
-    legend_label=['Satellites', 'Ground communication']
-    
-    #prepare data
-    ls_exec_time=[]
-
-    edge_exec_time = ExecTime.merge_exec_time('results/nocache/edge/exec_time_client_ac.log', 
-                                              'results/nocache/edge/auth_exec_time_server.log', 
-                                              'results/nocache/edge/capac_exec_time_server.log')
-    
-    edge_ave_exec_time = ExecTime.calc_exec_time(edge_exec_time)
-
-    fog_exec_time = ExecTime.merge_exec_time('results/nocache/fog/exec_time_client_ac.log', 
-                                             'results/nocache/fog/auth_exec_time_server.log', 
-                                             'results/nocache/fog/capac_exec_time_server.log')
-    
-    fog_ave_exec_time = ExecTime.calc_exec_time(fog_exec_time)
-    
-    #append data to list
-    ls_exec_time.append(edge_ave_exec_time)
-    ls_exec_time.append(fog_ave_exec_time)
-
-    VisualizeData.plot_groupbar_Platform(xtick_label,'Time (ms)', legend_label, ls_exec_time)
-    
+   
 def plot_lines():
     #exec_time_data=ExecTime.merge_data('BlendCapAC_optimized/exec_time_client.log', 'CapVsNoCap/exec_time_client_NoCap.log')
-    file_list=['results/cache/edge/exec_time_client_ac.log']
-    file_list.append('results/cache/edge/exec_time_client_noac.log')
-    file_list.append('results/cache/fog/exec_time_client_ac.log')
-    file_list.append('results/cache/fog/exec_time_client_noac.log')
+    file_list=['results/exec_time_client_ac.log']
+    file_list.append('results/exec_time_client_noac.log')
     exec_time_data=ExecTime.merge_files(file_list)
     
     #print(exec_time_data)
-    obj_label=['BlendCAC on satellites', 'No Access Control on satellites', 'BlendCAC on ground communication', 'No Access Control on ground communication']
+    obj_label=['BlendCAC on Patient Data Sharing', 'No Access Control on Patient Data Sharing']
     VisualizeData.plot_ACVsNoAC("", obj_label, 'Time (ms)', exec_time_data)
 
 def ave_Totaldelay():
     #exec_time_data=ExecTime.merge_data('BlendCapAC_optimized/exec_time_client.log', 'CapVsNoCap/exec_time_client_NoCap.log')
-    file_list=['results/cache/edge/exec_time_client_ac.log']
-    file_list.append('results/cache/edge/exec_time_client_noac.log')
-    file_list.append('results/cache/fog/exec_time_client_ac.log')
-    file_list.append('results/cache/fog/exec_time_client_noac.log')
+    file_list=['results/exec_time_client_ac.log']
+    file_list.append('results/exec_time_client_noac.log')
     exec_time_data=ExecTime.merge_files(file_list)
     
     ave_exec_time=ExecTime.calc_exec_time(exec_time_data)
@@ -286,7 +246,6 @@ def ave_Totaldelay():
 if __name__ == "__main__":
     #matplotlib.rcParams.update({'font.size': 16})
     #plot_bar()
-    #plot_groupbar_Platform()
     #plot_lines()
-    ave_Totaldelay()
+    #ave_Totaldelay()
     pass
