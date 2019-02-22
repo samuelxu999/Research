@@ -103,8 +103,8 @@ if __name__ == "__main__":
 	print("coinbase balance:%d" %(balance))
 	print("--------------------------------------------------------------------")
 
-	user_address = SummaryToken.getAddress('sam_ubuntu', '../contracts/test/addr_list.json')
-	patientACToken_address = SummaryToken.getAddress('TKB1_node1', '../contracts/test/addr_list.json')
+	user_address = SummaryToken.getAddress('sam_ubuntu', './addr_list.json')
+	patientACToken_address = SummaryToken.getAddress('PatientACToken', './addr_list.json')
 
 	#------------------------------ call functions test -------------------------
 	#Read valid master data using call

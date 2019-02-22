@@ -137,8 +137,8 @@ if __name__ == "__main__":
 	print("coinbase balance:%d" %(balance))
 	print("--------------------------------------------------------------------")
 
-	user_address = PatientACToken.getAddress('sam_ubuntu', '../contracts/test/addr_list.json')
-	patientACToken_address = PatientACToken.getAddress('PatientACToken', '../contracts/test/addr_list.json')
+	user_address = PatientACToken.getAddress('sam_ubuntu', './addr_list.json')
+	patientACToken_address = PatientACToken.getAddress('PatientACToken', './addr_list.json')
 
 	#------------------------------ call functions test -------------------------
 	#Read token data using call

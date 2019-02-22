@@ -102,8 +102,8 @@ if __name__ == "__main__":
 	print("coinbase balance:%d" %(balance))
 	print("--------------------------------------------------------------------")
 
-	user_address = RegisterToken.getAddress('sam_ubuntu', '../contracts/test/addr_list.json')
-	sum_address = RegisterToken.getAddress('SummaryToken', '../contracts/test/addr_list.json')
+	user_address = RegisterToken.getAddress('sam_ubuntu', './addr_list.json')
+	sum_address = RegisterToken.getAddress('SummaryToken', './addr_list.json')
 
 	#------------------------------ call functions test -------------------------
 	#Read valid master data using call
