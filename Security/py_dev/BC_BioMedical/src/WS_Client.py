@@ -155,7 +155,7 @@ def test_CapAC():
 	# set host id address
 	host_ip = '128.226.77.237'
 	#host_ip = '128.226.77.51'
-	test_address = PatientACToken.getAddress('sam_ubuntu', '../contracts/test/addr_list.json')
+	test_address = PatientACToken.getAddress('sam_ubuntu', './addr_list.json')
 	
 	# get host account
 	accounts = myPatientACToken.getAccounts()
