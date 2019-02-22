@@ -166,7 +166,7 @@ def test_CapAC():
 	data_args = {}
 	data_args ['project_id'] = project_id
 	data_args ['host_ip'] = host_ip
-	data_args ['host_address'] = accounts
+	data_args ['host_address'] = accounts[0]
 	
 	start_time=time.time()
 	

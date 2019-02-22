@@ -170,8 +170,8 @@ if __name__ == "__main__":
 	#myPatientACtoken.setCapToken_expireddate(user_address, issue_time, expire_time)
 
 	#set access right
-	#access_right='{"resource":"/test/api/v1.0/dt", "action":"GET", "conditions":{"value": {"start": "08:12:32", "end": "22:32:32"},"type": "Timespan"}}';
-	myPatientACtoken.setCapToken_authorization(user_address, access_right)
+	access_right='{"resource":"/test/api/v1.0/dt", "action":"GET", "conditions":{"value": {"start": "08:12:32", "end": "22:32:32"},"type": "Timespan"}}';
+	#myPatientACtoken.setCapToken_authorization(user_address, access_right)
 
 
 	pass
