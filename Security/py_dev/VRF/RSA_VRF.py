@@ -5,7 +5,7 @@ RSA_VRF module
 Created on May.18, 2019
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
-@TaskDescription: This module provide RAS-Verifiable Random Functions.
+@TaskDescription: This module provide RSA-Verifiable Random Functions.
 @Reference: https://cryptography.io/en/latest/
             Verifiable Random Functions (VRFs) draft-goldbe-vrf-01
 
@@ -177,7 +177,7 @@ class RSA_FDH_VRF(object):
     @staticmethod
     def i2osp(x, xLen):
         # If x >= 256^xLen, output "integer too large" and stop.
-        if(x > 256**xLen):
+        if(x >= 256**xLen):
              raise ValueError("integer too large")
         # get hex value of integer
         hex_x = hex(x)[2:]
@@ -230,6 +230,7 @@ class RSA_FDH_VRF(object):
 
         # Let T be the empty octet string.
         T = b''
+        hash_class.update(mgf_seed.encode(encoding='UTF-8'))
 
         # For counter i from 0 to \ceil (mask_len / h_len) - 1
         for i in range(0, integer_ceil(mask_len, h_len)):
@@ -239,8 +240,8 @@ class RSA_FDH_VRF(object):
             # Concatenate the hash of the seed mgfSeed and C to the octet string T
             # T = T || Hash(mgfSeed || C)
             #temp = (mgf_seed + C.decode(encoding='UTF-8')).encode(encoding='UTF-8')
-            temp = b"".join([mgf_seed.encode(encoding='UTF-8'), C])
-            hash_class.update(temp)
+            #temp = b"".join([mgf_seed.encode(encoding='UTF-8'), C])
+            hash_class.update(C)
             #T = T + hash_class.digest()
             T = b"".join([T, hash_class.digest()])
 
@@ -258,7 +259,7 @@ class RSA_FDH_VRF(object):
         pi - proof, an octet string of length n
     '''
     @staticmethod
-    def VRF_prove(private_key, alpha, k):
+    def prove(private_key, alpha, k):
         # k is the length of pi
         EM = RSA_FDH_VRF.mgf1(alpha, k-1)  
         m = RSA_FDH_VRF.os2ip(EM)
@@ -274,7 +275,7 @@ class RSA_FDH_VRF(object):
         beta - VRF hash output, an octet string of length hLen
     '''
     @staticmethod
-    def VRF_proof2hash(pi, hash_type="SHA1"):
+    def proof2hash(pi, hash_type="SHA1"):
         hash_class=hashlib.new(hash_type)
         hash_class.update(pi)
         beta = hash_class.digest()
@@ -291,7 +292,7 @@ class RSA_FDH_VRF(object):
         beta - VRF hash output, an octet string of length hLen
     '''
     @staticmethod
-    def VRF_verifying(public_key, alpha, pi, k):
+    def verifying(public_key, alpha, pi, k):
         s = RSA_FDH_VRF.os2ip(pi)
         m = public_key.rsavp1(s)
         EM = RSA_FDH_VRF.i2osp(m, k-1)
@@ -332,11 +333,16 @@ if __name__ == "__main__":
     #print(rsa_publickey.__repr__())
     #print(rsa_privatekey.__repr__())
 
+    # k should be no less than key_size/8
     k = 256
 
-    pi = RSA_FDH_VRF.VRF_prove(rsa_privatekey, alpha, k)
+    pi = RSA_FDH_VRF.prove(rsa_privatekey, alpha, k)
     #print(pi)
-    beta = RSA_FDH_VRF.VRF_proof2hash(pi)
-    #print(beta)
 
-    print(RSA_FDH_VRF.VRF_verifying(rsa_publickey, alpha, pi, k))
+    beta = RSA_FDH_VRF.proof2hash(pi)
+
+    '''print(beta)
+    print(RSA_FDH_VRF.os2ip(beta))
+    print(RSA_FDH_VRF.i2osp(RSA_FDH_VRF.os2ip(beta), 20))'''
+
+    print(RSA_FDH_VRF.verifying(rsa_publickey, alpha, pi, k))
