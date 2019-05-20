@@ -17,8 +17,8 @@ import operator
 import math
 import sys
 from sys import argv
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa
+from crypto_rsa import Crypto_RSA
+
 
 '''Returns the number of bytes necessary to store the integer n.'''
 def integer_byte_size(int_num):
@@ -302,47 +302,68 @@ class RSA_FDH_VRF(object):
         else:
             return "INVALID"
 
+def get_key_numbers_from_files():
+	#define key_pairs dictionary
+	key_numbers={}
+	load_public_key_bytes = Crypto_RSA.load_key_bytes('public_key_file')
+	load_private_key_bytes = Crypto_RSA.load_key_bytes('private_key_file')
+
+	reload_publick_key=Crypto_RSA.load_public_key(load_public_key_bytes)
+	#print(reload_publick_key.public_numbers())
+
+	reload_private_key=Crypto_RSA.load_private_key(load_private_key_bytes, 'samuelxu999')
+	#print(reload_private_key.private_numbers().d)
+
+	# genereate key pairs numbers
+	private_numbers = reload_private_key.private_numbers()
+	public_numbers = reload_publick_key.public_numbers()
+
+	#add private key value - x
+	key_numbers['n']=public_numbers.n
+	key_numbers['e']=public_numbers.e
+	key_numbers['d']=private_numbers.d
+	key_numbers['key_size']=reload_private_key.key_size
+
+	return key_numbers
 
 if __name__ == "__main__":
-    if len(argv) < 2:
-        print("USAGE: python RSA_VRF.py [alpha]")
-        exit(1)
+	if len(argv) < 2:
+	    print("USAGE: python RSA_VRF.py [alpha]")
+	    exit(1)
 
 
-    alpha = " ".join(argv[1:])
-    #print(alpha)
+	alpha = " ".join(argv[1:])
+	#print(alpha)
 
-    #print(integer_byte_size(256))
-    #print(integer_ceil(19,20))
+	# choose RSA key source 0: From RSA key generator; 1:From saved key_bytes files
+	RSA_key_src = 0
 
-    #generate private key
-    private_key = rsa.generate_private_key(public_exponent=65537,
-                                            key_size=2048,
-                                            backend=default_backend())
+	if(RSA_key_src==0):
+		#A) From RSA key generator
+		keys_numbers = Crypto_RSA.generate_key_numbers(65537, 2048)
+	else:
+		#B) From saved key_bytes files
+		keys_numbers = get_key_numbers_from_files()
 
-    # genereate key pairs
-    private_numbers = private_key.private_numbers()
-    public_key = private_key.public_key()
-    public_numbers = public_key.public_numbers()
-    n = public_numbers.n
-    e = public_numbers.e
-    d = private_numbers.d
-    rsa_publickey = RSA_PublicKey(n, e)
-    rsa_privatekey = RSA_PrivateKey(n, d)
+	# use key number to new RSA_PublicKey() and RSA_PrivateKey() instances
+	rsa_publickey = RSA_PublicKey(keys_numbers['n'], keys_numbers['e'])
+	rsa_privatekey = RSA_PrivateKey(keys_numbers['n'], keys_numbers['d'])
 
-    #print(rsa_publickey.__repr__())
-    #print(rsa_privatekey.__repr__())
+	#print(rsa_publickey.__repr__())
+	#print(rsa_privatekey.__repr__())
 
-    # k should be no less than key_size/8
-    k = 256
+	# k should be no less than key_size/8
+	k = int(keys_numbers['key_size']/8)
 
-    pi = RSA_FDH_VRF.prove(rsa_privatekey, alpha, k)
-    #print(pi)
+	# generate proof pi
+	pi = RSA_FDH_VRF.prove(rsa_privatekey, alpha, k)
+	#print(pi)
 
-    beta = RSA_FDH_VRF.proof2hash(pi)
+	# generate hash value v
+	beta = RSA_FDH_VRF.proof2hash(pi)
 
-    '''print(beta)
-    print(RSA_FDH_VRF.os2ip(beta))
-    print(RSA_FDH_VRF.i2osp(RSA_FDH_VRF.os2ip(beta), 20))'''
+	'''print(beta)
+	print(RSA_FDH_VRF.os2ip(beta))
+	print(RSA_FDH_VRF.i2osp(RSA_FDH_VRF.os2ip(beta), 20))'''
 
-    print(RSA_FDH_VRF.verifying(rsa_publickey, alpha, pi, k))
+	print(RSA_FDH_VRF.verifying(rsa_publickey, alpha, pi, k))
