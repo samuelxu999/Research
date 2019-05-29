@@ -256,6 +256,9 @@ def test():
 	    for share_proof, verify_share in zip(share_proofs, verify_shares):
 	        print('  ',share_proof == verify_share)
 
+	verify_S0 = _eval_commit_at(poly_commits, 0, p)
+	print('verify S0:', verify_S0 == poly_commits[0])
+
 
 #Call main function   
 if __name__ == "__main__":
