@@ -111,6 +111,7 @@ class PVSS(object):
 		poly_prime: maximum of poly parameters
 	    minimum_t: 	minimal shares for s0 recover - t
 	    shares_n: 	available shares count - n
+	    poly_max:	maximum value of poly parameter
 	    prime: 		public prime number
 	@Output:
 	    poly: 		poly(j), where 0<=j<t
@@ -129,10 +130,10 @@ class PVSS(object):
 		# set poly[0]=s
 		poly = [secret_s]
 
-		# random choose poly
+		# random choose poly no great than poly_max
 		poly += [_RINT(poly_max) for i in range(minimum_t-1)]
 
-		# calculate poly points
+		# calculate poly points for each i as format (i, s(i))
 		points = [(i, _eval_at(poly, i, prime))
 		          for i in range(1, shares_n + 1)]
 
@@ -148,6 +149,8 @@ class PVSS(object):
 	    if len(shares) < 2:
 	        raise ValueError("need at least two shares")
 	    x_s, y_s = zip(*shares)
+	    
+	    #perform lagrange interpolat to recover s(0) 
 	    return _lagrange_interpolate(0, x_s, y_s, prime)
 
 	@staticmethod
@@ -183,7 +186,29 @@ class PVSS(object):
 		          for i in range(1, len(share_proofs) + 1)]
 		return verify_points
 
-def demo():
+	@staticmethod
+	def verify_S0(poly_commits, prime=_PRIME):
+		return _eval_commit_at(poly_commits, 0, prime)
+
+def get_public_numbers_from_files():
+	#define public numbers
+	key_numbers={}
+	load_public_key_bytes = Crypto_RSA.load_key_bytes('public_key_file')
+
+	reload_publick_key=Crypto_RSA.load_public_key(load_public_key_bytes)
+
+	# genereate key pairs numbers
+	public_numbers = reload_publick_key.public_numbers()
+
+	# add public numbers
+	key_numbers['n']=public_numbers.n
+	key_numbers['e']=public_numbers.e
+	key_numbers['key_size']=reload_publick_key.key_size
+
+	return key_numbers
+
+# this function show basic VSS function.
+def VSS_demo():
 	
 	keys_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
 	#print(keys_numbers)
@@ -210,7 +235,17 @@ def demo():
 
 def test():
 	
-	keys_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
+	# choose RSA key source 0: From RSA key generator; 1:From saved key_bytes files
+	RSA_key_src = 0
+
+	if(RSA_key_src==0):
+		#A) From RSA key generator
+		keys_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
+	else:
+		#B) From saved key_bytes files
+		keys_numbers = get_public_numbers_from_files()
+	
+
 	print(keys_numbers)
 	p = keys_numbers['n']
 	e = _PRIME_EXP
@@ -256,7 +291,7 @@ def test():
 	    for share_proof, verify_share in zip(share_proofs, verify_shares):
 	        print('  ',share_proof == verify_share)
 
-	verify_S0 = _eval_commit_at(poly_commits, 0, p)
+	verify_S0 = PVSS.verify_S0(poly_commits, p)
 	print('verify S0:', verify_S0 == poly_commits[0])
 
 
@@ -269,7 +304,7 @@ if __name__ == "__main__":
 		availale_size=int(sys.argv[1])
 		needed_size=int(sys.argv[2])
 		testSSSS(availale_size,needed_size)'''
-	#demo()		
+	#VSS_demo()		
 	test()
 	
 	pass
