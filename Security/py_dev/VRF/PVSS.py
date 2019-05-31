@@ -104,26 +104,24 @@ def _lagrange_interpolate(x, x_s, y_s, p):
     Public Verifiable Security Share Class
 '''
 class PVSS(object):
-	'''
-	random choose poly function to split s0.
-	@Input:
-		secret_s: 	secret s to be shared
-		poly_prime: maximum of poly parameters
-	    minimum_t: 	minimal shares for s0 recover - t
-	    shares_n: 	available shares count - n
-	    poly_max:	maximum value of poly parameter
-	    prime: 		public prime number
-	@Output:
-	    poly: 		poly(j), where 0<=j<t
-	    points: 	shared points f(i) where 1<=i<=n
 
-	'''
 	@staticmethod
 	def split_shares(secret_s, minimum_t, shares_n, poly_max, prime=_PRIME):
 		'''
-		Generates a random shamir pool, returns the secret and the share
-		points.
+		Random generates a random shamir pool to build poly function f(x),
+		returns the share that split secret s0=f(0). 
+		@Input:
+			secret_s: 	secret s to be shared
+			poly_prime: maximum of poly parameters
+		    minimum_t: 	minimal shares for s0 recover - t
+		    shares_n: 	available shares count - n
+		    poly_max:	maximum value of poly parameter
+		    prime: 		public prime number
+		@Output:
+		    poly: 		poly(j), where 0<=j<t
+		    points: 	shared points f(i) where 1<=i<=n
 		'''
+		
 		if minimum_t > shares_n:
 		    raise ValueError("pool secret would be irrecoverable")
 
@@ -155,10 +153,13 @@ class PVSS(object):
 
 	@staticmethod
 	def get_poly_commitment(g, poly, prime=_PRIME):
+		'''
+		Generate the poly commitment: (i, g^poly(i) mod prime)
+		'''		
 		#If the message representative g is not between 0 and n - 1,
 		#output "message representative out of range" and stop.
 		if not (0 <= g <= prime-1):
-		    raise Exception("g not within 0 and prime - 1")
+			raise Exception("g not within 0 and prime - 1")
 		# Let poly_com = g^a mod n 
 		poly_com = [pow(g, ai, prime) for ai in poly]
 
@@ -167,10 +168,14 @@ class PVSS(object):
 
 	@staticmethod
 	def get_share_proofs(g, shares, prime=_PRIME):
+		'''
+		Generate the consistency share proof: (i, g^s(i) mod prime)
+		'''
 		#If the message representative g is not between 0 and n - 1,
 		#output "message representative out of range" and stop.
 		if not (0 <= g <= prime-1):
-		    raise Exception("g not within 0 and prime - 1")
+			raise Exception("g not within 0 and prime - 1")
+
 		# Let poly_com = g^a mod n 
 		# calculate consistency proof
 		share_proofs = [(share[0], pow(g, share[1], prime)) 
@@ -181,6 +186,9 @@ class PVSS(object):
 
 	@staticmethod
 	def verify_shares(poly_commits, share_proofs, prime=_PRIME):
+		'''
+		verify consistency share proof given poly_commits
+		'''
 		# calculate S(x) by uisng 
 		verify_points = [(i, _eval_commit_at(poly_commits, i, prime))
 		          for i in range(1, len(share_proofs) + 1)]

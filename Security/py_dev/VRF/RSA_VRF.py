@@ -66,16 +66,16 @@ class RSA_PublicKey(object):
         return('<RSA_PublicKey n: %d e: %d bit_size: %d byte_size: %d>' 
                 %(self.n, self.e, self.bit_size, self.byte_size))
 
-    '''
-        Function: RSA Encryption Primitive (RSAEP) as defined in Section 5.1.1 of [RFC8017]
-        Define: RSAEP ((n, e), m)
-            @Input:
-                (n, e): RSA public key
-                m: message representative, an integer between 0 and n - 1
-            @Output:
-                c: ciphertext representative, an integer between 0 and n - 1
-    '''
     def rsaep(self, m):
+        '''
+            Function: RSA Encryption Primitive (RSAEP) as defined in Section 5.1.1 of [RFC8017]
+            Define: RSAEP ((n, e), m)
+                @Input:
+                    (n, e): RSA public key
+                    m: message representative, an integer between 0 and n - 1
+                @Output:
+                    c: ciphertext representative, an integer between 0 and n - 1
+        '''
         #If the message representative m is not between 0 and n - 1,
         #output "message representative out of range" and stop.
         if not (0 <= m <= self.n-1):
@@ -85,16 +85,16 @@ class RSA_PublicKey(object):
         # output c.
         return c
 
-    '''
-        Function: RSA verification primitive as defined in Section 5.2.2 of [RFC8017]
-        Define: RSAVP1 ((n, e), s)
-            @Input:
-                s: signature representative, an integer between 0 and n - 1
-                (n, e): RSA public key
-            @Output:
-                m: message representative, an integer between 0 and n - 1
-    '''
     def rsavp1(self, s):
+        '''
+            Function: RSA verification primitive as defined in Section 5.2.2 of [RFC8017]
+            Define: RSAVP1 ((n, e), s)
+                @Input:
+                    s: signature representative, an integer between 0 and n - 1
+                    (n, e): RSA public key
+                @Output:
+                    m: message representative, an integer between 0 and n - 1
+        '''
         # If the signature representative s is not between 0 and n - 1, 
         # output "signature representative out of range" and stop.
         if not (0 <= s <= self.n-1):
@@ -122,16 +122,16 @@ class RSA_PrivateKey(object):
         return('<RSA_PrivateKey n: %d d: %d bit_size: %d byte_size: %d>' 
                 %(self.n, self.d, self.bit_size, self.byte_size))
 
-    '''
-        Function: RSA Decryption Primitive (RSADP) as defined in Section 5.1.2 of [RFC8017]
-        Define: RSADP ((n, d), m)
-            @Input:
-                (n, d): RSA private key
-                c: ciphertext representative, an integer between 0 and n - 1
-            @Output:
-                m: message representative, an integer between 0 and n - 1
-    '''
     def rsadp(self, c):
+        '''
+            Function: RSA Decryption Primitive (RSADP) as defined in Section 5.1.2 of [RFC8017]
+            Define: RSADP ((n, d), m)
+                @Input:
+                    (n, d): RSA private key
+                    c: ciphertext representative, an integer between 0 and n - 1
+                @Output:
+                    m: message representative, an integer between 0 and n - 1
+        '''
         # If the ciphertext representative c is not between 0 and n - 1,
         # output "ciphertext representative out of range" and stop.
         if not (0 <= c <= self.n-1):
@@ -142,16 +142,16 @@ class RSA_PrivateKey(object):
         # output m
         return m
 
-    '''
-        Function: RSA signature primitive as defined in Section 5.2.1 of [RFC8017]
-        Define: RSAVP1 ((n, e), m)
-            @Input:
-                m: message representative, an integer between 0 and n - 1
-                (n, e): RSA private key
-            @Output:
-                s: signature representative, an integer between 0 and n - 1
-    '''
     def rsasp1(self, m):
+        '''
+            Function: RSA signature primitive as defined in Section 5.2.1 of [RFC8017]
+            Define: RSAVP1 ((n, e), m)
+                @Input:
+                    m: message representative, an integer between 0 and n - 1
+                    (n, e): RSA private key
+                @Output:
+                    s: signature representative, an integer between 0 and n - 1
+        '''
         # If the message representative m is not between 0 and n - 1,
         # output "message representative out of range" and stop.
         if not (0 <= m <= self.n-1):
@@ -164,18 +164,19 @@ class RSA_PrivateKey(object):
     RSA Full Domain Hash VRF (RSA-FDH-VRF)
 '''
 class RSA_FDH_VRF(object):
-    '''
-    Coversion of a nonnegative integer x to an octet string as defined in Section 4.1 of [RFC8017]
-    big-endian representation with length x_len.
-    @Input:
-        x: nonnegative integer to be converted
-        xLen: intended length of the resulting octet string
-    @Output:
-        X: corresponding octet string of length xLen
 
-    '''
     @staticmethod
     def i2osp(x, xLen):
+        '''
+        Coversion of a nonnegative integer x to an octet string as defined in Section 4.1 of [RFC8017]
+        big-endian representation with length x_len.
+        @Input:
+            x: nonnegative integer to be converted
+            xLen: intended length of the resulting octet string
+        @Output:
+            X: corresponding octet string of length xLen
+
+        '''
         # If x >= 256^xLen, output "integer too large" and stop.
         if(x >= 256**xLen):
              raise ValueError("integer too large")
@@ -194,32 +195,30 @@ class RSA_FDH_VRF(object):
         # Output the octet string
         return b'\x00' * int(xLen-len(X)) + X
     
-    '''
-    Coversion of an octet string to a nonnegative integer as defined in Section 4.2 of [RFC8017]
-    @Input:
-        X: octet string to be converted
-    @Output:
-        x: corresponding nonnegative integer
-
-    '''   
     @staticmethod
     def os2ip(X):
+        '''
+        Coversion of an octet string to a nonnegative integer as defined in Section 4.2 of [RFC8017]
+        @Input:
+            X: octet string to be converted
+        @Output:
+            x: corresponding nonnegative integer
+        '''   
         #Return the hexadecimal representation of the binary data
         x = binascii.hexlify(X)
         return int(x, 16)
 
-    '''
-    Mask Generation Function based on a hash function as defined in Section B.2.1 of [RFC8017]
-    @Input:
-        mgs_seed - seed from which mask is generated, an octet string
-        mask_len - intended length in octets of the mask, at most 2^32 hLen
-        hash_type - the digest hash function to use, default is SHA1
-    Outout: 
-        mask: an octet string of length mask_len
-    '''
     @staticmethod
     def mgf1(mgf_seed, mask_len, hash_type="SHA1"):
-
+        '''
+        Mask Generation Function based on a hash function as defined in Section B.2.1 of [RFC8017]
+        @Input:
+            mgs_seed - seed from which mask is generated, an octet string
+            mask_len - intended length in octets of the mask, at most 2^32 hLen
+            hash_type - the digest hash function to use, default is SHA1
+        Outout: 
+            mask: an octet string of length mask_len
+        '''
         hash_class=hashlib.new(hash_type)
         # get hash length given hash function
         h_len = hash_class.digest_size
@@ -248,18 +247,17 @@ class RSA_FDH_VRF(object):
         # Output the leading maskLen octets of T as the octet string mask.
         return T[:mask_len]
 
-
-    '''
-    RSA-FDH-VRF Proving
-    @Input:
-        private_key - RSA private key
-        alpha - VRF hash input, an octet string
-        k - intended length in octets of the mask, at most 2^32 hLen
-    Outout: 
-        pi - proof, an octet string of length n
-    '''
     @staticmethod
     def prove(private_key, alpha, k):
+        '''
+        RSA-FDH-VRF Proving
+        @Input:
+            private_key - RSA private key
+            alpha - VRF hash input, an octet string
+            k - intended length in octets of the mask, at most 2^32 hLen
+        Outout: 
+            pi - proof, an octet string of length n
+        '''
         # k is the length of pi
         EM = RSA_FDH_VRF.mgf1(alpha, k-1)  
         m = RSA_FDH_VRF.os2ip(EM)
@@ -267,32 +265,32 @@ class RSA_FDH_VRF(object):
         pi = RSA_FDH_VRF.i2osp(s, k)
         return pi
 
-    '''
-    RSA-FDH-VRF Proof To Hash
-    @Input:
-        pi - proof, an octet string of length k
-    Outout: 
-        beta - VRF hash output, an octet string of length hLen
-    '''
     @staticmethod
     def proof2hash(pi, hash_type="SHA1"):
+        '''
+        RSA-FDH-VRF Proof To Hash
+        @Input:
+            pi - proof, an octet string of length k
+        Outout: 
+            beta - VRF hash output, an octet string of length hLen
+        '''
         hash_class=hashlib.new(hash_type)
         hash_class.update(pi)
         beta = hash_class.digest()
         return beta
 
-    '''
-    RSA-FDH-VRF Verifying
-    @Input:
-        (n, e) - RSA public key
-        alpha - VRF hash input, an octet string
-        pi - proof to be verified, an octet string of length n
-        k - intended length in octets of the mask, at most 2^32 hLen
-    Outout: 
-        beta - VRF hash output, an octet string of length hLen
-    '''
     @staticmethod
     def verifying(public_key, alpha, pi, k):
+        '''
+        RSA-FDH-VRF Verifying
+        @Input:
+            (n, e) - RSA public key
+            alpha - VRF hash input, an octet string
+            pi - proof to be verified, an octet string of length n
+            k - intended length in octets of the mask, at most 2^32 hLen
+        Outout: 
+            beta - VRF hash output, an octet string of length hLen
+        '''
         s = RSA_FDH_VRF.os2ip(pi)
         m = public_key.rsavp1(s)
         EM = RSA_FDH_VRF.i2osp(m, k-1)
