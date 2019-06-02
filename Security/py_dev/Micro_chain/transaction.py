@@ -10,7 +10,6 @@ Created on June.1, 2019
 '''
 
 from collections import OrderedDict
-
 import hashlib
 
 from utilities import FileUtil, TypesUtil, DatetimeUtil

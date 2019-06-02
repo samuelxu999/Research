@@ -39,7 +39,7 @@ def test_transaction():
     mywallet.load_accounts()
 
     #list account address
-    print(mywallet.list_address())
+    #print(mywallet.list_address())
 
     #----------------- test transaction --------------------
     sender = mywallet.accounts[0]

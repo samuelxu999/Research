@@ -14,21 +14,49 @@ import datetime
 import json
 from flask import Flask, jsonify
 from flask import abort,make_response,request
+
 from wallet import Wallet
 from transaction import Transaction
-from blockchain import Blockchain
+from nodes import PeerNodes
 from utilities import FileUtil, TypesUtil, DatetimeUtil
 
-# Instantiate the server
+def print_config():
+	#list account address
+	accounts = mywallet.list_address()
+	print('Current accounts:')
+	if accounts:
+		i=0
+		for account in accounts:
+		    print(i, '  ', account)
+		    i+=1
+
+	print('Peer nodes:')
+	for node in list(peer_nodes.nodes):
+		json_node = TypesUtil.string_to_json(node)
+		print('    ', json_node['address'] + '    ' + json_node['node_url'])
+
+# ================================= Instantiate the server =====================================
 app = Flask(__name__)
 #CORS(app)
+
+# Instantiate the PeerNodes
+peer_nodes = PeerNodes()
+peer_nodes.load_node()
+
+# Instantiate the Wallet
+mywallet = Wallet()
+# load accounts
+mywallet.load_accounts()
+
+print_config()
+
 
 
 	
 #========================================== Request handler ===============================================
 #GET req
 @app.route('/test/transaction', methods=['POST'])
-def get_transaction():
+def verify_transaction():
 	#Token missing, deny access
 	req_data=TypesUtil.bytes_to_string(request.data)
 	#transaction_data = TypesUtil.string_to_json(req_data)
@@ -39,19 +67,7 @@ def get_transaction():
 	
 	#print(transaction_data)
 
-	# Instantiate the Wallet
-	mywallet = Wallet()
-
-	# load accounts
-	mywallet.load_accounts()
-
-	#list account address
-	#print(mywallet.list_address())
-
-	#----------------- test transaction --------------------
-	sender = mywallet.accounts[0]
-
-	# verify transaction
+	# ====================== verify transaction ==========================
 	dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
 										transaction_data['recipient_address'],
 										transaction_data['value'])
@@ -60,8 +76,14 @@ def get_transaction():
 	#print(dict_transaction)
 	#print(sign_data)
 
-	verify_data = Transaction.verify(sender['public_key'], sign_data, dict_transaction)
-	print('verify transaction:', verify_data)
+	sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+	if(sender_node!={}):
+		sender_pk= sender_node['public_key']
+		verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
+	else:
+		verify_data = False
+
+	#print('verify transaction:', verify_data)
 
 	return jsonify({'verify_transaction': verify_data}), 201
 	
