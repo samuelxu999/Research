@@ -15,10 +15,12 @@ import json
 from flask import Flask, jsonify
 from flask import abort,make_response,request
 
+from utilities import FileUtil, TypesUtil, DatetimeUtil
 from wallet import Wallet
 from transaction import Transaction
 from nodes import PeerNodes
-from utilities import FileUtil, TypesUtil, DatetimeUtil
+from blockchain import Blockchain
+from service_api import SrvAPI
 
 def print_config():
 	#list account address
@@ -35,6 +37,12 @@ def print_config():
 		json_node = TypesUtil.string_to_json(node)
 		print('    ', json_node['address'] + '    ' + json_node['node_url'])
 
+	# Instantiate the Blockchain
+	myblockchain = Blockchain()
+	print('Chain information:')
+	print('    uuid:          ', myblockchain.node_id)
+	print('    chain length: ', len(myblockchain.chain))
+
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
 #CORS(app)
@@ -48,6 +56,9 @@ mywallet = Wallet()
 # load accounts
 mywallet.load_accounts()
 
+# Instantiate the Blockchain
+myblockchain = Blockchain()
+
 print_config()
 
 
@@ -55,19 +66,19 @@ print_config()
 	
 #========================================== Request handler ===============================================
 #GET req
-@app.route('/test/transaction', methods=['POST'])
+@app.route('/test/transaction/verify', methods=['POST'])
 def verify_transaction():
-	#Token missing, deny access
+	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
 	#transaction_data = TypesUtil.string_to_json(req_data)
 	transaction_data=json.loads(req_data)
 	
 	if(transaction_data=='{}'):
-		abort(401, {'message': 'Token missing, deny access'})
+		abort(401, {'error': 'No transaction data'})
 	
 	#print(transaction_data)
 
-	# ====================== verify transaction ==========================
+	# ====================== rebuild transaction ==========================
 	dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
 										transaction_data['recipient_address'],
 										transaction_data['value'])
@@ -77,23 +88,80 @@ def verify_transaction():
 	#print(sign_data)
 
 	sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+
+	# ====================== verify transaction ==========================
 	if(sender_node!={}):
 		sender_pk= sender_node['public_key']
-		verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
+		#verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
+		verify_data = myblockchain.verify_transaction(dict_transaction, sender_pk, sign_data)
 	else:
 		verify_data = False
 
-	#print('verify transaction:', verify_data)
-
 	return jsonify({'verify_transaction': verify_data}), 201
+
+#GET req
+@app.route('/test/transaction/broadcast', methods=['POST'])
+def broadcast_transaction():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	#transaction_data = TypesUtil.string_to_json(req_data)
+	transaction_data=json.loads(req_data)
+
+	if(transaction_data=='{}'):
+		abort(401, {'error': 'No transaction data'})
+
+	# broadcast transaction to peer nodes
+	for node in list(peer_nodes.nodes):
+		json_node = TypesUtil.string_to_json(node)
+		api_url = 'http://' + json_node['node_url'] + '/test/transaction/verify'
+		json_response = SrvAPI.POST(api_url, transaction_data)
+		#print(api_url)
+
+	return jsonify({'broadcast_transaction': 'Succeed!'}), 201
+
+@app.route('/test/transactions/get', methods=['GET'])
+def get_transactions():
+    # Get transactions from transactions pool
+    transactions = myblockchain.transactions
+
+    response = {'transactions': transactions}
+    return jsonify(response), 200
+
+@app.route('/test/chain/get', methods=['GET'])
+def full_chain():
+    response = {
+        'chain': myblockchain.chain,
+        'length': len(myblockchain.chain),
+    }
+    return jsonify(response), 200
+
+@app.route('/test/mining', methods=['GET'])
+def mine_block():
+	new_block=myblockchain.mine_block()
+	#print(new_block)
+
+	response = {
+	    'message': "New Block Forged",
+	    'block_number': new_block['block_number'],
+	    'transactions': new_block['transactions'],
+	    'nonce': new_block['nonce'],
+	    'previous_hash': new_block['previous_hash'],
+	}
+	return jsonify(response), 200
+
+@app.route('/test/nodes/get', methods=['GET'])
+def get_nodes():
+    nodes = list(peer_nodes.nodes)
+    response = {'nodes': nodes}
+    return jsonify(response), 200
 	
 if __name__ == '__main__':
-	'''from argparse import ArgumentParser
+	from argparse import ArgumentParser
 
 	parser = ArgumentParser()
-	parser.add_argument('-p', '--port', default=8042, type=int, help='port to listen on')
+	parser.add_argument('-p', '--port', default=8080, type=int, help='port to listen on')
 	args = parser.parse_args()
-	port = args.port'''
+	port = args.port
 
-	app.run(host='0.0.0.0', port=8042, debug=True)
+	app.run(host='0.0.0.0', port=port, debug=True)
 

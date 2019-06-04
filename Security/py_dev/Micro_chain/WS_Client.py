@@ -16,22 +16,10 @@ import json
 from wallet import Wallet
 from transaction import Transaction
 from utilities import TypesUtil
+from service_api import SrvAPI
 
-class WSClient(object):
-	'''
-	Post data to add record
-	'''
-	@staticmethod
-	def send_transaction(api_url, transaction):          
-		headers = {'Content-Type' : 'application/json'}
-		response = requests.post(api_url, data=json.dumps(transaction), headers=headers)
 
-		#get response json
-		json_response = response.json()      
-
-		return json_response
-
-def test_transaction():
+def send_transaction(isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
 
@@ -50,7 +38,7 @@ def test_transaction():
     sender_address = sender['address']
     sender_private_key = sender['private_key']
     recipient_address = recipient['address']
-    value = 12
+    value = 15
 
     mytransaction = Transaction(sender_address, sender_private_key, recipient_address, value)
 
@@ -67,8 +55,8 @@ def test_transaction():
     dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
                                             mytransaction.recipient_address,
                                             mytransaction.value)
-    for k in dict_transaction.items():
-        print(k)
+    #for k in dict_transaction.items():
+    #    print(k)
     #print(dict_transaction)
     #print(sign_data)
 
@@ -79,13 +67,55 @@ def test_transaction():
     transaction_data = mytransaction.to_json()
     transaction_data['signature']=TypesUtil.string_to_hex(sign_data)
     #print(transaction_data)
-    json_response=WSClient.send_transaction('http://localhost:8042/test/transaction', 
-    						transaction_data)
-
+    if(not isBroadcast):
+        json_response=SrvAPI.POST('http://localhost:8080/test/transaction/verify', 
+        						transaction_data)
+    else:
+        json_response=SrvAPI.POST('http://localhost:8080/test/transaction/broadcast', 
+                                transaction_data)
     print(json_response)
 
+def get_transactions():
+    json_response=SrvAPI.GET('http://localhost:8080/test/transactions/get')
+    transactions = json_response['transactions']
+    print(transactions)
+
+def start_mining():
+    json_response=SrvAPI.GET('http://localhost:8080/test/mining')
+    #transactions = json_response['transactions']
+    print(json_response)
+
+def get_nodes():
+    json_response=SrvAPI.GET('http://localhost:8080/test/nodes/get')
+    nodes = json_response['nodes']
+    print('Peer nodes:')
+    for node in nodes:
+        print(node)
+
+def get_chain():
+    json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
+    chain_data = json_response['chain']
+    chain_length = json_response['length']
+    print('Chain length:', chain_length)
+
+    # only list latest 10 blocks
+    if(chain_length>10):
+        for block in chain_data[-10:]:
+            print(block)
+    else:
+        for block in chain_data:
+            print(block)
 
 
 if __name__ == "__main__":
-	test_transaction()
-	pass
+    #send_transaction()
+
+    #get_transactions()
+
+    #start_mining()
+
+    #get_nodes()
+
+    #get_chain()
+
+    pass
