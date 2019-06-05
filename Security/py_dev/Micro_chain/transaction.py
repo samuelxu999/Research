@@ -94,6 +94,14 @@ class Transaction(object):
             verify_sign=False
         return verify_sign
 
+    @staticmethod
+    def json_to_dict(list_transactions):
+        # Need to make sure that the dictionary is ordered. Otherwise we'll get a different hash
+        transaction_elements = ['sender_address', 'recipient_address', 'value', 'signature']
+        dict_transactions = [OrderedDict((k, transaction[k]) for k in transaction_elements) 
+                        for transaction in list_transactions]
+        return dict_transactions
+
 def test():
     # Instantiate the Wallet
     mywallet = Wallet()

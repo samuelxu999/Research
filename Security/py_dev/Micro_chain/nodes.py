@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 from utilities import FileUtil, TypesUtil
 
 
-CHAIN_DATA_DIR = 'chaindata'
+NODE_DATA_DIR = 'nodedata'
 PEER_NODES = 'static_nodes'
 
 class PeerNodes:
@@ -52,17 +52,17 @@ class PeerNodes:
         """
         Save the list of nodes to static node file
         """
-        if(not os.path.exists(CHAIN_DATA_DIR)):
-            os.makedirs(CHAIN_DATA_DIR)
-        FileUtil.List_save(CHAIN_DATA_DIR+'/'+node_file, list(self.nodes))
+        if(not os.path.exists(NODE_DATA_DIR)):
+            os.makedirs(NODE_DATA_DIR)
+        FileUtil.List_save(NODE_DATA_DIR+'/'+node_file, list(self.nodes))
 
     def load_node(self, node_file=PEER_NODES):
         """
         load nodes from static node file
         """
         #self.nodes = fname.read()
-        if(os.path.isfile(CHAIN_DATA_DIR+'/'+node_file)):
-            self.nodes = set(FileUtil.List_load(CHAIN_DATA_DIR+'/'+node_file))
+        if(os.path.isfile(NODE_DATA_DIR+'/'+node_file)):
+            self.nodes = set(FileUtil.List_load(NODE_DATA_DIR+'/'+node_file))
 
     def get_node(self, node_address):
         """

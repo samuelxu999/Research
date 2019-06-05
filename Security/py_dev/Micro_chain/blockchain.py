@@ -24,7 +24,9 @@ from transaction import Transaction
 
 MINING_SENDER = "THE BLOCKCHAIN"
 MINING_REWARD = 1
-MINING_DIFFICULTY = 4
+MINING_DIFFICULTY = 5
+
+COMMIT_TRANS = 10
 
 
 class Blockchain:
@@ -36,36 +38,59 @@ class Blockchain:
 
 	    #Generate random number to be used as node_id
 	    self.node_id = str(uuid4()).replace('-', '')
+	    
 	    #Create genesis block
-	    self.create_block(0, '00')
+	    genesis_block = self.genesis_block()
+	    self.chain.append(genesis_block)
+
+	def genesis_block(self):
+		"""
+		Add a genesis block to the blockchain
+		"""
+		block = {'block_number': 1,
+		        'timestamp': 0,
+		        'transactions': [],
+		        'nonce': 0,
+		        'previous_hash': '00'}
+
+		#self.chain.append(block)
+		return block
 
 	def create_block(self, nonce, previous_hash):
-	    """
-	    Add a block of transactions to the blockchain
-	    """
-	    block = {'block_number': len(self.chain) + 1,
-	            'timestamp': time(),
-	            'transactions': self.transactions,
-	            'nonce': nonce,
-	            'previous_hash': previous_hash}
+		"""
+		Add a block of transactions to the blockchain
+		"""
+		# Only commit no more than 10 transactions from list
+		if(len(self.transactions)<=COMMIT_TRANS):
+			commit_transactions=self.transactions
+			# Clear the current list of transactions
+			self.transactions = []
+		else:
+			commit_transactions=self.transactions[:COMMIT_TRANS]
+			# remove the commit list of transactions
+			del self.transactions[:COMMIT_TRANS]
 
-	    # Reset the current list of transactions
-	    self.transactions = []
+		block = {'block_number': len(self.chain) + 1,
+		        'timestamp': time(),
+		        'transactions': commit_transactions,
+		        'nonce': nonce,
+		        'previous_hash': previous_hash}
 
-	    self.chain.append(block)
-	    return block
+		#self.chain.append(block)
+		return block
 
 	def verify_transaction(self, transaction, sender_pk, signature):
 		"""
 		Verify a transaction and append to transactions list
 		"""
+		verified_transaction = transaction
 		verify_result = Transaction.verify(sender_pk, signature, transaction)
 		if(verify_result):
-		    self.transactions.append(transaction)
-		    return True
+			verified_transaction['signature'] = TypesUtil.string_to_hex(signature)
+			self.transactions.append(verified_transaction)
+			return True
 		else:
-		    return False
-
+			return False
  
 	def mine_block(self):
 	    """
@@ -75,7 +100,9 @@ class Blockchain:
 	    #print(last_block)
 	    block_hash = Blockchain.hash_block(last_block)
 	    nonce = Blockchain.proof_of_work(last_block, self.transactions)
-	    return self.create_block(nonce, block_hash)
+	    new_block = self.create_block(nonce, block_hash)
+	    self.chain.append(new_block)
+	    return new_block
 
 	@staticmethod
 	def hash_block(block):
@@ -104,13 +131,39 @@ class Blockchain:
 	    """
 	    #last_block = chain_data[-1]
 	    last_hash = Blockchain.hash_block(last_block)
-
+	    #print(transactions)
 	    nonce = 0
 	    while Blockchain.valid_proof(transactions, last_hash, nonce) is False:
 	        nonce += 1
 
 	    # return mined nonce
 	    return nonce
+
+	@staticmethod
+	def valid_block(new_block, chain_data):
+		"""
+		check if a new block from other miners is valid
+		"""
+		previous_block = chain_data[-1]
+		current_block = new_block
+		#print(previous_block)
+		#print(current_block)
+
+		# Check that the hash of the block is correct
+		if( current_block['previous_hash'] != Blockchain.hash_block(previous_block) ):
+		    return False
+
+		# Check that the hash of the block is correct
+		if( current_block['block_number'] <= previous_block['block_number'] ):
+		    return False
+
+		# Check that the Proof of Work is correct given current block data
+		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
+
+		if(not Blockchain.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce'])):
+		    return False
+
+		return True
 
 	@staticmethod
 	def valid_chain(chain_data):
@@ -131,11 +184,11 @@ class Blockchain:
 	        transactions = current_block['transactions']
 
 	        # Need to make sure that the dictionary is ordered. Otherwise we'll get a different hash
-	        transaction_elements = ['sender_address', 'recipient_address', 'value']
+	        transaction_elements = ['sender_address', 'recipient_address', 'value', 'signature']
 	        transactions = [OrderedDict((k, transaction[k]) for k in transaction_elements) for transaction in transactions]
 	        #print(transactions)
 
-	        if(not Blockchain.valid_proof(transactions, current_block['previous_hash'], current_block['nonce'], MINING_DIFFICULTY)):
+	        if(not Blockchain.valid_proof(transactions, current_block['previous_hash'], current_block['nonce'])):
 	            return False
 	            #pass
 

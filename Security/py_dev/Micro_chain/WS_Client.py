@@ -14,9 +14,16 @@ import requests
 import json
 
 from wallet import Wallet
+from nodes import PeerNodes
 from transaction import Transaction
+from blockchain import Blockchain
 from utilities import TypesUtil
 from service_api import SrvAPI
+
+
+# Instantiate the PeerNodes
+peer_nodes = PeerNodes()
+peer_nodes.load_node()
 
 
 def send_transaction(isBroadcast=False):
@@ -81,7 +88,7 @@ def get_transactions():
     print(transactions)
 
 def start_mining():
-    json_response=SrvAPI.GET('http://localhost:8080/test/mining')
+    json_response=SrvAPI.GET('http://localhost:8081/test/mining')
     #transactions = json_response['transactions']
     print(json_response)
 
@@ -106,9 +113,54 @@ def get_chain():
         for block in chain_data:
             print(block)
 
+def valid_transactions():
+    json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
+    chain_data = json_response['chain']
+
+    last_block = chain_data[-1]
+    #print('List transactions:')
+    for transaction_data in last_block['transactions']:
+        #print(transaction_data)
+        # ====================== rebuild transaction ==========================
+        dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
+                                            transaction_data['recipient_address'],
+                                            transaction_data['value'])
+        
+        sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
+        #print(dict_transaction)
+        #print(sign_str)
+
+        sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+        #print(sender_node)
+        # ====================== verify transaction ==========================
+        if(sender_node!={}):
+            sender_pk= sender_node['public_key']
+            verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
+        else:
+            verify_result = False
+        return verify_result
+
+def valid_block():
+    '''json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
+    chain_data = json_response['chain']
+    if(len(chain_data)>1):
+        return(Blockchain.valid_block(chain_data[-1], chain_data[0:-1]) )
+
+    return False'''
+
+    json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
+    chain_data = json_response['chain']
+
+    #print(chain_data[-1])
+    json_response=SrvAPI.POST('http://localhost:8081/test/block/verify', 
+                                chain_data[-1])
+
+    print(json_response)
+    return(json_response['verify_block'])
+
 
 if __name__ == "__main__":
-    #send_transaction()
+    #send_transaction(True)
 
     #get_transactions()
 
@@ -116,6 +168,10 @@ if __name__ == "__main__":
 
     #get_nodes()
 
+    #print('Valid last_block:', valid_block())
+
     #get_chain()
+
+    #print('Valid transactions:', valid_transactions())    
 
     pass

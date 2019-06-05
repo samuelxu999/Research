@@ -62,6 +62,13 @@ myblockchain = Blockchain()
 print_config()
 
 
+def broadcast_block(block_data):
+	# broadcast transaction to peer nodes
+	for node in list(peer_nodes.nodes):
+		json_node = TypesUtil.string_to_json(node)
+		api_url = 'http://' + json_node['node_url'] + '/test/block/verify'
+		json_response = SrvAPI.POST(api_url, block_data)
+
 
 	
 #========================================== Request handler ===============================================
@@ -139,6 +146,7 @@ def full_chain():
 def mine_block():
 	new_block=myblockchain.mine_block()
 	#print(new_block)
+	broadcast_block(new_block)
 
 	response = {
 	    'message': "New Block Forged",
@@ -154,6 +162,46 @@ def get_nodes():
     nodes = list(peer_nodes.nodes)
     response = {'nodes': nodes}
     return jsonify(response), 200
+
+@app.route('/test/block/verify', methods=['POST'])
+def verify_block():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	#transaction_data = TypesUtil.string_to_json(req_data)
+	block_data=json.loads(req_data)
+	
+	if(block_data=='{}'):
+		abort(401, {'error': 'No block data'})
+
+	# verify block
+	if(Blockchain.valid_block(block_data, myblockchain.chain)):
+		for transaction_data in block_data['transactions']:
+		    #print(transaction_data)
+		    # ====================== rebuild transaction ==========================
+		    dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
+		                                        transaction_data['recipient_address'],
+		                                        transaction_data['value'])
+		    
+		    sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
+		    #print(dict_transaction)
+		    #print(sign_str)
+
+		    sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+		    #print(sender_node)
+		    # ====================== verify transaction ==========================
+		    if(sender_node!={}):
+		        sender_pk= sender_node['public_key']
+		        verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
+		    else:
+		        verify_result = False
+		        break
+	else:
+		verify_result = False
+
+	# append verified block to local chain
+	if(verify_result):
+		myblockchain.chain.append(block_data)
+	return jsonify({'verify_block': verify_result}), 201
 	
 if __name__ == '__main__':
 	from argparse import ArgumentParser
