@@ -175,6 +175,7 @@ def verify_block():
 
 	# verify block
 	if(Blockchain.valid_block(block_data, myblockchain.chain)):
+		verify_result = True
 		for transaction_data in block_data['transactions']:
 		    #print(transaction_data)
 		    # ====================== rebuild transaction ==========================
@@ -194,13 +195,19 @@ def verify_block():
 		        verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
 		    else:
 		        verify_result = False
+		        #print('1')
 		        break
 	else:
 		verify_result = False
+		#print('2')
 
-	# append verified block to local chain
 	if(verify_result):
+		# remove committed transactions
+		for transaction in block_data['transactions']:
+			myblockchain.transactions.remove(transaction)
+		# append verified block to local chain
 		myblockchain.chain.append(block_data)
+	#print(verify_result)
 	return jsonify({'verify_block': verify_result}), 201
 	
 if __name__ == '__main__':

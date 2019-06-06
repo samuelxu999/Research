@@ -26,7 +26,7 @@ peer_nodes = PeerNodes()
 peer_nodes.load_node()
 
 
-def send_transaction(isBroadcast=False):
+def send_transaction(target_address, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
 
@@ -49,12 +49,6 @@ def send_transaction(isBroadcast=False):
 
     mytransaction = Transaction(sender_address, sender_private_key, recipient_address, value)
 
-    '''print(mytransaction.sender_address)
-    print(mytransaction.sender_private_key)
-    print(mytransaction.recipient_address)
-    print(mytransaction.value)'''
-    #print(mytransaction.to_dict())
-
     # sign transaction
     sign_data = mytransaction.sign('samuelxu999')
 
@@ -62,45 +56,38 @@ def send_transaction(isBroadcast=False):
     dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
                                             mytransaction.recipient_address,
                                             mytransaction.value)
-    #for k in dict_transaction.items():
-    #    print(k)
-    #print(dict_transaction)
-    #print(sign_data)
-
-    verify_data = Transaction.verify(sender['public_key'], sign_data, dict_transaction)
-    #print('verify transaction:', verify_data)
     #send transaction
-
-    transaction_data = mytransaction.to_json()
-    transaction_data['signature']=TypesUtil.string_to_hex(sign_data)
-    #print(transaction_data)
+    transaction_json = mytransaction.to_json()
+    transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
+    #print(transaction_json)
     if(not isBroadcast):
-        json_response=SrvAPI.POST('http://localhost:8080/test/transaction/verify', 
-        						transaction_data)
+        json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/verify', 
+        						transaction_json)
     else:
-        json_response=SrvAPI.POST('http://localhost:8080/test/transaction/broadcast', 
-                                transaction_data)
+        json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/broadcast', 
+                                transaction_json)
     print(json_response)
 
-def get_transactions():
-    json_response=SrvAPI.GET('http://localhost:8080/test/transactions/get')
+
+def get_transactions(target_address):
+    json_response=SrvAPI.GET('http://'+target_address+'/test/transactions/get')
     transactions = json_response['transactions']
     print(transactions)
 
-def start_mining():
-    json_response=SrvAPI.GET('http://localhost:8081/test/mining')
+def start_mining(target_address):
+    json_response=SrvAPI.GET('http://'+target_address+'/test/mining')
     #transactions = json_response['transactions']
     print(json_response)
 
-def get_nodes():
-    json_response=SrvAPI.GET('http://localhost:8080/test/nodes/get')
+def get_nodes(target_address):
+    json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
     nodes = json_response['nodes']
     print('Peer nodes:')
     for node in nodes:
         print(node)
 
-def get_chain():
-    json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
+def get_chain(target_address):
+    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
     chain_data = json_response['chain']
     chain_length = json_response['length']
     print('Chain length:', chain_length)
@@ -113,8 +100,8 @@ def get_chain():
         for block in chain_data:
             print(block)
 
-def valid_transactions():
-    json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
+def valid_transactions(target_address):
+    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
     chain_data = json_response['chain']
 
     last_block = chain_data[-1]
@@ -140,7 +127,7 @@ def valid_transactions():
             verify_result = False
         return verify_result
 
-def valid_block():
+def valid_block(target_address):
     '''json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
     chain_data = json_response['chain']
     if(len(chain_data)>1):
@@ -160,18 +147,20 @@ def valid_block():
 
 
 if __name__ == "__main__":
-    #send_transaction(True)
+    target_address = "localhost:8080"
+    
+    #send_transaction(target_address, True)
 
-    #get_transactions()
+    #get_transactions(target_address)
 
-    #start_mining()
+    #start_mining(target_address)
 
-    #get_nodes()
+    #get_nodes(target_address)
 
-    #print('Valid last_block:', valid_block())
+    #print('Valid last_block:', valid_block(target_address))
 
-    #get_chain()
+    #get_chain(target_address)
 
-    #print('Valid transactions:', valid_transactions())    
+    #print('Valid transactions:', valid_transactions(target_address))    
 
     pass
