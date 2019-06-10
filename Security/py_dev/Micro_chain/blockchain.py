@@ -18,6 +18,7 @@ import json
 from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
+import copy
 
 from utilities import FileUtil, TypesUtil
 from transaction import Transaction
@@ -60,15 +61,16 @@ class Blockchain:
 		"""
 		Add a block of transactions to the blockchain
 		"""
+		commit_transactions = []
 		# Only commit no more than 10 transactions from list
 		if(len(self.transactions)<=COMMIT_TRANS):
-			commit_transactions=self.transactions
+			commit_transactions = copy.copy(self.transactions)
 			# Clear the current list of transactions
-			self.transactions = []
+			#self.transactions = []
 		else:
-			commit_transactions=self.transactions[:COMMIT_TRANS]
+			commit_transactions = copy.copy(self.transactions[:COMMIT_TRANS])
 			# remove the commit list of transactions
-			del self.transactions[:COMMIT_TRANS]
+			#del self.transactions[:COMMIT_TRANS]
 
 		block = {'block_number': len(self.chain) + 1,
 		        'timestamp': time(),
@@ -103,7 +105,7 @@ class Blockchain:
 	    block_hash = Blockchain.hash_block(last_block)
 	    nonce = Blockchain.proof_of_work(last_block, self.transactions)
 	    new_block = self.create_block(nonce, block_hash)
-	    self.chain.append(new_block)
+	    #self.chain.append(new_block)
 	    return new_block
 
 	@staticmethod
@@ -153,17 +155,20 @@ class Blockchain:
 
 		# Check that the hash of the block is correct
 		if( current_block['previous_hash'] != Blockchain.hash_block(previous_block) ):
-		    return False
+			print('v1')
+			return False
 
 		# Check that the hash of the block is correct
 		if( current_block['block_number'] <= previous_block['block_number'] ):
-		    return False
+			print('v2')
+			return False
 
 		# Check that the Proof of Work is correct given current block data
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
 
 		if(not Blockchain.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce'])):
-		    return False
+			print('v3')
+			return False
 
 		return True
 

@@ -64,10 +64,11 @@ print_config()
 
 def broadcast_block(block_data):
 	# broadcast transaction to peer nodes
+	block = block_data
 	for node in list(peer_nodes.nodes):
 		json_node = TypesUtil.string_to_json(node)
 		api_url = 'http://' + json_node['node_url'] + '/test/block/verify'
-		json_response = SrvAPI.POST(api_url, block_data)
+		json_response = SrvAPI.POST(api_url, block)
 
 
 	
