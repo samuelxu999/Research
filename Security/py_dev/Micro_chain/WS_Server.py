@@ -87,8 +87,9 @@ def verify_transaction():
 
 	# ====================== rebuild transaction ==========================
 	dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
-										transaction_data['recipient_address'],
-										transaction_data['value'])
+											transaction_data['recipient_address'],
+											transaction_data['time_stamp'],
+											transaction_data['value'])
 	
 	sign_data = TypesUtil.hex_to_string(transaction_data['signature'])
 	#print(dict_transaction)
@@ -181,6 +182,7 @@ def verify_block():
 		    # ====================== rebuild transaction ==========================
 		    dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
 		                                        transaction_data['recipient_address'],
+		                                        transaction_data['time_stamp'],
 		                                        transaction_data['value'])
 		    
 		    sign_str = TypesUtil.hex_to_string(transaction_data['signature'])

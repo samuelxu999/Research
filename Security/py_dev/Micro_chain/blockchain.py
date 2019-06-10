@@ -87,7 +87,9 @@ class Blockchain:
 		verify_result = Transaction.verify(sender_pk, signature, transaction)
 		if(verify_result):
 			verified_transaction['signature'] = TypesUtil.string_to_hex(signature)
-			self.transactions.append(verified_transaction)
+			# discard duplicated tx
+			if(verified_transaction not in self.transactions):
+				self.transactions.append(verified_transaction)
 			return True
 		else:
 			return False
@@ -184,7 +186,7 @@ class Blockchain:
 	        transactions = current_block['transactions']
 
 	        # Need to make sure that the dictionary is ordered. Otherwise we'll get a different hash
-	        transaction_elements = ['sender_address', 'recipient_address', 'value', 'signature']
+	        transaction_elements = ['sender_address', 'recipient_address', 'time_stamp', 'value', 'signature']
 	        transactions = [OrderedDict((k, transaction[k]) for k in transaction_elements) for transaction in transactions]
 	        #print(transactions)
 

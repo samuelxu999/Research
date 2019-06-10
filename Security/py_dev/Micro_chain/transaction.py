@@ -11,6 +11,7 @@ Created on June.1, 2019
 
 from collections import OrderedDict
 import hashlib
+from time import time
 
 from utilities import FileUtil, TypesUtil, DatetimeUtil
 from crypto_rsa import Crypto_RSA
@@ -19,10 +20,11 @@ from wallet import Wallet
 
 class Transaction(object):
 
-    def __init__(self, sender_address, sender_private_key, recipient_address, value):
+    def __init__(self, sender_address, sender_private_key, recipient_address, time_stamp, value):
         self.sender_address = sender_address
         self.sender_private_key = sender_private_key
         self.recipient_address = recipient_address
+        self.time_stamp = time_stamp
         self.value = value
 
     def to_dict(self):
@@ -32,6 +34,7 @@ class Transaction(object):
         order_dict = OrderedDict()
         order_dict['sender_address'] = self.sender_address
         order_dict['recipient_address'] = self.recipient_address
+        order_dict['time_stamp'] = self.time_stamp
         order_dict['value'] = self.value
         return order_dict
     def to_json(self):
@@ -39,8 +42,9 @@ class Transaction(object):
         Output dict transaction data structure. 
         """
         return {'sender_address': self.sender_address,
-                            'recipient_address': self.recipient_address,
-                            'value': self.value }
+                'recipient_address': self.recipient_address,
+                'time_stamp': self.time_stamp,
+                'value': self.value }
 
 
     def sign(self, sk_pw):
@@ -59,23 +63,25 @@ class Transaction(object):
         return sign_value
 
     @staticmethod
-    def get_dict(sender_address, recipient_address, value):
+    def get_dict(sender_address, recipient_address, time_stamp, value):
         '''
         build dict transaction data structure given parameter. 
         '''
         order_dict = OrderedDict()
         order_dict['sender_address'] = sender_address
         order_dict['recipient_address'] = recipient_address
+        order_dict['time_stamp'] = time_stamp
         order_dict['value'] = value
         return order_dict
 
     @staticmethod
-    def get_json(sender_address, recipient_address, value):
+    def get_json(sender_address, recipient_address, time_stamp, value):
         '''
         build dict transaction data structure given parameter. 
         '''
         return {'sender_address': sender_address,
                 'recipient_address': recipient_address,
+                'time_stamp': time_stamp,
                 'value': value}
     
     @staticmethod
@@ -97,7 +103,7 @@ class Transaction(object):
     @staticmethod
     def json_to_dict(list_transactions):
         # Need to make sure that the dictionary is ordered. Otherwise we'll get a different hash
-        transaction_elements = ['sender_address', 'recipient_address', 'value', 'signature']
+        transaction_elements = ['sender_address', 'recipient_address', 'time_stamp', 'value', 'signature']
         dict_transactions = [OrderedDict((k, transaction[k]) for k in transaction_elements) 
                         for transaction in list_transactions]
         return dict_transactions
@@ -121,9 +127,10 @@ def test():
     sender_address = sender['address']
     sender_private_key = sender['private_key']
     recipient_address = recipient['address']
+    time_stamp = time()
     value = 12
 
-    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, value)
+    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
 
     '''print(mytransaction.sender_address)
     print(mytransaction.sender_private_key)
@@ -138,6 +145,7 @@ def test():
     # verify transaction
     dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
                                             mytransaction.recipient_address,
+                                            mytransaction.time_stamp,
                                             mytransaction.value)
     verify_data = Transaction.verify(sender['public_key'], sign_data, dict_transaction)
     print('verify transaction:', verify_data)

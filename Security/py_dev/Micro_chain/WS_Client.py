@@ -12,6 +12,7 @@ Created on Nov.2, 2017
 
 import requests
 import json
+from time import time
 
 from wallet import Wallet
 from nodes import PeerNodes
@@ -45,9 +46,10 @@ def send_transaction(target_address, isBroadcast=False):
     sender_address = sender['address']
     sender_private_key = sender['private_key']
     recipient_address = recipient['address']
+    time_stamp = time()
     value = 15
 
-    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, value)
+    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
 
     # sign transaction
     sign_data = mytransaction.sign('samuelxu999')
@@ -55,6 +57,7 @@ def send_transaction(target_address, isBroadcast=False):
     # verify transaction
     dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
                                             mytransaction.recipient_address,
+                                            mytransaction.time_stamp,
                                             mytransaction.value)
     #send transaction
     transaction_json = mytransaction.to_json()
@@ -111,6 +114,7 @@ def valid_transactions(target_address):
         # ====================== rebuild transaction ==========================
         dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
                                             transaction_data['recipient_address'],
+                                            transaction_data['time_stamp'],
                                             transaction_data['value'])
         
         sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
