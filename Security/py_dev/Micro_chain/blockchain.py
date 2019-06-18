@@ -27,7 +27,7 @@ MINING_SENDER = "THE BLOCKCHAIN"
 MINING_REWARD = 1
 MINING_DIFFICULTY = 4
 
-COMMIT_TRANS = 10
+COMMIT_TRANS = 2
 
 
 class Blockchain:
@@ -57,21 +57,10 @@ class Blockchain:
 		#self.chain.append(block)
 		return block
 
-	def create_block(self, nonce, previous_hash):
+	def create_block(self, nonce, previous_hash, commit_transactions):
 		"""
 		Add a block of transactions to the blockchain
 		"""
-		commit_transactions = []
-		# Only commit no more than 10 transactions from list
-		if(len(self.transactions)<=COMMIT_TRANS):
-			commit_transactions = copy.copy(self.transactions)
-			# Clear the current list of transactions
-			#self.transactions = []
-		else:
-			commit_transactions = copy.copy(self.transactions[:COMMIT_TRANS])
-			# remove the commit list of transactions
-			#del self.transactions[:COMMIT_TRANS]
-
 		block = {'block_number': len(self.chain) + 1,
 		        'timestamp': time(),
 		        'transactions': commit_transactions,
@@ -97,16 +86,27 @@ class Blockchain:
 			return False
  
 	def mine_block(self):
-	    """
-	    Mining task to find new block
-	    """
-	    last_block = self.chain[-1]
-	    #print(last_block)
-	    block_hash = Blockchain.hash_block(last_block)
-	    nonce = Blockchain.proof_of_work(last_block, self.transactions)
-	    new_block = self.create_block(nonce, block_hash)
-	    #self.chain.append(new_block)
-	    return new_block
+		"""
+		Mining task to find new block
+		"""
+		last_block = self.chain[-1]
+		#print(last_block)
+		block_hash = Blockchain.hash_block(last_block)
+
+		commit_transactions = []
+		if(len(self.transactions)<=COMMIT_TRANS):
+			commit_transactions = copy.copy(self.transactions)
+			# Clear the current list of transactions
+			#self.transactions = []
+		else:
+			commit_transactions = copy.copy(self.transactions[:COMMIT_TRANS])
+			# remove the commit list of transactions
+			#del self.transactions[:COMMIT_TRANS]
+
+		nonce = Blockchain.proof_of_work(last_block, commit_transactions)
+		new_block = self.create_block(nonce, block_hash, commit_transactions)
+		#self.chain.append(new_block)
+		return new_block
 
 	@staticmethod
 	def hash_block(block):
@@ -214,7 +214,7 @@ def chain_test():
     print('Mining....')
     for i in range(1, 6):
         new_block=blockchain.mine_block()
-        #print(blockchain.chain[-1])
+        blockchain.chain.append(new_block)
         print(new_block)
 
     #print(blockchain.chain[-1])

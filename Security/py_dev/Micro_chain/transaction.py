@@ -37,6 +37,7 @@ class Transaction(object):
         order_dict['time_stamp'] = self.time_stamp
         order_dict['value'] = self.value
         return order_dict
+
     def to_json(self):
         """
         Output dict transaction data structure. 
