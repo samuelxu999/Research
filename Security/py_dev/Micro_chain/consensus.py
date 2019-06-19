@@ -14,6 +14,9 @@ from configuration import *
 from block import Block
 
 class POW():
+	''' 
+	Proof-of-Work consenses mechanism
+	'''
 
 	@staticmethod
 	def valid_proof(transactions, previous_hash, nonce, difficulty=MINING_DIFFICULTY):
@@ -39,4 +42,40 @@ class POW():
 
 		# return mined nonce
 		return nonce
+
+class POS():
+	''' 
+	Proof-of-Stake consenses mechanism
+	'''
+
+	@staticmethod
+	def valid_proof(transactions, previous_hash, nonce, sum_stake):
+		"""
+		Check if a guessing hash value satisfies the mining difficulty conditions. 
+		@ nonce: the stake deposit value 
+		"""
+		guess_str = (str(transactions)+str(previous_hash)+str(nonce)).encode()
+		guess_hash = hashlib.sha256(guess_str).hexdigest()
+
+		difficulty =1
+		while(int('f'*difficulty, 16) < sum_stake):
+			difficulty+=1
+
+		guess_weight = int(guess_hash[:difficulty], 16)/int('f'*difficulty, 16) 
+
+		# The hit rate is related to P(nonce/sum_stake)
+		return guess_weight < (nonce/sum_stake)
+
+	@staticmethod
+	def proof_of_stake(parent_block, commit_transactions, nonce=1, sum_stake=1):
+		"""
+		Proof of work algorithm
+		@ parent_block: parent block data without 'hash' value
+		@ commit_transactions: commited transactions list when new block
+		"""
+		#last_block = chain_data[-1]
+		last_hash = Block.hash_block(parent_block)
+
+		return POS.valid_proof(commit_transactions, last_hash, nonce, sum_stake)
+
 
