@@ -17,7 +17,9 @@ from time import time
 from wallet import Wallet
 from nodes import PeerNodes
 from transaction import Transaction
+from block import Block
 from blockchain import Blockchain
+from consensus import POW
 from utilities import TypesUtil
 from service_api import SrvAPI
 
@@ -132,26 +134,27 @@ def valid_transactions(target_address):
         return verify_result
 
 def valid_block(target_address):
-    '''json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
-    chain_data = json_response['chain']
-    if(len(chain_data)>1):
-        return(Blockchain.valid_block(chain_data[-1], chain_data[0:-1]) )
 
-    return False'''
-
-    json_response=SrvAPI.GET('http://localhost:8080/test/chain/get')
+    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
     chain_data = json_response['chain']
+
+    # new a block to test
+    last_block = chain_data[-1]
+    parent_block = Block.json_to_block(last_block)
+
+    nonce = POW.proof_of_work(last_block, [])
+    new_block = Block(parent_block, [], nonce)
+    new_block.print_data()
 
     #print(chain_data[-1])
-    json_response=SrvAPI.POST('http://localhost:8081/test/block/verify', 
-                                chain_data[-1])
+    json_response=SrvAPI.POST('http://'+target_address+'/test/block/verify', 
+                                new_block.to_json())
 
-    print(json_response)
     return(json_response['verify_block'])
 
 
 if __name__ == "__main__":
-    target_address = "localhost:8080"
+    target_address = "localhost:8081"
     
     #send_transaction(target_address, True)
 
@@ -161,9 +164,9 @@ if __name__ == "__main__":
 
     #get_nodes(target_address)
 
-    #print('Valid last_block:', valid_block(target_address))
-
     #get_chain(target_address)
+
+    #print('Valid last_block:', valid_block(target_address))
 
     #print('Valid transactions:', valid_transactions(target_address))    
 

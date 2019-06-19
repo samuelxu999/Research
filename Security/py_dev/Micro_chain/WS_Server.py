@@ -152,7 +152,8 @@ def mine_block():
 
 	response = {
 	    'message': "New Block Forged",
-	    'block_number': new_block['block_number'],
+	    'hash': new_block['hash'],
+	    'height': new_block['height'],
 	    'transactions': new_block['transactions'],
 	    'nonce': new_block['nonce'],
 	    'previous_hash': new_block['previous_hash'],
