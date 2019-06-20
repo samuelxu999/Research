@@ -64,16 +64,6 @@ myblockchain = Validator(ConsensusType.PoS)
 print_config()
 
 
-def broadcast_block(block_data):
-	# broadcast transaction to peer nodes
-	block = block_data
-	for node in list(peer_nodes.nodes):
-		json_node = TypesUtil.string_to_json(node)
-		api_url = 'http://' + json_node['node_url'] + '/test/block/verify'
-		json_response = SrvAPI.POST(api_url, block)
-
-
-	
 #========================================== Request handler ===============================================
 #GET req
 @app.route('/test/transaction/verify', methods=['POST'])
@@ -122,11 +112,7 @@ def broadcast_transaction():
 		abort(401, {'error': 'No transaction data'})
 
 	# broadcast transaction to peer nodes
-	for node in list(peer_nodes.nodes):
-		json_node = TypesUtil.string_to_json(node)
-		api_url = 'http://' + json_node['node_url'] + '/test/transaction/verify'
-		json_response = SrvAPI.POST(api_url, transaction_data)
-		#print(api_url)
+	SrvAPI.broadcast(peer_nodes.nodes, transaction_data, '/test/transaction/verify')
 
 	return jsonify({'broadcast_transaction': 'Succeed!'}), 201
 
@@ -151,7 +137,8 @@ def mine_block():
 	new_block=myblockchain.mine_block()
 	#broadcast proposed block
 	if( (myblockchain.consensus==ConsensusType.PoW) or (not Block.isEmptyBlock(new_block)) ):
-		broadcast_block(new_block)
+		#broadcast new block to peer nodes
+		SrvAPI.broadcast(peer_nodes.nodes, new_block, '/test/block/verify')
 
 		response = {
 			'message': "New Block Forged",
