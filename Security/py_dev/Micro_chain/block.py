@@ -102,8 +102,17 @@ class Block():
 		block.height = block_json['height']
 		block.previous_hash = block_json['previous_hash']
 		block.transactions = block_json['transactions']
-		block.nonce = block_json['transactions']
+		block.nonce = block_json['nonce']
 		return block
+
+	@staticmethod
+	def isEmptyBlock(block_json):
+		"""
+		check if block_json is empty block. 
+		"""
+		if( (block_json['height'] >0) and block_json['nonce']==0):
+			return True
+		return False
 
 
 

@@ -10,8 +10,20 @@ Created on June.18, 2019
 '''
 
 import hashlib
+from enum import Enum
 from configuration import *
 from block import Block
+
+class ConsensusType(Enum):
+	'''
+	Define consensus enum type
+	@ PoW :  Proof-of-Work
+	@ PoS :  Proof-of-Stake
+	@ BFT :  Byzantine Fault Tolerant
+	'''
+	PoW = 0
+	PoS = 1
+	BFT = 2
 
 class POW():
 	''' 
@@ -49,14 +61,14 @@ class POS():
 	'''
 
 	@staticmethod
-	def valid_proof(transactions, previous_hash, nonce, sum_stake):
+	def valid_proof(transactions, previous_hash, nonce, stake_weight=1, sum_stake=1):
 		"""
 		Check if a guessing hash value satisfies the mining difficulty conditions. 
 		@ nonce: the stake deposit value 
 		"""
 		guess_str = (str(transactions)+str(previous_hash)+str(nonce)).encode()
 		guess_hash = hashlib.sha256(guess_str).hexdigest()
-
+		#print(guess_hash)
 		difficulty =1
 		while(int('f'*difficulty, 16) < sum_stake):
 			difficulty+=1
@@ -64,10 +76,10 @@ class POS():
 		guess_weight = int(guess_hash[:difficulty], 16)/int('f'*difficulty, 16) 
 
 		# The hit rate is related to P(nonce/sum_stake)
-		return guess_weight < (nonce/sum_stake)
+		return guess_weight < (stake_weight/sum_stake)
 
 	@staticmethod
-	def proof_of_stake(parent_block, commit_transactions, nonce=1, sum_stake=1):
+	def proof_of_stake(parent_block, commit_transactions, nonce, stake_weight, sum_stake):
 		"""
 		Proof of work algorithm
 		@ parent_block: parent block data without 'hash' value
@@ -76,6 +88,10 @@ class POS():
 		#last_block = chain_data[-1]
 		last_hash = Block.hash_block(parent_block)
 
-		return POS.valid_proof(commit_transactions, last_hash, nonce, sum_stake)
+		if( not POS.valid_proof(commit_transactions, last_hash, nonce, stake_weight, sum_stake) ):
+			return 0
+		return nonce
+
+		
 
 

@@ -1,15 +1,66 @@
 #This is used for test code
 
 from wallet import Wallet
-from nodes import PeerNodes
+from nodes import *
 from transaction import Transaction
 from block import Block
-from consensus import POW, POS
+from validator import Validator
+from consensus import *
 from utilities import FileUtil, TypesUtil
+from configuration import *
 
 from time import time
+import random
+
+def test_transaction():
+    # Instantiate the Wallet
+    mywallet = Wallet()
+
+    # load accounts
+    mywallet.load_accounts()
+
+    #list account address
+    print(mywallet.list_address())
+
+    #----------------- test transaction --------------------
+    sender = mywallet.accounts[0]
+    recipient = mywallet.accounts[-1]
+    attacker = mywallet.accounts[1]
+
+    # generate transaction
+    sender_address = sender['address']
+    sender_private_key = sender['private_key']
+    recipient_address = recipient['address']
+    time_stamp = time()
+    value = 12
+
+    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
+
+    '''print(mytransaction.sender_address)
+    print(mytransaction.sender_private_key)
+    print(mytransaction.recipient_address)
+    print(mytransaction.value)'''
+    #print(mytransaction.to_dict())
+    #print(mytransaction.to_json())
+
+    # sign transaction
+    sign_data = mytransaction.sign('samuelxu999')
+
+    # verify transaction
+    dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
+                                            mytransaction.recipient_address,
+                                            mytransaction.time_stamp,
+                                            mytransaction.value)
+    verify_data = Transaction.verify(sender['public_key'], sign_data, dict_transaction)
+    print('verify transaction:', verify_data)
 
 def build_transaction():
+	# Instantiate the Wallet
+	mywallet = Wallet()
+
+	# load accounts
+	mywallet.load_accounts()
+
 	#----------------- test transaction --------------------
 	sender = mywallet.accounts[0]
 	recipient = mywallet.accounts[-1]
@@ -39,7 +90,10 @@ def build_transaction():
 	return transaction_json
 
 def test_block():
-
+	# Instantiate the PeerNodes
+	peer_nodes = PeerNodes()
+	peer_nodes.load_node()
+	root_block=Block()
 	transaction_json = build_transaction()
 
 	myblock=Block(root_block, [transaction_json])
@@ -73,6 +127,7 @@ def test_PoW():
 	"""
 	Mining task to find new block
 	"""
+	root_block=Block()
 	chain_data = []
 	chain_data.append(root_block.to_json())
 
@@ -94,7 +149,7 @@ def test_PoW():
 
 def test_PoS():
 	# test PoS
-
+	root_block=Block()
 	chain_data = []
 	chain_data.append(root_block.to_json())
 
@@ -103,32 +158,106 @@ def test_PoS():
 
 	sum_hit = 0
 	test_run = 1000
+	ran_nonce = random.randint(1, 2**256)
+
 	for n in range(1, test_run):
 		i=1
-		while(not POS.proof_of_stake(last_block, [build_transaction()], 1, 3 )):
+		while(POS.proof_of_stake(last_block, [build_transaction()], ran_nonce, TEST_STAKE_WEIGHT, TEST_STAKE_SUM )==0):
 			i+=1
 		#print('Try %d until succeed!' %(i))
 		sum_hit+=i
 	print('hit rate:', sum_hit/test_run)
 
+def test_validator():
+    # Instantiate the Blockchain
+    myblockchain = Validator(ConsensusType.PoW)
+    print('Chain information:')
+    print('    uuid:          ', myblockchain.node_id)
+    print('    chain length: ', len(myblockchain.chain))
 
+    print(myblockchain.chain[0])
+    print('Mining....')
+    for i in range(1, 6):
+        new_block=myblockchain.mine_block()
+        myblockchain.chain.append(new_block)
+        print(new_block)
 
-# Instantiate the Wallet
-mywallet = Wallet()
+    #print(blockchain.chain[-1])
+    print('    chain length: ', len(myblockchain.chain))
 
-# load accounts
-mywallet.load_accounts()
+    print('Valid chain: ', Validator.valid_chain(myblockchain.chain))
 
-# Instantiate the PeerNodes
-peer_nodes = PeerNodes()
-peer_nodes.load_node()
+    new_block = myblockchain.mine_block()
+    print('Valid block: ', Validator.valid_block(new_block, myblockchain.chain))
 
-root_block=Block()
+def test_Node():
+    # Instantiate the PeerNodes
+    peer_nodes = PeerNodes()
+
+    # ----------------------- register node -------------------------------
+    peer_nodes.register_node('ceeebaa052718c0a00adb87de857ba63608260e9',
+        '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414b396a6a6e486e332f70492f596c6e4175454c492b35574b34394c397776510a5950346471516e514a7a66312f634d34416a726835484e706f5974622b326a6c33336a6b684850662f2b784f694f52346b4a685658526b434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
+        'http://128.226.77.51:8080')
+    peer_nodes.register_node('1699600976ec6fc0fe35d54174eb6094e671d2fd',
+        '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414d58736e354f706b57706e3359695a386257753749397168363873784439370a2b2f4f5374616270305a464e365745475a415452316f397051684273727041416f656f4d4876717871784d2f645a636e7a43377a4f394d434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
+        'http://128.226.77.51:8081')
+    peer_nodes.register_node('f55af09f40768ca05505767cd013b6b9a78579c4',
+        '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414e393072576d52506b6e46446b6d51536368414f74594434686f675a4d57330a6f4b4d77626559306a322f4966705a642b614447414863754c317534463443314d712b426354765239336b4b34573657346b6e59383145434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
+        'http://128.226.77.51:8082')
+    
+    nodes = peer_nodes.nodes
+    #print(nodes)
+
+    print('List registered nodes:')
+    for node in list(nodes):
+        json_node = TypesUtil.string_to_json(node)
+        print('    ' + json_node['address'] + '    ' + json_node['node_url'])
+
+    # ------------------ save and load node -------------------
+    #peer_nodes.save_node(PEER_NODES)
+    peer_nodes.load_node(PEER_NODES)
+    reload_nodes = peer_nodes.nodes
+    #print(reload_nodes)
+
+    print('List loaded nodes:')
+    for node in list(reload_nodes):
+        json_node = TypesUtil.string_to_json(node)
+        print('    ' + json_node['address'] + '    ' + json_node['node_url'])
+
+    # ---------------------- search node ----------------------
+    node_address = '1699600976ec6fc0fe35d54174eb6094e671d2fd'
+    print('Search nodes:' + node_address)
+    print(peer_nodes.get_node(node_address))
+
+def test_Wallet():
+    # Instantiate the Wallet
+    mywallet = Wallet()
+
+    # load accounts
+    mywallet.load_accounts()
+
+    # new account
+    #mywallet.create_account('samuelxu999')
+
+    #print(mywallet.accounts)
+    
+    if(len(mywallet.accounts)!=0):
+        account = mywallet.accounts[0]
+        print(TypesUtil.hex_to_string(account['public_key']))
+        print(len(account['address']))
+    
+    #list account address
+    print(mywallet.list_address())
+
 
 if __name__ == '__main__':
 	#test_block()
 	#test_PoW()
-	test_PoS()
+	#test_PoS()
+	#test_validator()
+	#test_transaction()
+	#test_Node()
+	#test_Wallet()
 	pass
 
 

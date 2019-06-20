@@ -18,7 +18,7 @@ from wallet import Wallet
 from nodes import PeerNodes
 from transaction import Transaction
 from block import Block
-from blockchain import Blockchain
+from validator import Validator
 from consensus import POW
 from utilities import TypesUtil
 from service_api import SrvAPI
@@ -155,7 +155,7 @@ def valid_block(target_address):
 
 if __name__ == "__main__":
     target_address = "localhost:8081"
-    
+
     #send_transaction(target_address, True)
 
     #get_transactions(target_address)

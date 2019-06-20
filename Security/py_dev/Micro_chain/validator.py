@@ -1,6 +1,6 @@
 '''
 ========================
-blockchain.py
+validator.py
 ========================
 Created on May.31, 2019
 @author: Xu Ronghua
@@ -23,28 +23,35 @@ import copy
 from utilities import FileUtil, TypesUtil
 from transaction import Transaction
 from block import Block
-from consensus import POW
+from consensus import *
 from configuration import *
 
 
-class Blockchain():
+class Validator(object):
 
-	def __init__(self):
+	def __init__(self, consensus=ConsensusType.PoW):
+		'''A blockchain contains the following arguments:
 
+		self.transactions: local transaction pool
+		self.chain: local chain data
+		self.previous_hash: hash of the parent block
+		self.transactions: transactions list
+		'''
+		#Generate random number to be used as node_id
+		self.node_id = str(uuid4()).replace('-', '')
 		self.transactions = []
 		self.chain = []
 
-		#Generate random number to be used as node_id
-		self.node_id = str(uuid4()).replace('-', '')
-
 		#Create genesis block
-		#genesis_block = self.genesis_block()
 		genesis_block = Block()
 		self.chain.append(genesis_block.to_json())
 
+		#choose consensus algorithm
+		self.consensus = consensus
+
 	def verify_transaction(self, transaction, sender_pk, signature):
 		"""
-		Verify a transaction and append to transactions list
+		Verify a received transaction and append to local transactions pool
 		"""
 		verified_transaction = transaction
 		verify_result = Transaction.verify(sender_pk, signature, transaction)
@@ -59,11 +66,11 @@ class Blockchain():
  
 	def mine_block(self):
 		"""
-		Mining task to find new block
+		Mining task to propose new block
 		"""
 
 		commit_transactions = []
-		if(len(self.transactions)<=COMMIT_TRANS):
+		if( len(self.transactions)<=COMMIT_TRANS ):
 			commit_transactions = copy.copy(self.transactions)
 
 		else:
@@ -79,14 +86,27 @@ class Blockchain():
 
 		parent_block = Block.json_to_block(last_block)
 
-		# mining new nonce
-		nonce = POW.proof_of_work(block_data, commit_transactions)
-		new_block = Block(parent_block, commit_transactions, nonce)
+		# execute mining task given consensus algorithm
+		if(self.consensus==ConsensusType.PoW):
+			# mining new nonce
+			nonce = POW.proof_of_work(block_data, commit_transactions)
+			new_block = Block(parent_block, commit_transactions, nonce)
+		elif(self.consensus==ConsensusType.PoS):
+			# propose new block given stake weight
+			if( POS.proof_of_stake(block_data, commit_transactions, self.node_id, 
+									TEST_STAKE_WEIGHT, TEST_STAKE_SUM )!=0 ):
+				new_block = Block(parent_block, commit_transactions, self.node_id)	
+			else:
+				# generate empty block without transactions
+				new_block = Block(parent_block)	
+		else:
+			# generate empty block without transactions
+			new_block = Block(parent_block)				
 
 		return new_block.to_json()
 
 	@staticmethod
-	def valid_block(new_block, chain_data):
+	def valid_block(new_block, chain_data, consensus=ConsensusType.PoW):
 		"""
 		check if a new block from other miners is valid
 		"""
@@ -113,14 +133,23 @@ class Blockchain():
 		# Check that the Proof of Work is correct given current block data
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
 
-		if(not POW.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce'])):
-			print('v3')
+		# execute valid proof task given consensus algorithm
+		if(consensus==ConsensusType.PoW):
+			if( not POW.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce']) ):
+				print('v3')
+				return False
+		elif(consensus==ConsensusType.PoS):
+			if( not POS.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce'], 
+									TEST_STAKE_WEIGHT, TEST_STAKE_SUM) ):
+				print('v3')
+				return False
+		else:
 			return False
 
 		return True
 
 	@staticmethod
-	def valid_chain(chain_data):
+	def valid_chain(chain_data, consensus=ConsensusType.PoW):
 		"""
 		check if a bockchain data is valid
 		""" 
@@ -146,47 +175,23 @@ class Blockchain():
 			# Need to make sure that the dictionary is ordered. Otherwise we'll get a different hash
 			transaction_elements = ['sender_address', 'recipient_address', 'time_stamp', 'value', 'signature']
 			transactions = [OrderedDict((k, transaction[k]) for k in transaction_elements) for transaction in transactions]
-
-			if(not POW.valid_proof(transactions, current_block['previous_hash'], current_block['nonce'])):
-				print('C2')
+			
+			# execute valid proof task given consensus algorithm
+			if(consensus==ConsensusType.PoW):
+				if( not POW.valid_proof(transactions, current_block['previous_hash'], current_block['nonce']) ):
+					print('C2')
+					return False
+			elif(consensus==ConsensusType.PoS):
+				if( not POS.valid_proof(transactions, current_block['previous_hash'], current_block['nonce'], 
+										TEST_STAKE_WEIGHT, TEST_STAKE_SUM) ):
+					print('v3')
+					return False
+			else:
 				return False
-				#pass
 
 			previous_block = current_block
 			current_index += 1
 
 			return True
-
-def chain_test():
-    # Instantiate the Blockchain
-    myblockchain = Blockchain()
-    print('Chain information:')
-    print('    uuid:          ', myblockchain.node_id)
-    print('    chain length: ', len(myblockchain.chain))
-
-    print(myblockchain.chain[0])
-    print('Mining....')
-    for i in range(1, 6):
-        new_block=myblockchain.mine_block()
-        myblockchain.chain.append(new_block)
-        print(new_block)
-
-    #print(blockchain.chain[-1])
-    print('    chain length: ', len(myblockchain.chain))
-
-    print('Valid chain: ', Blockchain.valid_chain(myblockchain.chain))
-
-    new_block = myblockchain.mine_block()
-    print('Valid block: ', Blockchain.valid_block(new_block, myblockchain.chain))
-
-if __name__ == '__main__':
-    chain_test()
-    pass
-
-
-
-
-
-
 
 

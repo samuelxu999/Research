@@ -76,36 +76,3 @@ class Wallet(object):
             ls_address.append(account['address'])
         return ls_address
 
-
-def test():
-    # Instantiate the Wallet
-    mywallet = Wallet()
-
-    # load accounts
-    mywallet.load_accounts()
-
-    # new account
-    #mywallet.create_account('samuelxu999')
-
-    #print(mywallet.accounts)
-    
-    if(len(mywallet.accounts)!=0):
-        account = mywallet.accounts[0]
-        print(TypesUtil.hex_to_string(account['public_key']))
-        print(len(account['address']))
-    
-    #list account address
-    print(mywallet.list_address())
-
- 
-if __name__ == '__main__':
-    test()
-    pass
-
-
-
-
-
-
-
-

@@ -19,7 +19,9 @@ from utilities import FileUtil, TypesUtil, DatetimeUtil
 from wallet import Wallet
 from transaction import Transaction
 from nodes import PeerNodes
-from blockchain import Blockchain
+from block import Block
+from validator import Validator
+from consensus import *
 from service_api import SrvAPI
 
 def print_config():
@@ -38,10 +40,10 @@ def print_config():
 		print('    ', json_node['address'] + '    ' + json_node['node_url'])
 
 	# Instantiate the Blockchain
-	myblockchain = Blockchain()
 	print('Chain information:')
-	print('    uuid:          ', myblockchain.node_id)
+	print('    uuid:         ', myblockchain.node_id)
 	print('    chain length: ', len(myblockchain.chain))
+	print('    consensus: 	 ', myblockchain.consensus.name)
 
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
@@ -57,7 +59,7 @@ mywallet = Wallet()
 mywallet.load_accounts()
 
 # Instantiate the Blockchain
-myblockchain = Blockchain()
+myblockchain = Validator(ConsensusType.PoS)
 
 print_config()
 
@@ -147,17 +149,21 @@ def full_chain():
 @app.route('/test/mining', methods=['GET'])
 def mine_block():
 	new_block=myblockchain.mine_block()
-	#print(new_block)
-	broadcast_block(new_block)
+	#broadcast proposed block
+	if( (myblockchain.consensus==ConsensusType.PoW) or (not Block.isEmptyBlock(new_block)) ):
+		broadcast_block(new_block)
 
-	response = {
-	    'message': "New Block Forged",
-	    'hash': new_block['hash'],
-	    'height': new_block['height'],
-	    'transactions': new_block['transactions'],
-	    'nonce': new_block['nonce'],
-	    'previous_hash': new_block['previous_hash'],
-	}
+		response = {
+			'message': "New Block Forged",
+			'hash': new_block['hash'],
+			'height': new_block['height'],
+			'transactions': new_block['transactions'],
+			'nonce': new_block['nonce'],
+			'previous_hash': new_block['previous_hash'],
+		}
+	else:
+		response = { 'message': "Empty Block Forged, not broadcast."}		
+	
 	return jsonify(response), 200
 
 @app.route('/test/nodes/get', methods=['GET'])
@@ -177,7 +183,7 @@ def verify_block():
 		abort(401, {'error': 'No block data'})
 
 	# verify block
-	if(Blockchain.valid_block(block_data, myblockchain.chain)):
+	if(Validator.valid_block(block_data, myblockchain.chain, myblockchain.consensus)):
 		verify_result = True
 		for transaction_data in block_data['transactions']:
 		    #print(transaction_data)
