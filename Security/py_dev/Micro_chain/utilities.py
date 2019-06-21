@@ -235,6 +235,16 @@ class DatetimeUtil(object):
 TypesUtil class for data type format transfer
 '''
 class TypesUtil(object):
+	#integer to hex
+	@staticmethod
+	def int_to_hex(int_data):
+		return hex(int_data)
+		
+	#hex to integer
+	@staticmethod
+	def hex_to_int(hex_data):
+		return int(hex_data, 16)
+		
 	#string to hex
 	@staticmethod
 	def string_to_hex(str_data):

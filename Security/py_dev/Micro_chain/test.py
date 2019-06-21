@@ -8,6 +8,7 @@ from validator import Validator
 from consensus import *
 from utilities import FileUtil, TypesUtil
 from configuration import *
+from db_adapter import DataManager
 
 from time import time
 import random
@@ -249,6 +250,43 @@ def test_Wallet():
     #list account address
     print(mywallet.list_address())
 
+def test_database():
+	myDB_manager = DataManager('testdb')
+
+	# new table 
+	myDB_manager.create_table('processed')
+	#myDB_manager.remove_table('processed')
+
+	#build test data
+	transaction = build_transaction()
+	json_data = {}
+	json_data['hash']='ed6d03786f790508ae752f5190432bca4d9cc017c5835c1c6e470a9936d88015'
+	json_data['nonce']= 34567
+	json_data['transactions'] = [transaction]
+	#print(json_data)
+
+	# CRUD test
+	hash_value= TypesUtil.hex_to_int(json_data['hash'])
+	#myDB_manager.add_block('processed', hash_value, TypesUtil.json_to_string(json_data))
+	#myDB_manager.update_block('processed', hash_value, TypesUtil.json_to_string('{}'))
+	#myDB_manager.delete_block('processed', hash_value)
+
+	#Display data
+	ls_result = myDB_manager.select_block('processed', hash_value)
+	print(ls_result)
+
+	if(len(ls_result)>0):
+		print( ls_result[0][0] )
+		hex_hash =  TypesUtil.int_to_hex(int(ls_result[0][0])) 
+		int_hash =  TypesUtil.hex_to_int(hex_hash)
+		#print( ls_result[0][1] == str(int_hash)  )
+		print( int_hash==int(ls_result[0][0]) )
+
+		json_data = TypesUtil.string_to_json(ls_result[0][1])
+		if(json_data !={}):
+			print(json_data['transactions'])
+
+
 
 if __name__ == '__main__':
 	#test_block()
@@ -258,6 +296,8 @@ if __name__ == '__main__':
 	#test_transaction()
 	#test_Node()
 	#test_Wallet()
+	#test_database()
+
 	pass
 
 
