@@ -4,6 +4,7 @@ from wallet import Wallet
 from nodes import *
 from transaction import Transaction
 from block import Block
+from Sim_validator import Validator as SimValidator
 from validator import Validator
 from consensus import *
 from utilities import FileUtil, TypesUtil
@@ -169,9 +170,9 @@ def test_PoS():
 		sum_hit+=i
 	print('hit rate:', sum_hit/test_run)
 
-def test_validator():
+def test_SimValidator():
     # Instantiate the Blockchain
-    myblockchain = Validator(ConsensusType.PoW)
+    myblockchain = SimValidator(ConsensusType.PoW)
     print('Chain information:')
     print('    uuid:          ', myblockchain.node_id)
     print('    chain length: ', len(myblockchain.chain))
@@ -186,10 +187,10 @@ def test_validator():
     #print(blockchain.chain[-1])
     print('    chain length: ', len(myblockchain.chain))
 
-    print('Valid chain: ', Validator.valid_chain(myblockchain.chain))
+    print('Valid chain: ', SimValidator.valid_chain(myblockchain.chain))
 
     new_block = myblockchain.mine_block()
-    print('Valid block: ', Validator.valid_block(new_block, myblockchain.chain))
+    print('Valid block: ', SimValidator.valid_block(new_block, myblockchain.chain))
 
 def test_Node():
     # Instantiate the PeerNodes
@@ -263,40 +264,62 @@ def test_database():
 	json_data['hash']='ed6d03786f790508ae752f5190432bca4d9cc017c5835c1c6e470a9936d88015'
 	json_data['nonce']= 34567
 	json_data['transactions'] = [transaction]
-	#print(json_data)
 
 	# CRUD test
-	hash_value= TypesUtil.hex_to_int(json_data['hash'])
-	#myDB_manager.add_block('processed', hash_value, TypesUtil.json_to_string(json_data))
-	#myDB_manager.update_block('processed', hash_value, TypesUtil.json_to_string('{}'))
-	#myDB_manager.delete_block('processed', hash_value)
+	#myDB_manager.insert_block('processed', json_data['hash'], TypesUtil.json_to_string(json_data))
+	#myDB_manager.update_block('processed', json_data['hash'], TypesUtil.json_to_string('{}'))
+	#myDB_manager.update_status('processed', json_data['hash'], 1)
+	#myDB_manager.delete_block('processed', json_data['hash'])
 
 	#Display data
-	ls_result = myDB_manager.select_block('processed', hash_value)
-	print(ls_result)
+	ls_result = myDB_manager.select_block('processed', json_data['hash'])
+	#ls_result = myDB_manager.select_status('processed', 1)	
+	#print(ls_result)
 
 	if(len(ls_result)>0):
-		print( ls_result[0][0] )
-		hex_hash =  TypesUtil.int_to_hex(int(ls_result[0][0])) 
-		int_hash =  TypesUtil.hex_to_int(hex_hash)
-		#print( ls_result[0][1] == str(int_hash)  )
-		print( int_hash==int(ls_result[0][0]) )
-
-		json_data = TypesUtil.string_to_json(ls_result[0][1])
+		print('ID:           ', ls_result[0][0] )
+		print('Block_hash:   ', ls_result[0][1] )
+		print('Block_status: ', ls_result[0][3] )
+		json_data = TypesUtil.string_to_json(ls_result[0][2])
 		if(json_data !={}):
 			print(json_data['transactions'])
+			print(json_data['hash']==ls_result[0][1])		
 
+
+def test_Validator():
+	# Instantiate the Blockchain
+	myblockchain = Validator(ConsensusType.PoW)
+	print('Chain information:')
+	print('    uuid:          ', myblockchain.node_id)
+	print('    chain length: ', len(myblockchain.chain))
+
+	print(myblockchain.chain)
+
+	print('Mining....')
+	for i in range(1, 6):
+		new_block=myblockchain.mine_block()
+		myblockchain.chain.append(new_block)
+		print(new_block)
+
+	#print(blockchain.chain[-1])
+	print('    chain length: ', len(myblockchain.chain))
+
+	print('Valid chain: ', Validator.valid_chain(myblockchain.chain))
+
+	new_block = myblockchain.mine_block()
+	print('Valid block: ', Validator.valid_block(new_block, myblockchain.chain))
 
 
 if __name__ == '__main__':
 	#test_block()
 	#test_PoW()
 	#test_PoS()
-	#test_validator()
+	#test_SimValidator()
 	#test_transaction()
 	#test_Node()
 	#test_Wallet()
 	#test_database()
+	test_Validator()
 
 	pass
 

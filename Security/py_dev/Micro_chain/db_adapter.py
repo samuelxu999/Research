@@ -38,8 +38,10 @@ class DataManager():
 		conn = sqlite3.connect(self.db_path)
 		
 		conn.execute("CREATE TABLE IF NOT EXISTS %s \
-				 (Block_hash	REAL		PRIMARY KEY, \
-				 Block_data	TEXT    	NOT NULL);" %(table_name))
+				 (ID 			INTEGER 	PRIMARY KEY AUTOINCREMENT, \
+				 Block_hash		TEXT		NOT NULL, \
+				 Block_data		TEXT    	NOT NULL, \
+				 Block_status	INTEGER    	NOT NULL);" %(table_name))
 
 		conn.close()
 
@@ -53,18 +55,20 @@ class DataManager():
 
 		conn.close()
 
-	def select_block(self, table_name, block_hash=0):
+	def select_block(self, table_name, block_hash=''):
 		'''
 		# return matched block data in table_name given block_hash
 		'''
 		conn = sqlite3.connect(self.db_path)
 		
-		if( block_hash==0 ):
+		if( block_hash=='' ):
 			#select all data
 			cursor = conn.execute("SELECT * FROM %s;" %(table_name))
 		else:
 			#select data given block.hash
-			cursor = conn.execute("SELECT * FROM %s where Block_hash=%d;" %(table_name, block_hash))
+			sql = ("SELECT * FROM %s where Block_hash=?;" %(table_name) )			
+			cursor = conn.execute(sql, (block_hash,))
+
 
 		ls_result=[]
 
@@ -75,14 +79,35 @@ class DataManager():
 
 		return ls_result
 
-	def add_block(self, table_name, block_hash, block_data):
+	def select_status(self, table_name, block_status):
+		'''
+		# return matched block data in table_name given block_hash
+		'''
+		conn = sqlite3.connect(self.db_path)		
+
+		#select data given block.status
+		cursor = conn.execute("SELECT * FROM %s where Block_status=%d;" %(table_name, block_status))
+
+		ls_result=[]
+
+		for row in cursor:
+			ls_result.append(row)
+
+		conn.close()
+
+		return ls_result
+
+	def insert_block(self, table_name, block_hash, block_data, block_status=0):
 		'''
 		# insert block data into table_name
 		'''
 		conn = sqlite3.connect(self.db_path)
 		
-		conn.execute("INSERT INTO %s (Block_hash, Block_data) VALUES ('%d', '%s');" \
-			%(table_name, block_hash, block_data));
+		sql = ("INSERT INTO %s (Block_hash, Block_data, Block_status) VALUES (?, ?, ?);" %(table_name))
+		'''conn.execute("INSERT INTO %s (Block_hash, Block_data, Block_status) \
+					VALUES (?, ?, ?);" \
+					%(table_name, sqlite3.Binary(block_hash), block_data, block_status));'''
+		conn.execute(sql, (block_hash, block_data, block_status) )
 
 		conn.commit()
 
@@ -94,8 +119,23 @@ class DataManager():
 		'''
 		conn = sqlite3.connect(self.db_path)
 		
-		conn.execute("UPDATE %s set Block_data=%s where Block_hash=%d;" \
-			%(table_name, block_data, block_hash));
+		sql = ( "UPDATE %s set Block_data=? where Block_hash=?;" %(table_name) )
+
+		conn.execute(sql, (block_data, block_hash));
+
+		conn.commit()
+
+		conn.close()
+
+	def update_status(self, table_name, block_hash, block_status):
+		'''
+		# update block data in table_name given block_hash
+		'''
+		conn = sqlite3.connect(self.db_path)
+		
+		sql = ( "UPDATE %s set Block_status=? where Block_hash=?;" %(table_name) )
+
+		conn.execute(sql, (block_status, block_hash));
 
 		conn.commit()
 
@@ -107,8 +147,9 @@ class DataManager():
 		'''
 		conn = sqlite3.connect(self.db_path)
 		
-		conn.execute("DELETE from %s where Block_hash=%d;" \
-			%(table_name, block_hash));
+		sql = ( "DELETE from %s where Block_hash=?;" %(table_name) )
+
+		conn.execute(sql, (block_hash,));
 
 		conn.commit()
 

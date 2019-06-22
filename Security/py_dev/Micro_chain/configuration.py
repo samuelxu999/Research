@@ -15,3 +15,7 @@ COMMIT_TRANS = 5
 
 TEST_STAKE_WEIGHT = 1
 TEST_STAKE_SUM = 3
+
+
+BLOCKCHAIN_DATA = "chain_db"	# local chain database name
+CHAIN_TABLE = "Block_table"		# chain data table name

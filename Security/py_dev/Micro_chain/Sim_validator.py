@@ -23,7 +23,6 @@ import copy
 from utilities import FileUtil, TypesUtil
 from transaction import Transaction
 from block import Block
-from db_adapter import DataManager
 from consensus import *
 from configuration import *
 
@@ -37,28 +36,15 @@ class Validator(object):
 		self.chain: local chain data
 		self.previous_hash: hash of the parent block
 		self.transactions: transactions list
-		self.chain_data: local chain database adapter
 		'''
-		# New database manager to manage chain data
-		self.chain_db = DataManager(BLOCKCHAIN_DATA)
-		self.chain_db.create_table(CHAIN_TABLE)
-		self.chain = []
-		# no local chain data, generate a new validator information
-		if( self.chain_db.select_block(CHAIN_TABLE)==[] ):
-			#Create genesis block
-			genesis_block = Block()
-			json_data = genesis_block.to_json()
-			print(json_data)
-			#self.chain.append(genesis_block.to_json())
-			self.chain_db.insert_block(CHAIN_TABLE,	json_data['hash'], 
-										TypesUtil.json_to_string(json_data))
-		
 		#Generate random number to be used as node_id
 		self.node_id = str(uuid4()).replace('-', '')
-		#get chain data from database
-		self.chain.append(TypesUtil.string_to_json( self.chain_db.select_block(CHAIN_TABLE)[0][2]) )	
-		# new transaction pool
 		self.transactions = []
+		self.chain = []
+
+		#Create genesis block
+		genesis_block = Block()
+		self.chain.append(genesis_block.to_json())
 
 		#choose consensus algorithm
 		self.consensus = consensus
