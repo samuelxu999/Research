@@ -36,7 +36,7 @@ def print_config():
 
 	print('Peer nodes:')
 	for node in list(peer_nodes.nodes):
-		json_node = TypesUtil.string_to_json(node)
+		json_node = TypesUtil.string_to_json(node[2])
 		print('    ', json_node['address'] + '    ' + json_node['node_url'])
 
 	# Instantiate the Blockchain
@@ -51,7 +51,8 @@ app = Flask(__name__)
 
 # Instantiate the PeerNodes
 peer_nodes = PeerNodes()
-peer_nodes.load_node()
+#peer_nodes.load_node()
+peer_nodes.load_ByAddress()
 
 # Instantiate the Wallet
 mywallet = Wallet()
@@ -59,7 +60,7 @@ mywallet = Wallet()
 mywallet.load_accounts()
 
 # Instantiate the Blockchain
-myblockchain = Validator(ConsensusType.PoS)
+myblockchain = Validator(ConsensusType.PoW)
 
 print_config()
 
@@ -88,7 +89,9 @@ def verify_transaction():
 	#print(dict_transaction)
 	#print(sign_data)
 
-	sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+	#sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+	peer_nodes.load_ByAddress(transaction_data['sender_address'])
+	sender_node = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
 
 	# ====================== verify transaction ==========================
 	if(sender_node!={}):
@@ -112,7 +115,8 @@ def broadcast_transaction():
 		abort(401, {'error': 'No transaction data'})
 
 	# broadcast transaction to peer nodes
-	SrvAPI.broadcast(peer_nodes.nodes, transaction_data, '/test/transaction/verify')
+	peer_nodes.load_ByAddress()
+	SrvAPI.broadcast(peer_nodes.get_nodelist(), transaction_data, '/test/transaction/verify')
 
 	return jsonify({'broadcast_transaction': 'Succeed!'}), 201
 
@@ -138,7 +142,8 @@ def mine_block():
 	#broadcast proposed block
 	if( (myblockchain.consensus==ConsensusType.PoW) or (not Block.isEmptyBlock(new_block)) ):
 		#broadcast new block to peer nodes
-		SrvAPI.broadcast(peer_nodes.nodes, new_block, '/test/block/verify')
+		peer_nodes.load_ByAddress()
+		SrvAPI.broadcast(peer_nodes.get_nodelist(), new_block, '/test/block/verify')
 
 		response = {
 			'message': "New Block Forged",
@@ -173,27 +178,29 @@ def verify_block():
 	if(Validator.valid_block(block_data, myblockchain.chain, myblockchain.consensus)):
 		verify_result = True
 		for transaction_data in block_data['transactions']:
-		    #print(transaction_data)
-		    # ====================== rebuild transaction ==========================
-		    dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
-		                                        transaction_data['recipient_address'],
-		                                        transaction_data['time_stamp'],
-		                                        transaction_data['value'])
-		    
-		    sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
-		    #print(dict_transaction)
-		    #print(sign_str)
+			#print(transaction_data)
+			# ====================== rebuild transaction ==========================
+			dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
+			                                    transaction_data['recipient_address'],
+			                                    transaction_data['time_stamp'],
+			                                    transaction_data['value'])
 
-		    sender_node = peer_nodes.get_node(transaction_data['sender_address'])
-		    #print(sender_node)
-		    # ====================== verify transaction ==========================
-		    if(sender_node!={}):
-		        sender_pk= sender_node['public_key']
-		        verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
-		    else:
-		        verify_result = False
-		        #print('1')
-		        break
+			sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
+			#print(dict_transaction)
+			#print(sign_str)
+
+			#sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+			peer_nodes.load_ByAddress(transaction_data['sender_address'])
+			sender_node = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
+			#print(sender_node)
+			# ====================== verify transaction ==========================
+			if(sender_node!={}):
+			    sender_pk= sender_node['public_key']
+			    verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
+			else:
+			    verify_result = False
+			    #print('1')
+			    break
 	else:
 		verify_result = False
 		#print('2')

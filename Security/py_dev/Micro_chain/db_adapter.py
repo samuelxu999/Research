@@ -10,23 +10,28 @@ Created on June.21, 2019
 '''
 
 
-CHAIN_DATA_DIR = 'chaindata'
+#CHAIN_DATA_DIR = 'chaindata'
 #CHAIN_DATABASE = 'chain_db'
 
 import os
 import sqlite3
 
 def new_db(db_path):
+	'''
+	# New database file given db_path
+	'''
 	conn = sqlite3.connect(db_path)
 	print("New database successfully at: ", db_path)
 	conn.close()
 
 class DataManager():
-
-	def __init__(self, db_file):
-		if(not os.path.exists(CHAIN_DATA_DIR)):
-			os.makedirs(CHAIN_DATA_DIR)
-		self.db_path = CHAIN_DATA_DIR+'/'+db_file
+	'''
+	# block data manager class based on sqlite database
+	'''
+	def __init__(self, db_dir, db_file):
+		if(not os.path.exists(db_dir)):
+			os.makedirs(db_dir)
+		self.db_path = db_dir+'/'+db_file
 
 		if(not os.path.exists(self.db_path)):
 			new_db(self.db_path)
@@ -43,7 +48,7 @@ class DataManager():
 				 Block_data		TEXT    	NOT NULL, \
 				 Block_status	INTEGER    	NOT NULL);" %(table_name))
 
-		conn.close()
+		conn.close()		
 
 	def remove_table(self, table_name):
 		'''
@@ -53,7 +58,7 @@ class DataManager():
 		
 		conn.execute("DROP TABLE IF EXISTS %s;" %(table_name))
 
-		conn.close()
+		conn.close()		
 
 	def select_block(self, table_name, block_hash=''):
 		'''
@@ -81,7 +86,7 @@ class DataManager():
 
 	def select_status(self, table_name, block_status):
 		'''
-		# return matched block data in table_name given block_hash
+		# return matched block data in table_name given block_status
 		'''
 		conn = sqlite3.connect(self.db_path)		
 

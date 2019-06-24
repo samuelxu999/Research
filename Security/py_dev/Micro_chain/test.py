@@ -13,6 +13,7 @@ from db_adapter import DataManager
 
 from time import time
 import random
+import copy
 
 def test_transaction():
     # Instantiate the Wallet
@@ -193,43 +194,56 @@ def test_SimValidator():
     print('Valid block: ', SimValidator.valid_block(new_block, myblockchain.chain))
 
 def test_Node():
-    # Instantiate the PeerNodes
-    peer_nodes = PeerNodes()
+	# Instantiate the PeerNodes
+	peer_nodes = PeerNodes()
 
-    # ----------------------- register node -------------------------------
-    peer_nodes.register_node('ceeebaa052718c0a00adb87de857ba63608260e9',
-        '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414b396a6a6e486e332f70492f596c6e4175454c492b35574b34394c397776510a5950346471516e514a7a66312f634d34416a726835484e706f5974622b326a6c33336a6b684850662f2b784f694f52346b4a685658526b434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
-        'http://128.226.77.51:8080')
-    peer_nodes.register_node('1699600976ec6fc0fe35d54174eb6094e671d2fd',
-        '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414d58736e354f706b57706e3359695a386257753749397168363873784439370a2b2f4f5374616270305a464e365745475a415452316f397051684273727041416f656f4d4876717871784d2f645a636e7a43377a4f394d434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
-        'http://128.226.77.51:8081')
-    peer_nodes.register_node('f55af09f40768ca05505767cd013b6b9a78579c4',
-        '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414e393072576d52506b6e46446b6d51536368414f74594434686f675a4d57330a6f4b4d77626559306a322f4966705a642b614447414863754c317534463443314d712b426354765239336b4b34573657346b6e59383145434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
-        'http://128.226.77.51:8082')
-    
-    nodes = peer_nodes.nodes
-    #print(nodes)
+	# ----------------------- register node -------------------------------
+	peer_nodes.register_node('ceeebaa052718c0a00adb87de857ba63608260e9',
+	    '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414b396a6a6e486e332f70492f596c6e4175454c492b35574b34394c397776510a5950346471516e514a7a66312f634d34416a726835484e706f5974622b326a6c33336a6b684850662f2b784f694f52346b4a685658526b434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
+	    'http://128.226.77.51:8080')
+	peer_nodes.register_node('1699600976ec6fc0fe35d54174eb6094e671d2fd',
+	    '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414d58736e354f706b57706e3359695a386257753749397168363873784439370a2b2f4f5374616270305a464e365745475a415452316f397051684273727041416f656f4d4876717871784d2f645a636e7a43377a4f394d434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
+	    'http://128.226.77.51:8081')
+	peer_nodes.register_node('f55af09f40768ca05505767cd013b6b9a78579c4',
+	    '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414e393072576d52506b6e46446b6d51536368414f74594434686f675a4d57330a6f4b4d77626559306a322f4966705a642b614447414863754c317534463443314d712b426354765239336b4b34573657346b6e59383145434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
+	    'http://128.226.77.51:8082')
 
-    print('List registered nodes:')
-    for node in list(nodes):
-        json_node = TypesUtil.string_to_json(node)
-        print('    ' + json_node['address'] + '    ' + json_node['node_url'])
+	peer_nodes.load_ByAddress()
+	nodes = peer_nodes.get_nodelist()    
+	#nodes = copy.copy(peer_nodes.nodes)
+	print('List nodes by address:')
+	for node in nodes:
+	    json_node = TypesUtil.string_to_json(node)
+	    print('    ' + json_node['address'] + '    ' + json_node['node_url'] )
 
-    # ------------------ save and load node -------------------
-    #peer_nodes.save_node(PEER_NODES)
-    peer_nodes.load_node(PEER_NODES)
-    reload_nodes = peer_nodes.nodes
-    #print(reload_nodes)
+	# ------------------ update and remove test -------------------
+	json_data = {}
+	#peer_nodes.update_node('ceeebaa052718c0a00adb87de857ba63608260e9', TypesUtil.json_to_string('{}'))
+	peer_nodes.update_status('ceeebaa052718c0a00adb87de857ba63608260e9', 1)
+	#peer_nodes.remove_node('ceeebaa052718c0a00adb87de857ba63608260e9')
 
-    print('List loaded nodes:')
-    for node in list(reload_nodes):
-        json_node = TypesUtil.string_to_json(node)
-        print('    ' + json_node['address'] + '    ' + json_node['node_url'])
+	node_status = 1
+	peer_nodes.load_ByStatus(node_status)
+	nodes = peer_nodes.get_nodelist()  
+	print('List nodes by status %d:' %(node_status))
+	for node in nodes:
+		json_node = TypesUtil.string_to_json(node)
+		print('    ' + json_node['address'] + '    ' + json_node['node_url'] )
 
-    # ---------------------- search node ----------------------
-    node_address = '1699600976ec6fc0fe35d54174eb6094e671d2fd'
-    print('Search nodes:' + node_address)
-    print(peer_nodes.get_node(node_address))
+	#peer_nodes.save_node(PEER_NODES)
+	'''peer_nodes.load_node(PEER_NODES)
+	reload_nodes = peer_nodes.nodes
+	#print(reload_nodes)
+
+	print('List loaded nodes:')
+	for node in list(reload_nodes):
+	    json_node = TypesUtil.string_to_json(node)
+	    print('    ' + json_node['address'] + '    ' + json_node['node_url'])
+
+	# ---------------------- search node ----------------------
+	node_address = '1699600976ec6fc0fe35d54174eb6094e671d2fd'
+	print('Search nodes:' + node_address)
+	print(peer_nodes.get_node(node_address))'''
 
 def test_Wallet():
     # Instantiate the Wallet
@@ -252,7 +266,7 @@ def test_Wallet():
     print(mywallet.list_address())
 
 def test_database():
-	myDB_manager = DataManager('testdb')
+	myDB_manager = DataManager(CHAIN_DATA_DIR, 'testdb')
 
 	# new table 
 	myDB_manager.create_table('processed')
@@ -316,10 +330,10 @@ if __name__ == '__main__':
 	#test_PoS()
 	#test_SimValidator()
 	#test_transaction()
-	#test_Node()
+	test_Node()
 	#test_Wallet()
 	#test_database()
-	test_Validator()
+	#test_Validator()
 
 	pass
 

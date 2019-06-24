@@ -40,7 +40,7 @@ class Validator(object):
 		self.chain_data: local chain database adapter
 		'''
 		# New database manager to manage chain data
-		self.chain_db = DataManager(BLOCKCHAIN_DATA)
+		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
 		self.chain_db.create_table(CHAIN_TABLE)
 		self.chain = []
 		# no local chain data, generate a new validator information
