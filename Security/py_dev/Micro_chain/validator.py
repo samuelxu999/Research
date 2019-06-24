@@ -32,26 +32,26 @@ class Validator(object):
 
 	def __init__(self, consensus=ConsensusType.PoW):
 		'''A blockchain contains the following arguments:
-
+		self.node_id: GUID 
 		self.transactions: local transaction pool
-		self.chain: local chain data
-		self.previous_hash: hash of the parent block
-		self.transactions: transactions list
-		self.chain_data: local chain database adapter
+		self.chain: local chain data buffer
+		self.chain_db: local chain database adapter
+		self.consensus: consensus algorithm
 		'''
 		# New database manager to manage chain data
 		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
 		self.chain_db.create_table(CHAIN_TABLE)
+
 		self.chain = []
+
 		# no local chain data, generate a new validator information
 		if( self.chain_db.select_block(CHAIN_TABLE)==[] ):
 			#Create genesis block
 			genesis_block = Block()
 			json_data = genesis_block.to_json()
-			print(json_data)
+			
 			#self.chain.append(genesis_block.to_json())
-			self.chain_db.insert_block(CHAIN_TABLE,	json_data['hash'], 
-										TypesUtil.json_to_string(json_data))
+			self.add_block(json_data)
 		
 		#Generate random number to be used as node_id
 		self.node_id = str(uuid4()).replace('-', '')
@@ -62,6 +62,26 @@ class Validator(object):
 
 		#choose consensus algorithm
 		self.consensus = consensus
+
+	def add_block(self, json_block):
+		'''
+		add verified block to local chain data
+		'''
+		# if block not processed, add block
+		if( self.chain_db.select_block(CHAIN_TABLE, json_block['hash'])==[] ):
+			self.chain_db.insert_block(CHAIN_TABLE,	json_block['hash'], 
+								TypesUtil.json_to_string(json_block))
+
+	def load_chain(self):
+		'''
+		load chain data from local database
+		'''
+		ls_chain=self.chain_db.select_block(CHAIN_TABLE)
+		self.chain = []
+		for block in ls_chain:
+			json_data = TypesUtil.string_to_json(block[2])
+			if( json_data['hash'] not in self.chain):
+				self.chain.append(json_data)
 
 	def verify_transaction(self, transaction, sender_pk, signature):
 		"""
@@ -198,7 +218,7 @@ class Validator(object):
 			elif(consensus==ConsensusType.PoS):
 				if( not POS.valid_proof(transactions, current_block['previous_hash'], current_block['nonce'], 
 										TEST_STAKE_WEIGHT, TEST_STAKE_SUM) ):
-					print('v3')
+					print('C2')
 					return False
 			else:
 				return False

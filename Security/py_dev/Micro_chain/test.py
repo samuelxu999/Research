@@ -330,7 +330,7 @@ if __name__ == '__main__':
 	#test_PoS()
 	#test_SimValidator()
 	#test_transaction()
-	test_Node()
+	#test_Node()
 	#test_Wallet()
 	#test_database()
 	#test_Validator()

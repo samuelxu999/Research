@@ -26,7 +26,7 @@ from service_api import SrvAPI
 
 # Instantiate the PeerNodes
 peer_nodes = PeerNodes()
-peer_nodes.load_node()
+peer_nodes.load_ByAddress()
 
 
 def send_transaction(target_address, isBroadcast=False):
@@ -123,7 +123,8 @@ def valid_transactions(target_address):
         #print(dict_transaction)
         #print(sign_str)
 
-        sender_node = peer_nodes.get_node(transaction_data['sender_address'])
+        peer_nodes.load_ByAddress(transaction_data['sender_address'])
+        sender_node = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
         #print(sender_node)
         # ====================== verify transaction ==========================
         if(sender_node!={}):
