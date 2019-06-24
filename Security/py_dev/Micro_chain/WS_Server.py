@@ -24,7 +24,7 @@ from validator import Validator
 from consensus import *
 from service_api import SrvAPI
 
-def print_config():
+'''def print_config():
 	#list account address
 	accounts = mywallet.list_address()
 	print('Current accounts:')
@@ -44,27 +44,11 @@ def print_config():
 	print('Chain information:')
 	print('    uuid:         ', myblockchain.node_id)
 	print('    chain length: ', len(myblockchain.chain))
-	print('    consensus: 	 ', myblockchain.consensus.name)
+	print('    consensus: 	 ', myblockchain.consensus.name)'''
 
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
 #CORS(app)
-
-# Instantiate the PeerNodes
-peer_nodes = PeerNodes()
-peer_nodes.load_ByAddress()
-
-# Instantiate the Wallet
-mywallet = Wallet()
-# load accounts
-mywallet.load_accounts()
-
-# Instantiate the Blockchain
-myblockchain = Validator(ConsensusType.PoW)
-myblockchain.load_chain()
-
-print_config()
-
 
 #========================================== Request handler ===============================================
 #GET req
@@ -213,6 +197,28 @@ def verify_block():
 		myblockchain.add_block(block_data)
 	#print(verify_result)
 	return jsonify({'verify_block': verify_result}), 201
+
+def print_config():
+	#list account address
+	accounts = mywallet.list_address()
+	print('Current accounts:')
+	if accounts:
+		i=0
+		for account in accounts:
+		    print(i, '  ', account)
+		    i+=1
+
+	print('Peer nodes:')
+	nodes = peer_nodes.get_nodelist()
+	for node in nodes:
+		json_node = TypesUtil.string_to_json(node)
+		print('    ', json_node['address'] + '    ' + json_node['node_url'])
+
+	# Instantiate the Blockchain
+	print('Chain information:')
+	print('    uuid:         ', myblockchain.node_id)
+	print('    chain length: ', len(myblockchain.chain))
+	print('    consensus: 	 ', myblockchain.consensus.name)
 	
 if __name__ == '__main__':
 	from argparse import ArgumentParser
@@ -221,6 +227,21 @@ if __name__ == '__main__':
 	parser.add_argument('-p', '--port', default=8080, type=int, help='port to listen on')
 	args = parser.parse_args()
 	port = args.port
+
+	# Instantiate the PeerNodes
+	peer_nodes = PeerNodes()
+	peer_nodes.load_ByAddress()
+
+	# Instantiate the Wallet
+	mywallet = Wallet()
+	# load accounts
+	mywallet.load_accounts()
+
+	# Instantiate the Blockchain
+	myblockchain = Validator(ConsensusType.PoW)
+	myblockchain.load_chain()
+
+	print_config()
 
 	app.run(host='0.0.0.0', port=port, debug=True)
 
