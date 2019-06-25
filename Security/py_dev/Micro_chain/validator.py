@@ -21,7 +21,9 @@ from uuid import uuid4
 import copy
 
 from utilities import FileUtil, TypesUtil
+from wallet import Wallet
 from transaction import Transaction
+from nodes import PeerNodes
 from block import Block
 from db_adapter import DataManager
 from consensus import *
@@ -37,7 +39,18 @@ class Validator(object):
 		self.chain: local chain data buffer
 		self.chain_db: local chain database adapter
 		self.consensus: consensus algorithm
+		self.wallet: wallet account management
+		self.peer_nodes: peer nodes management 
 		'''
+
+		# Instantiate the Wallet
+		self.wallet = Wallet()
+		self.wallet.load_accounts()
+
+		# Instantiate the PeerNodes
+		self.peer_nodes = PeerNodes()
+		self.peer_nodes.load_ByAddress()
+
 		# New database manager to manage chain data
 		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
 		self.chain_db.create_table(CHAIN_TABLE)
@@ -139,12 +152,11 @@ class Validator(object):
 
 		return new_block.to_json()
 
-	@staticmethod
-	def valid_block(new_block, chain_data, consensus=ConsensusType.PoW):
+	def valid_block(self, new_block):
 		"""
 		check if a new block from other miners is valid
 		"""
-		last_block = chain_data[-1]
+		last_block = self.chain[-1]
 		current_block = new_block
 		#print(previous_block)
 		#print(current_block)
@@ -168,11 +180,11 @@ class Validator(object):
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
 
 		# execute valid proof task given consensus algorithm
-		if(consensus==ConsensusType.PoW):
+		if(self.consensus==ConsensusType.PoW):
 			if( not POW.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce']) ):
 				print('v3')
 				return False
-		elif(consensus==ConsensusType.PoS):
+		elif(self.consensus==ConsensusType.PoS):
 			if( not POS.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce'], 
 									TEST_STAKE_WEIGHT, TEST_STAKE_SUM) ):
 				print('v3')
@@ -181,6 +193,36 @@ class Validator(object):
 			return False
 
 		return True
+
+	def valid_transactions(self, transactions):
+		"""
+		check if transactions in a new block are valid
+		"""
+		verify_result = True
+		for transaction_data in transactions:
+			#print(transaction_data)
+			# ====================== rebuild transaction ==========================
+			dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
+			                                    transaction_data['recipient_address'],
+			                                    transaction_data['time_stamp'],
+			                                    transaction_data['value'])
+
+			sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
+			#print(dict_transaction)
+			#print(sign_str)
+
+			self.peer_nodes.load_ByAddress(transaction_data['sender_address'])
+			sender_node = TypesUtil.string_to_json(list(self.peer_nodes.get_nodelist())[0])
+			#print(sender_node)
+			# ====================== verify transaction ==========================
+			if(sender_node!={}):
+			    sender_pk= sender_node['public_key']
+			    verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
+			else:
+				verify_result = False
+			if(not verify_result):
+				break
+		return verify_result
 
 	@staticmethod
 	def valid_chain(chain_data, consensus=ConsensusType.PoW):
