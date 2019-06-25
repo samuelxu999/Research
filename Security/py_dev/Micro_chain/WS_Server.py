@@ -39,28 +39,7 @@ def verify_transaction():
 	if(transaction_data=='{}'):
 		abort(401, {'error': 'No transaction data'})
 	
-	#print(transaction_data)
-
-	# ====================== rebuild transaction ==========================
-	dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
-											transaction_data['recipient_address'],
-											transaction_data['time_stamp'],
-											transaction_data['value'])
-	
-	sign_data = TypesUtil.hex_to_string(transaction_data['signature'])
-	#print(dict_transaction)
-	#print(sign_data)
-
-	myblockchain.peer_nodes.load_ByAddress(transaction_data['sender_address'])
-	sender_node = TypesUtil.string_to_json(list(myblockchain.peer_nodes.get_nodelist())[0])
-
-	# ====================== verify transaction ==========================
-	if(sender_node!={}):
-		sender_pk= sender_node['public_key']
-		#verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
-		verify_data = myblockchain.verify_transaction(dict_transaction, sender_pk, sign_data)
-	else:
-		verify_data = False
+	verify_data = myblockchain.on_receive(transaction_data, 0)
 
 	return jsonify({'verify_transaction': verify_data}), 201
 
@@ -137,22 +116,8 @@ def verify_block():
 	if(block_data=='{}'):
 		abort(401, {'error': 'No block data'})
 
-	verify_result=False
-	# verify block
-	if(myblockchain.valid_block(block_data)):
-		verify_result = myblockchain.valid_transactions(block_data['transactions'])
-		#print('1')
-	else:
-		verify_result = False
-		#print('2')
+	verify_result = myblockchain.on_receive(block_data, 1)
 
-	if(verify_result):
-		# remove committed transactions
-		for transaction in block_data['transactions']:
-			myblockchain.transactions.remove(transaction)
-		# append verified block to local chain
-		myblockchain.add_block(block_data)
-	#print(verify_result)
 	return jsonify({'verify_block': verify_result}), 201
 
 def print_config():

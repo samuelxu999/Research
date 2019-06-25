@@ -303,13 +303,16 @@ def test_database():
 def test_Validator():
 	# Instantiate the Blockchain
 	myblockchain = Validator(ConsensusType.PoW)
+	myblockchain.load_chain()
+
 	print('Chain information:')
 	print('    uuid:          ', myblockchain.node_id)
 	print('    chain length: ', len(myblockchain.chain))
 
-	print(myblockchain.chain)
+	#print(myblockchain.chain[-1])
+	#print(myblockchain.chain_db.select_block(CHAIN_TABLE))
 
-	print('Mining....')
+	'''print('Mining....')
 	for i in range(1, 6):
 		new_block=myblockchain.mine_block()
 		myblockchain.chain.append(new_block)
@@ -318,10 +321,14 @@ def test_Validator():
 	#print(blockchain.chain[-1])
 	print('    chain length: ', len(myblockchain.chain))
 
-	print('Valid chain: ', Validator.valid_chain(myblockchain.chain))
-
 	new_block = myblockchain.mine_block()
-	print('Valid block: ', Validator.valid_block(new_block, myblockchain.chain))
+	print('Valid block: ', myblockchain.valid_block(new_block))'''
+
+	print(myblockchain.get_parent(myblockchain.chain[1]))
+
+	print(myblockchain.is_ancestor(myblockchain.chain[0], myblockchain.chain[1]))
+
+
 
 
 if __name__ == '__main__':
@@ -333,7 +340,7 @@ if __name__ == '__main__':
 	#test_Node()
 	#test_Wallet()
 	#test_database()
-	#test_Validator()
+	test_Validator()
 
 	pass
 

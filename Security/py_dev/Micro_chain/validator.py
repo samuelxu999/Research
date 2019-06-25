@@ -31,17 +31,21 @@ from configuration import *
 
 
 class Validator(object):
+	'''A Validator contains the following arguments:
+	self.node_id: GUID 
+	self.consensus: consensus algorithm
+	self.chain_db: local chain database adapter
+	self.consensus: consensus algorithm
+	self.wallet: wallet account management
+	self.peer_nodes: peer nodes management 
+
+	self.transactions: local transaction pool
+	self.chain: local chain data buffer
+	self.block_dependencies: used to save blocks need for dependency
+	self.vote_dependencies: used to save pending vote need for dependency
+	'''
 
 	def __init__(self, consensus=ConsensusType.PoW):
-		'''A blockchain contains the following arguments:
-		self.node_id: GUID 
-		self.transactions: local transaction pool
-		self.chain: local chain data buffer
-		self.chain_db: local chain database adapter
-		self.consensus: consensus algorithm
-		self.wallet: wallet account management
-		self.peer_nodes: peer nodes management 
-		'''
 
 		# Instantiate the Wallet
 		self.wallet = Wallet()
@@ -76,14 +80,18 @@ class Validator(object):
 		#choose consensus algorithm
 		self.consensus = consensus
 
-	def add_block(self, json_block):
+		# initialize pending data buffer
+		self.block_dependencies = {}
+		self.vote_dependencies = {}
+
+	def add_block(self, json_block, status=0):
 		'''
 		add verified block to local chain data
 		'''
-		# if block not processed, add block
+		# if block not existed, add block to database
 		if( self.chain_db.select_block(CHAIN_TABLE, json_block['hash'])==[] ):
 			self.chain_db.insert_block(CHAIN_TABLE,	json_block['hash'], 
-								TypesUtil.json_to_string(json_block))
+								TypesUtil.json_to_string(json_block), status)
 
 	def load_chain(self):
 		'''
@@ -167,14 +175,14 @@ class Validator(object):
 					'nonce': last_block['nonce']}
 
 		# Check that the hash of the block is correct
-		if( current_block['previous_hash'] != Block.hash_block(block_data) ):
+		'''if( current_block['previous_hash'] != Block.hash_block(block_data) ):
 			print('v1')
 			return False
 
 		# Check that the hash of the block is correct
 		if( current_block['height'] <= last_block['height'] ):
 			print('v2')
-			return False
+			return False'''
 
 		# Check that the Proof of Work is correct given current block data
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
@@ -224,7 +232,125 @@ class Validator(object):
 				break
 		return verify_result
 
-	@staticmethod
+	# Get the parent block of a given block
+	def get_parent(self, json_block):
+		# root block, return None
+	    if json_block['height'] == 0:
+	        return None
+	    ls_block = self.chain_db.select_block(CHAIN_TABLE, json_block['previous_hash'])
+	    if(ls_block==[]):
+	    	return None
+	    else:
+	    	return TypesUtil.string_to_json(ls_block[0][2])
+
+	def is_ancestor(self, anc_block, desc_block):
+		"""Is a given block an ancestor of another given block?
+		Args:
+		    anc_hash: ancestor block hash
+		    desc_hash: descendant block hash
+		"""
+	
+		if(anc_block == None):
+			return False
+
+		# search parent
+		while( True ):
+			if desc_block is None:
+			    return False
+			if desc_block['hash'] == anc_block['hash']:
+			    return True
+			desc_block = self.get_parent(desc_block)
+
+	def on_receive(self, json_msg, op_type=0):
+		'''
+		Call on receiving message: transactions, block and vote
+		@ json_msg: json message
+		@ op_type: operation type given different message
+		'''
+		# transaction message processing
+		if(op_type ==0):
+			return self.accept_transaction(json_msg)
+		# block message processing
+		elif(op_type ==1):
+			return self.accept_block(json_msg)
+		#vote message processing
+		else:
+			return True
+
+	def accept_transaction(self, json_tran):
+		'''
+		Called on processing a transaction message.
+		'''
+		verify_result = False
+
+		# ====================== rebuild transaction ==========================
+		dict_transaction = Transaction.get_dict(json_tran['sender_address'], 
+												json_tran['recipient_address'],
+												json_tran['time_stamp'],
+												json_tran['value'])
+
+		sign_data = TypesUtil.hex_to_string(json_tran['signature'])
+		#print(dict_transaction)
+		#print(sign_data)
+
+		self.peer_nodes.load_ByAddress(json_tran['sender_address'])
+		sender_node = TypesUtil.string_to_json(list(self.peer_nodes.get_nodelist())[0])
+
+		# ====================== verify transaction ==========================
+		if(sender_node!={}):
+			sender_pk= sender_node['public_key']
+			#verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
+			verify_result = self.verify_transaction(dict_transaction, sender_pk, sign_data)
+		else:
+			verify_result = False	
+		return verify_result
+
+	def accept_block(self, json_block):
+		'''
+		Called on processing a block message.
+		'''
+		# ------------------- verify block before accept it ------------------
+		verify_result = False
+		if(self.valid_block(json_block)):
+			verify_result = self.valid_transactions(json_block['transactions'])
+
+		if(not verify_result):
+			return False
+		
+		# ---------------- accept block given processed status ----------------
+		# If the block's parent has not received, add to dependency list
+		if(self.get_parent(json_block) == None):
+			self.add_dependency(json_block['previous_hash'], json_block)
+			return False
+
+		# remove committed transactions
+		for transaction in json_block['transactions']:
+			self.transactions.remove(transaction)
+		
+		# append verified block to local chain, status = 0, processed
+		self.add_block(json_block, 0)
+		return True
+
+
+	def add_dependency(self, hash_value, json_data, op_type=0):
+		'''
+		If we processed an object but did not receive some dependencies
+		needed to process it, save it to be processed later
+		@ hash_value: hash value
+		@ json_data: json data
+		@ op_type: operation type given different message
+		'''
+		if(op_type ==0):
+			if(hash_value not in self.block_dependencies):
+				self.block_dependencies[hash_value] = []
+			self.block_dependencies[hash_value].append(json_data)
+		else:
+			if(hash_value not in self.vote_dependencies):
+				self.vote_dependencies[hash_value] = []
+			self.vote_dependencies[hash_value].append(json_data)
+
+
+'''	@staticmethod
 	def valid_chain(chain_data, consensus=ConsensusType.PoW):
 		"""
 		check if a bockchain data is valid
@@ -268,6 +394,6 @@ class Validator(object):
 			previous_block = current_block
 			current_index += 1
 
-			return True
+			return True'''
 
 
