@@ -43,6 +43,8 @@ class Validator(object):
 	self.chain: local chain data buffer
 	self.block_dependencies: used to save blocks need for dependency
 	self.vote_dependencies: used to save pending vote need for dependency
+	self.processed_head: the latest processed descendant of the highest justified checkpoint
+	self.highest_justified_checkpoint: the block with higest justified checkpoint
 	'''
 
 	def __init__(self, consensus=ConsensusType.PoW):
@@ -59,30 +61,72 @@ class Validator(object):
 		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
 		self.chain_db.create_table(CHAIN_TABLE)
 
-		self.chain = []
+		#Create genesis block
+		genesis_block = Block()
+		json_data = genesis_block.to_json()
 
 		# no local chain data, generate a new validator information
 		if( self.chain_db.select_block(CHAIN_TABLE)==[] ):
-			#Create genesis block
-			genesis_block = Block()
-			json_data = genesis_block.to_json()
-			
+			#set processed_head and highest_justified_checkpoint as genesis_block
+			self.processed_head = json_data
+			self.highest_justified_checkpoint = json_data
+
 			#self.chain.append(genesis_block.to_json())
 			self.add_block(json_data)
 		
-		#Generate random number to be used as node_id
-		self.node_id = str(uuid4()).replace('-', '')
-		#get chain data from database
-		self.chain.append(TypesUtil.string_to_json( self.chain_db.select_block(CHAIN_TABLE)[0][2]) )	
+		# new chain buffer
+		self.chain = []
+
 		# new transaction pool
 		self.transactions = []
 
 		#choose consensus algorithm
 		self.consensus = consensus
 
-		# initialize pending data buffer
-		self.block_dependencies = {}
-		self.vote_dependencies = {}
+		#-------------- load chain info ---------------
+		chain_info = self.load_chainInfo()
+		if(chain_info == None):
+			#Generate random number to be used as node_id
+			self.node_id = str(uuid4()).replace('-', '')
+
+			# initialize pending data buffer
+			self.block_dependencies = {}
+			self.vote_dependencies = {}
+			self.processed_head = json_data
+			self.highest_justified_checkpoint = json_data
+			# update chain info
+			self.save_chainInfo()
+		else:
+			#Generate random number to be used as node_id
+			self.node_id = chain_info['node_id']
+			self.block_dependencies = chain_info['block_dependencies']
+			self.vote_dependencies = chain_info['vote_dependencies']
+			self.processed_head = chain_info['processed_head']
+			self.highest_justified_checkpoint = chain_info['highest_justified_checkpoint']
+	
+	def print_config(self):
+		#list account address
+		accounts = self.wallet.list_address()
+		print('Current accounts:')
+		if accounts:
+			i=0
+			for account in accounts:
+			    print(i, '  ', account)
+			    i+=1
+
+		print('Peer nodes:')
+		nodes = self.peer_nodes.get_nodelist()
+		for node in nodes:
+			json_node = TypesUtil.string_to_json(node)
+			print('    ', json_node['address'] + '    ' + json_node['node_url'])
+
+		# Instantiate the Blockchain
+		print('Chain information:')
+		print('    uuid:         ', self.node_id)
+		print('    main chain size: ', self.processed_head['height']+1)
+		print('    processed head: ', self.processed_head['hash'])
+		print('    consensus: 	 ', self.consensus.name)
+
 
 	def add_block(self, json_block, status=0):
 		'''
@@ -103,6 +147,30 @@ class Validator(object):
 			json_data = TypesUtil.string_to_json(block[2])
 			if( json_data['hash'] not in self.chain):
 				self.chain.append(json_data)
+
+	def save_chainInfo(self):
+			"""
+			Save the validator information to static json file
+			"""
+			chain_info = {}
+			chain_info['node_id'] = self.node_id
+			chain_info['processed_head'] = self.processed_head
+			chain_info['highest_justified_checkpoint'] = self.highest_justified_checkpoint
+			chain_info['block_dependencies'] = self.block_dependencies
+			chain_info['vote_dependencies'] = self.vote_dependencies
+
+			if(not os.path.exists(CHAIN_DATA_DIR)):
+			    os.makedirs(CHAIN_DATA_DIR)
+			FileUtil.JSON_save(CHAIN_DATA_DIR+'/'+CHAIN_INFO, chain_info)
+
+	def load_chainInfo(self):
+			"""
+			load validator information from static json file
+			"""
+			if(os.path.isfile(CHAIN_DATA_DIR+'/'+CHAIN_INFO)):
+			    return FileUtil.JSON_load(CHAIN_DATA_DIR+'/'+CHAIN_INFO)
+			else:
+				return None
 
 	def verify_transaction(self, transaction, sender_pk, signature):
 		"""
@@ -132,7 +200,7 @@ class Validator(object):
 			commit_transactions = copy.copy(self.transactions[:COMMIT_TRANS])
 
 
-		last_block = self.chain[-1]
+		last_block = self.processed_head
 
 		block_data = {'height': last_block['height'],
 					'previous_hash': last_block['previous_hash'],
@@ -164,15 +232,15 @@ class Validator(object):
 		"""
 		check if a new block from other miners is valid
 		"""
-		last_block = self.chain[-1]
+		#last_block = self.chain[-1]
 		current_block = new_block
 		#print(previous_block)
 		#print(current_block)
 
-		block_data = {'height': last_block['height'],
+		'''block_data = {'height': last_block['height'],
 					'previous_hash': last_block['previous_hash'],
 					'transactions': last_block['transactions'],
-					'nonce': last_block['nonce']}
+					'nonce': last_block['nonce']}'''
 
 		# Check that the hash of the block is correct
 		'''if( current_block['previous_hash'] != Block.hash_block(block_data) ):
@@ -329,7 +397,24 @@ class Validator(object):
 		
 		# append verified block to local chain, status = 0, processed
 		self.add_block(json_block, 0)
+		self.check_processed_head(json_block)
+		self.save_chainInfo()
 		return True
+
+	def check_processed_head(self, new_block):
+		'''Reorganize the processed_head to stay on the chain with the highest
+		justified checkpoint.
+
+		If we are on wrong chain, reset the head to be the highest descendent
+		among the chains containing the highest justified checkpoint.
+
+		Args:
+		    block: latest block processed.'''
+
+		# we are on the right chain, the head is simply the latest block
+		if self.is_ancestor(self.highest_justified_checkpoint, new_block):
+			self.processed_head = new_block
+			#self.main_chain_size += 1
 
 
 	def add_dependency(self, hash_value, json_data, op_type=0):

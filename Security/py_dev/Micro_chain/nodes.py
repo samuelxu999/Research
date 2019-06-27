@@ -17,12 +17,7 @@ from urllib.parse import urlparse
 
 from utilities import FileUtil, TypesUtil
 from db_adapter import DataManager
-
-
-NODE_DATA_DIR = "nodedata"
-NODE_DATABASE = "node_db"
-NODE_TABLE = "Node_table"
-PEER_NODES = 'static_nodes'
+from configuration import *
 
 class PeerNodes:
 

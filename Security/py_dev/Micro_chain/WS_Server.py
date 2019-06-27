@@ -120,28 +120,6 @@ def verify_block():
 
 	return jsonify({'verify_block': verify_result}), 201
 
-def print_config():
-	#list account address
-	accounts = myblockchain.wallet.list_address()
-	print('Current accounts:')
-	if accounts:
-		i=0
-		for account in accounts:
-		    print(i, '  ', account)
-		    i+=1
-
-	print('Peer nodes:')
-	nodes = myblockchain.peer_nodes.get_nodelist()
-	for node in nodes:
-		json_node = TypesUtil.string_to_json(node)
-		print('    ', json_node['address'] + '    ' + json_node['node_url'])
-
-	# Instantiate the Blockchain
-	print('Chain information:')
-	print('    uuid:         ', myblockchain.node_id)
-	print('    chain length: ', len(myblockchain.chain))
-	print('    consensus: 	 ', myblockchain.consensus.name)
-	
 
 if __name__ == '__main__':
 	from argparse import ArgumentParser
@@ -155,7 +133,7 @@ if __name__ == '__main__':
 	myblockchain = Validator(ConsensusType.PoW)
 	myblockchain.load_chain()
 
-	print_config()
+	myblockchain.print_config()
 
 	app.run(host='0.0.0.0', port=port, debug=True)
 

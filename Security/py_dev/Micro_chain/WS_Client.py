@@ -155,7 +155,7 @@ def valid_block(target_address):
 
 
 if __name__ == "__main__":
-    target_address = "localhost:8080"
+    target_address = "localhost:8081"
 
     #send_transaction(target_address, True)
 
