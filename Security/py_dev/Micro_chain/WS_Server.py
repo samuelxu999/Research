@@ -116,9 +116,44 @@ def verify_block():
 	if(block_data=='{}'):
 		abort(401, {'error': 'No block data'})
 
-	verify_result = myblockchain.on_receive(block_data, 1)
+	verify_result, json_vote = myblockchain.on_receive(block_data, 1)
+
+	# if vote message is available, then broadcast to other validators
+	if(json_vote!= None):
+		SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), json_vote, '/test/vote/verify')
 
 	return jsonify({'verify_block': verify_result}), 201
+
+@app.route('/test/vote/verify', methods=['POST'])
+def verify_vote():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	#transaction_data = TypesUtil.string_to_json(req_data)
+	vote_data=json.loads(req_data)
+	
+	if(vote_data=='{}'):
+		abort(401, {'error': 'No vote data'})
+
+	verify_result = myblockchain.on_receive(vote_data, 2)
+	print('verify_vote:', verify_result)
+
+	return jsonify({'verify_vote': verify_result}), 201
+
+#GET req
+@app.route('/test/vote/broadcast', methods=['POST'])
+def broadcast_vote():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	vote_data=json.loads(req_data)
+
+	if(vote_data=='{}'):
+		abort(401, {'error': 'No vote data'})
+
+	# broadcast transaction to peer nodes
+	myblockchain.peer_nodes.load_ByAddress()
+	SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
+
+	return jsonify({'broadcast_vote': 'Succeed!'}), 201
 
 
 if __name__ == '__main__':

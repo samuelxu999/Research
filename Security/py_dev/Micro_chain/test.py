@@ -10,6 +10,7 @@ from consensus import *
 from utilities import FileUtil, TypesUtil
 from configuration import *
 from db_adapter import DataManager
+from vote import VoteCheckPoint
 
 from time import time
 import random
@@ -328,6 +329,42 @@ def test_Validator():
 
 	print(myblockchain.is_ancestor(myblockchain.chain[0], myblockchain.chain[1]))
 
+def test_Vote():
+	# Instantiate the Wallet
+	mywallet = Wallet()
+
+	# load accounts
+	mywallet.load_accounts()
+
+	#list account address
+	print(mywallet.list_address())
+
+	#----------------- test transaction --------------------
+	sender = mywallet.accounts[0]
+	recipient = mywallet.accounts[-1]
+	attacker = mywallet.accounts[1]
+
+	my_vote = VoteCheckPoint('src_h', 'tar_h', 1, 2, sender['address'])
+
+	dict_vote = my_vote.to_dict()
+	json_vote = my_vote.to_json()
+
+	print('dict vote data:', dict_vote)
+
+	# sign vote
+	sign_data = my_vote.sign(sender['private_key'], 'samuelxu999')
+	json_vote['signature'] = TypesUtil.string_to_hex(sign_data)
+
+	print('json vote data:', json_vote)
+
+	#rebuild vote object given json data
+	new_vote = VoteCheckPoint.json_to_vote(json_vote)
+
+	#verify vote
+	verify_data = VoteCheckPoint.verify(sender['public_key'], 
+						TypesUtil.hex_to_string(json_vote['signature']), new_vote.to_dict())
+
+	print('verify vote:', verify_data)
 
 
 
@@ -340,7 +377,8 @@ if __name__ == '__main__':
 	#test_Node()
 	#test_Wallet()
 	#test_database()
-	test_Validator()
+	#test_Validator()
+	#test_Vote()
 
 	pass
 

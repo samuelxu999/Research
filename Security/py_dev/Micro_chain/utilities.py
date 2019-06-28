@@ -10,6 +10,7 @@ Created on Oct.23, 2017
 '''
 
 from datetime import datetime, timedelta
+import hashlib
 import json
 import pickle
 import glob, os, fnmatch
@@ -295,3 +296,14 @@ class TypesUtil(object):
 		for data in list_data: 
 			json_list.append(TypesUtil.string_to_json(data))
 		return json_list
+
+	# get hashed json data
+	@staticmethod
+	def hash_json(json_block):
+	    """
+	    Create a SHA-256 hash of a json block
+	    """
+	    # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
+	    block_string = json.dumps(json_block, sort_keys=True).encode()
+	    
+	    return hashlib.sha256(block_string).hexdigest()

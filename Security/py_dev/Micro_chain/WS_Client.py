@@ -18,6 +18,7 @@ from wallet import Wallet
 from nodes import PeerNodes
 from transaction import Transaction
 from block import Block
+from vote import VoteCheckPoint
 from validator import Validator
 from consensus import POW
 from utilities import TypesUtil
@@ -71,6 +72,38 @@ def send_transaction(target_address, isBroadcast=False):
     else:
         json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/broadcast', 
                                 transaction_json)
+    print(json_response)
+
+def send_vote(target_address, isBroadcast=False):
+    # Instantiate the Wallet
+    mywallet = Wallet()
+
+    # load accounts
+    mywallet.load_accounts()
+
+    #list account address
+    print(mywallet.list_address())
+
+    #----------------- test transaction --------------------
+    sender = mywallet.accounts[0]
+    recipient = mywallet.accounts[-1]
+    attacker = mywallet.accounts[1]
+
+    my_vote = VoteCheckPoint('385816343cc08cbc5350f4d1c92d2768e3be237ab364fb3bfc1dccde341205a2', 
+                            'fc4341bb9867b7d389d84cd32a0e298cad595c806dd9477d0403ccc59f929138', 
+                            1, 2, sender['address'])
+    json_vote = my_vote.to_json()
+    
+    # sign vote
+    sign_data = my_vote.sign(sender['private_key'], 'samuelxu999')
+    json_vote['signature'] = TypesUtil.string_to_hex(sign_data)
+
+    if(not isBroadcast):
+        json_response=SrvAPI.POST('http://'+target_address+'/test/vote/verify', 
+                                json_vote)
+    else:
+        json_response=SrvAPI.POST('http://'+target_address+'/test/vote/broadcast', 
+                                json_vote)
     print(json_response)
 
 
@@ -155,7 +188,7 @@ def valid_block(target_address):
 
 
 if __name__ == "__main__":
-    target_address = "localhost:8081"
+    target_address = "localhost:8080"
 
     #send_transaction(target_address, True)
 
@@ -169,6 +202,8 @@ if __name__ == "__main__":
 
     #print('Valid last_block:', valid_block(target_address))
 
-    #print('Valid transactions:', valid_transactions(target_address))    
+    #print('Valid transactions:', valid_transactions(target_address)) 
+
+    #send_vote(target_address)   
 
     pass

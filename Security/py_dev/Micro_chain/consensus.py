@@ -12,7 +12,7 @@ Created on June.18, 2019
 import hashlib
 from enum import Enum
 from configuration import *
-from block import Block
+from utilities import TypesUtil
 
 class ConsensusType(Enum):
 	'''
@@ -46,7 +46,7 @@ class POW():
 		Proof of work algorithm
 		"""
 		#last_block = chain_data[-1]
-		last_hash = Block.hash_block(last_block)
+		last_hash = TypesUtil.hash_json(last_block)
 		#print(transactions)
 		nonce = 0
 		while POW.valid_proof(transactions, last_hash, nonce) is False:
@@ -86,7 +86,7 @@ class POS():
 		@ commit_transactions: commited transactions list when new block
 		"""
 		#last_block = chain_data[-1]
-		last_hash = Block.hash_block(parent_block)
+		last_hash = TypesUtil.hash_json(parent_block)
 
 		if( not POS.valid_proof(commit_transactions, last_hash, nonce, stake_weight, sum_stake) ):
 			return 0

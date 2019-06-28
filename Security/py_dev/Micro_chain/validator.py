@@ -25,6 +25,7 @@ from wallet import Wallet
 from transaction import Transaction
 from nodes import PeerNodes
 from block import Block
+from vote import VoteCheckPoint
 from db_adapter import DataManager
 from consensus import *
 from configuration import *
@@ -45,6 +46,8 @@ class Validator(object):
 	self.vote_dependencies: used to save pending vote need for dependency
 	self.processed_head: the latest processed descendant of the highest justified checkpoint
 	self.highest_justified_checkpoint: the block with higest justified checkpoint
+	self.votes: Map {sender -> votes} which contains all the votes for check
+	self.vote_count: Map {source_hash -> {target_hash -> count}} to count the votes
 	'''
 
 	def __init__(self, consensus=ConsensusType.PoW):
@@ -71,8 +74,8 @@ class Validator(object):
 			self.processed_head = json_data
 			self.highest_justified_checkpoint = json_data
 
-			#self.chain.append(genesis_block.to_json())
-			self.add_block(json_data)
+			#add genesis_block as 2-finalized
+			self.add_block(json_data, 2)
 		
 		# new chain buffer
 		self.chain = []
@@ -94,6 +97,8 @@ class Validator(object):
 			self.vote_dependencies = {}
 			self.processed_head = json_data
 			self.highest_justified_checkpoint = json_data
+			self.votes = {}
+			self.vote_count = {}
 			# update chain info
 			self.save_chainInfo()
 		else:
@@ -103,6 +108,8 @@ class Validator(object):
 			self.vote_dependencies = chain_info['vote_dependencies']
 			self.processed_head = chain_info['processed_head']
 			self.highest_justified_checkpoint = chain_info['highest_justified_checkpoint']
+			self.votes = chain_info['votes']
+			self.vote_count = chain_info['vote_count']
 	
 	def print_config(self):
 		#list account address
@@ -125,6 +132,7 @@ class Validator(object):
 		print('    uuid:         ', self.node_id)
 		print('    main chain size: ', self.processed_head['height']+1)
 		print('    processed head: ', self.processed_head['hash'])
+		print('    highest justified checkpoint: ', self.highest_justified_checkpoint['hash'])
 		print('    consensus: 	 ', self.consensus.name)
 
 
@@ -137,6 +145,21 @@ class Validator(object):
 			self.chain_db.insert_block(CHAIN_TABLE,	json_block['hash'], 
 								TypesUtil.json_to_string(json_block), status)
 
+	def update_blockStatus(self, block_hash, status):
+		'''
+		update block status
+		'''
+		self.chain_db.update_status(CHAIN_TABLE, block_hash, status)
+
+	def get_block(self, block_hash):
+		'''
+		select a block as json given block_hash
+		'''
+		str_block = self.chain_db.select_block(CHAIN_TABLE, block_hash)[0][2]
+		return TypesUtil.string_to_json(str_block)
+
+
+
 	def load_chain(self):
 		'''
 		load chain data from local database
@@ -146,6 +169,7 @@ class Validator(object):
 		for block in ls_chain:
 			json_data = TypesUtil.string_to_json(block[2])
 			if( json_data['hash'] not in self.chain):
+				json_data['status']=block[3]
 				self.chain.append(json_data)
 
 	def save_chainInfo(self):
@@ -158,6 +182,8 @@ class Validator(object):
 			chain_info['highest_justified_checkpoint'] = self.highest_justified_checkpoint
 			chain_info['block_dependencies'] = self.block_dependencies
 			chain_info['vote_dependencies'] = self.vote_dependencies
+			chain_info['votes'] = self.votes
+			chain_info['vote_count'] = self.vote_count
 
 			if(not os.path.exists(CHAIN_DATA_DIR)):
 			    os.makedirs(CHAIN_DATA_DIR)
@@ -172,7 +198,7 @@ class Validator(object):
 			else:
 				return None
 
-	def verify_transaction(self, transaction, sender_pk, signature):
+	def valid_transaction(self, transaction, sender_pk, signature):
 		"""
 		Verify a received transaction and append to local transactions pool
 		"""
@@ -270,6 +296,29 @@ class Validator(object):
 
 		return True
 
+	def valid_vote(self, json_vote):
+		"""
+		check if a vote from other voters is valid
+		"""
+		# ------------------- verify vote before accept it ------------------
+		verify_result = False
+
+		#rebuild vote object given json data
+		new_vote = VoteCheckPoint.json_to_vote(json_vote)
+
+		sign_data = TypesUtil.hex_to_string(json_vote['signature'])
+		#print(sign_data)
+
+		self.peer_nodes.load_ByAddress(new_vote.sender_address)
+		sender_node = TypesUtil.string_to_json(list(self.peer_nodes.get_nodelist())[0])
+
+		# ====================== verify vote ==========================
+		if(sender_node!={}):
+			sender_pk = sender_node['public_key']
+			verify_result = VoteCheckPoint.verify(sender_pk, sign_data, new_vote.to_dict())
+
+		return verify_result
+
 	def valid_transactions(self, transactions):
 		"""
 		check if transactions in a new block are valid
@@ -337,13 +386,28 @@ class Validator(object):
 		'''
 		# transaction message processing
 		if(op_type ==0):
-			return self.accept_transaction(json_msg)
+			ret = self.accept_transaction(json_msg)
 		# block message processing
 		elif(op_type ==1):
-			return self.accept_block(json_msg)
+			ret = self.accept_block(json_msg)
 		#vote message processing
 		else:
-			return True
+			ret = self.accept_vote(json_msg)
+
+		# If the object was successfully processed, clear dependencies
+		if(ret and op_type !=0):
+			if(op_type ==1):
+				if(json_msg['hash'] in self.block_dependencies):
+					for dependency in self.block_dependencies[json_msg['hash']]:
+						self.on_receive(dependency, 1)	
+					self.remove_dependency(json_msg['hash'], 0)			
+			else:
+				if(json_msg['hash'] in self.vote_dependencies):
+					for dependency in self.vote_dependencies[json_msg['hash']]:
+						self.on_receive(dependency, 2)	
+					self.remove_dependency(json_msg['hash'], 1)
+			self.save_chainInfo()
+		return ret
 
 	def accept_transaction(self, json_tran):
 		'''
@@ -368,7 +432,7 @@ class Validator(object):
 		if(sender_node!={}):
 			sender_pk= sender_node['public_key']
 			#verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
-			verify_result = self.verify_transaction(dict_transaction, sender_pk, sign_data)
+			verify_result = self.valid_transaction(dict_transaction, sender_pk, sign_data)
 		else:
 			verify_result = False	
 		return verify_result
@@ -383,13 +447,13 @@ class Validator(object):
 			verify_result = self.valid_transactions(json_block['transactions'])
 
 		if(not verify_result):
-			return False
+			return [False, None]
 		
 		# ---------------- accept block given processed status ----------------
 		# If the block's parent has not received, add to dependency list
 		if(self.get_parent(json_block) == None):
 			self.add_dependency(json_block['previous_hash'], json_block)
-			return False
+			return [False, None]
 
 		# remove committed transactions
 		for transaction in json_block['transactions']:
@@ -398,7 +462,131 @@ class Validator(object):
 		# append verified block to local chain, status = 0, processed
 		self.add_block(json_block, 0)
 		self.check_processed_head(json_block)
-		self.save_chainInfo()
+		#self.save_chainInfo()
+
+		#-----------If it's an epoch block, need check point voting process ------
+		vote = None
+		if( (json_block['height'] % EPOCH_SIZE) == 0):
+			vote = self.vote_checkpoint(json_block)
+
+		return [True, vote]
+
+	def vote_checkpoint(self, json_block):
+		"""Called after receiving a block.
+		Args:
+		    json_block: last processed block
+		"""
+		print('vote for ', json_block['hash'])
+		if( (json_block['height'] % EPOCH_SIZE) != 0):
+			return None
+
+		# get target block object as voting block
+		target_block = json_block
+		target_obj = Block.json_to_block(target_block)
+		# get source block object as justified checkpoint with greatest height
+		source_block = self.highest_justified_checkpoint
+		source_obj = Block.json_to_block(source_block)
+
+		# If the block is an epoch block of a higher epoch than what we've seen so far
+		# This means that it's the first time we see a checkpoint at this height
+		# It also means we never voted for any other checkpoint at this height (rule 1)
+		if(target_obj.epoch <= source_obj.epoch):
+			return None
+
+		# if the target_block is a descendent of the source_block, build a vote
+		if(self.is_ancestor(source_block, target_block)):
+			# get sender information
+			sender_node = self.wallet.accounts[0]
+
+			new_vote = VoteCheckPoint(source_block['hash'], target_block['hash'], 
+			                        source_obj.epoch, target_obj.epoch, sender_node['address'])
+			json_vote = new_vote.to_json()
+
+			# sign vote
+			sign_data = new_vote.sign(sender_node['private_key'], 'samuelxu999')
+			json_vote['signature'] = TypesUtil.string_to_hex(sign_data)
+
+			return json_vote
+		
+	def accept_vote(self, json_vote):
+		'''
+		Called on processing a vote message.
+		'''
+		# ------------------- verify vote before accept it ------------------
+		verify_result = self.valid_vote(json_vote)
+		if(not verify_result):
+			print('v')
+			return False
+
+		#--------------------- check if source block is valid---------
+		ls_block = self.chain_db.select_block(CHAIN_TABLE, json_vote['source_hash'])
+		# If the block has not yet been processed, add to vote_dependencies
+		if(ls_block==[]):
+			self.add_dependency(json_vote['source_hash'], json_vote, 1)
+			print('s1')
+			return False
+		
+		# If the source block is not justified, discard vote
+		if(ls_block[0][3]==0):
+			print('s2')
+			return False
+
+		#--------------------- check if target block is valid---------
+		ls_block = self.chain_db.select_block(CHAIN_TABLE, json_vote['target_hash'])
+		# If the block has not yet been processed, add to vote_dependencies
+		if(ls_block==[]):
+			self.add_dependency(json_vote['target_hash'], json_vote, 1)
+			print('t1')
+			return False
+
+		# Initialize self.votes[vote.sender] if necessary
+		if(json_vote['sender_address'] not in self.votes):
+			self.votes[json_vote['sender_address']] = []
+
+		# Check the slashing conditions
+		for past_vote in self.votes[json_vote['sender_address']]:
+			if past_vote['epoch_target'] == json_vote['epoch_target']:
+				# TODO: SLASH
+				print('You just got slashed. R1')
+				return False
+
+			if ((past_vote['epoch_source'] < json_vote['epoch_source'] and
+				past_vote['epoch_target'] > json_vote['epoch_target']) or
+				(past_vote['epoch_source'] > json_vote['epoch_source'] and
+				past_vote['epoch_target'] < json_vote['epoch_target'])):
+				print('You just got slashed. R2')
+				return False
+
+		# Add the vote to the map of votes['sender']
+		self.votes[json_vote['sender_address']].append(json_vote)
+
+		# Add to the vote count
+		if json_vote['source_hash'] not in self.vote_count:
+			self.vote_count[json_vote['source_hash']] = {}
+		self.vote_count[json_vote['source_hash']][json_vote['target_hash']] = \
+		self.vote_count[json_vote['source_hash']].get(json_vote['target_hash'], 0) + 1
+
+		# If there are enough votes, set block as justified
+		if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > 0): #(NUM_VALIDATORS * 2) // 3):
+			# Mark the target block as justified
+			print('justified target:', json_vote['target_hash'])
+			self.update_blockStatus(json_vote['target_hash'], 1)
+
+			if json_vote['epoch_target'] > Block.json_to_block(self.highest_justified_checkpoint).epoch:
+				print('update highest_justified_checkpoint:', json_vote['target_hash'])
+				self.highest_justified_checkpoint = self.get_block(json_vote['target_hash'])
+
+			# If the source was a direct parent of the target, the source
+			# is finalized
+			if json_vote['epoch_source'] == json_vote['epoch_target'] - 1:
+				# Mark the source block as 2-finalized
+				print('finalized source:', json_vote['source_hash'])
+				self.update_blockStatus(json_vote['source_hash'], 2)
+
+		#print(self.votes)
+		#print(self.vote_count)
+		#self.save_chainInfo()
+
 		return True
 
 	def check_processed_head(self, new_block):
@@ -433,6 +621,20 @@ class Validator(object):
 			if(hash_value not in self.vote_dependencies):
 				self.vote_dependencies[hash_value] = []
 			self.vote_dependencies[hash_value].append(json_data)
+	
+	def remove_dependency(self, hash_value, op_type=0):
+		'''
+		If we processed an object, then remove it from dependencies
+		@ hash_value: hash value
+		@ json_data: json data
+		@ op_type: operation type given different message
+		'''
+		if(op_type ==0):
+			if(hash_value in self.block_dependencies):
+				del self.block_dependencies[hash_value]
+		else:
+			if(hash_value in self.vote_dependencies):
+				del self.vote_dependencies[hash_value]
 
 
 '''	@staticmethod

@@ -15,8 +15,6 @@ from time import time
 
 from utilities import FileUtil, TypesUtil, DatetimeUtil
 from crypto_rsa import Crypto_RSA
-from wallet import Wallet
-
 
 class Transaction(object):
 

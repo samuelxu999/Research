@@ -9,8 +9,7 @@ Created on June.18, 2019
 @Reference: 
 '''
 
-import hashlib
-import json
+from utilities import TypesUtil
 from collections import OrderedDict
 
 from configuration import *
@@ -49,7 +48,7 @@ class Block():
 			'transactions': self.transactions,
 			'nonce': self.nonce}
 		# calculate hash of block 
-		self.hash = Block.hash_block(block)
+		self.hash = TypesUtil.hash_json(block)
 		return
 
 	def to_dict(self):
@@ -83,16 +82,6 @@ class Block():
 		print('    nonce:',self.nonce)
 
 	@staticmethod
-	def hash_block(block):
-	    """
-	    Create a SHA-256 hash of a block
-	    """
-	    # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
-	    block_string = json.dumps(block, sort_keys=True).encode()
-	    
-	    return hashlib.sha256(block_string).hexdigest()
-
-	@staticmethod
 	def json_to_block(block_json):
 		"""
 		Output block object given json block data structure. 
@@ -113,6 +102,10 @@ class Block():
 		if( (block_json['height'] >0) and block_json['nonce']==0):
 			return True
 		return False
+
+	@property
+	def epoch(self):
+		return(self.height // EPOCH_SIZE)
 
 
 
