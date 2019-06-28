@@ -138,7 +138,7 @@ def get_chain(target_address):
         for block in chain_data:
             print(block)
 
-def valid_transactions(target_address):
+def test_valid_transactions(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
     chain_data = json_response['chain']
 
@@ -167,7 +167,7 @@ def valid_transactions(target_address):
             verify_result = False
         return verify_result
 
-def valid_block(target_address):
+def test_valid_block(target_address):
 
     json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
     chain_data = json_response['chain']
@@ -200,9 +200,9 @@ if __name__ == "__main__":
 
     #get_chain(target_address)
 
-    #print('Valid last_block:', valid_block(target_address))
+    #print('Valid last_block:', test_valid_block(target_address))
 
-    #print('Valid transactions:', valid_transactions(target_address)) 
+    #print('Valid transactions:', test_valid_transactions(target_address)) 
 
     #send_vote(target_address)   
 

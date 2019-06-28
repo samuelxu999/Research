@@ -55,7 +55,7 @@ def broadcast_transaction():
 		abort(401, {'error': 'No transaction data'})
 
 	# broadcast transaction to peer nodes
-	myblockchain.peer_nodes.load_ByAddress()
+	#myblockchain.peer_nodes.load_ByAddress()
 	SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), transaction_data, '/test/transaction/verify')
 
 	return jsonify({'broadcast_transaction': 'Succeed!'}), 201
@@ -83,7 +83,7 @@ def mine_block():
 	#broadcast proposed block
 	if( (myblockchain.consensus==ConsensusType.PoW) or (not Block.isEmptyBlock(new_block)) ):
 		#broadcast new block to peer nodes
-		myblockchain.peer_nodes.load_ByAddress()
+		#myblockchain.peer_nodes.load_ByAddress()
 		SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
 
 		response = {
@@ -150,7 +150,7 @@ def broadcast_vote():
 		abort(401, {'error': 'No vote data'})
 
 	# broadcast transaction to peer nodes
-	myblockchain.peer_nodes.load_ByAddress()
+	#myblockchain.peer_nodes.load_ByAddress()
 	SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
 
 	return jsonify({'broadcast_vote': 'Succeed!'}), 201
