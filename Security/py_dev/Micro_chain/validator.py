@@ -46,7 +46,7 @@ class Validator(object):
 	self.vote_dependencies: used to save pending vote need for dependency
 	self.processed_head: the latest processed descendant of the highest justified checkpoint
 	self.highest_justified_checkpoint: the block with higest justified checkpoint
-	self.votes: Map {sender -> votes} which contains all the votes for check
+	self.votes: Map {sender -> vote_db object} which contains all the votes data for check
 	self.vote_count: Map {source_hash -> {target_hash -> count}} to count the votes
 	'''
 
@@ -83,6 +83,9 @@ class Validator(object):
 		# new transaction pool
 		self.transactions = []
 
+		# votes pool Map {sender -> vote_db object}
+		self.votes = {}
+
 		#choose consensus algorithm
 		self.consensus = consensus
 
@@ -97,7 +100,7 @@ class Validator(object):
 			self.vote_dependencies = {}
 			self.processed_head = json_data
 			self.highest_justified_checkpoint = json_data
-			self.votes = {}
+			#self.votes = {}
 			self.vote_count = {}
 			# update chain info
 			self.save_chainInfo()
@@ -108,7 +111,7 @@ class Validator(object):
 			self.vote_dependencies = chain_info['vote_dependencies']
 			self.processed_head = chain_info['processed_head']
 			self.highest_justified_checkpoint = chain_info['highest_justified_checkpoint']
-			self.votes = chain_info['votes']
+			#self.votes = chain_info['votes']
 			self.vote_count = chain_info['vote_count']
 	
 	def print_config(self):
@@ -193,7 +196,7 @@ class Validator(object):
 			chain_info['highest_justified_checkpoint'] = self.highest_justified_checkpoint
 			chain_info['block_dependencies'] = self.block_dependencies
 			chain_info['vote_dependencies'] = self.vote_dependencies
-			chain_info['votes'] = self.votes
+			#chain_info['votes'] = self.votes
 			chain_info['vote_count'] = self.vote_count
 
 			if(not os.path.exists(CHAIN_DATA_DIR)):
@@ -552,10 +555,13 @@ class Validator(object):
 
 		# Initialize self.votes[vote.sender] if necessary
 		if(json_vote['sender_address'] not in self.votes):
-			self.votes[json_vote['sender_address']] = []
+			#self.votes[json_vote['sender_address']] = []
+			self.votes[json_vote['sender_address']] = VoteCheckPoint.new_voter(json_vote)
 
 		# Check the slashing conditions
-		for past_vote in self.votes[json_vote['sender_address']]:
+		vote_data = VoteCheckPoint.get_voter_data(self.votes[json_vote['sender_address']], json_vote)
+		#for past_vote in self.votes[json_vote['sender_address']]:
+		for past_vote in vote_data:
 			if past_vote['epoch_target'] == json_vote['epoch_target']:
 				# TODO: SLASH
 				print('You just got slashed. R1')
@@ -569,7 +575,8 @@ class Validator(object):
 				return False
 
 		# Add the vote to the map of votes['sender']
-		self.votes[json_vote['sender_address']].append(json_vote)
+		#self.votes[json_vote['sender_address']].append(json_vote)
+		VoteCheckPoint.add_voter_data(self.votes[json_vote['sender_address']], json_vote)
 
 		# Add to the vote count
 		if json_vote['source_hash'] not in self.vote_count:

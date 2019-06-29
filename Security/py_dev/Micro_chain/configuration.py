@@ -16,6 +16,7 @@ CHAIN_DATA_DIR = 'chaindata'		# local chain database dir
 BLOCKCHAIN_DATA = "chain_db"		# local chain database file name
 CHAIN_TABLE = "Block_table"			# chain data table name
 CHAIN_INFO = "chain_info.json"		# chain information file name (.json)
+VOTER_DATA = "voter_db"				# local voter database file name
 
 NODE_DATA_DIR = "nodedata"			# local node database dir
 NODE_DATABASE = "node_db"			# local node database file name

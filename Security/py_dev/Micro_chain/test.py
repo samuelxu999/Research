@@ -369,6 +369,15 @@ def test_Vote():
 
 	print('verify vote:', verify_data)
 
+	voter = VoteCheckPoint.new_voter(json_vote)
+	#voter = VoteCheckPoint.remove_voter(json_vote)
+	votes_db={}
+	votes_db[json_vote['sender_address']]=voter
+
+	VoteCheckPoint.add_voter_data(votes_db[json_vote['sender_address']], json_vote)
+	vote_data = VoteCheckPoint.get_voter_data(votes_db[json_vote['sender_address']], json_vote)
+
+	print(vote_data)
 
 
 if __name__ == '__main__':

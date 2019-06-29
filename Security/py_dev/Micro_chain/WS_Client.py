@@ -188,13 +188,33 @@ def test_valid_block(target_address):
 
 
 if __name__ == "__main__":
-    target_address = "localhost:8080"
+    #-------------- desktop ----------------
+    '''target_address = "128.226.76.51:8081"
+    send_transaction(target_address)
+    target_address = "128.226.77.186:8081"
+    send_transaction(target_address)
+    target_address = "128.226.88.123:8081"
+    send_transaction(target_address)
+    target_address = "128.226.88.97:8081"
+    send_transaction(target_address)'''
 
+    #-------------- Rpi ----------------
+    '''target_address = "128.226.79.137:8080"
+    send_transaction(target_address)
+    target_address = "128.226.79.251:8080"
+    send_transaction(target_address)
+    target_address = "128.226.88.37:8080"
+    send_transaction(target_address)
+    target_address = "128.226.76.62:8080"
+    send_transaction(target_address)'''
+
+    #-------------- localhost ----------------
+    target_address = "128.226.77.51:8080"
     #send_transaction(target_address, True)
 
     #get_transactions(target_address)
 
-    #start_mining(target_address)
+    start_mining(target_address)
 
     #get_nodes(target_address)
 

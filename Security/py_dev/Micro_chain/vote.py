@@ -13,6 +13,8 @@ import hashlib
 from utilities import TypesUtil
 from collections import OrderedDict
 from crypto_rsa import Crypto_RSA
+from db_adapter import DataManager
+from configuration import *
 
 class VoteCheckPoint(object):
 	"""Vote check point message
@@ -103,5 +105,52 @@ class VoteCheckPoint(object):
 		return VoteCheckPoint(json_vote['source_hash'], json_vote['target_hash'],
 								json_vote['epoch_source'], json_vote['epoch_target'], 
 								json_vote['sender_address'])
+
+	# ------------------------ voter database function--------------------
+	@staticmethod
+	def new_voter(voter_block):
+		"""
+		Output voter_db object given voter's hash address. 
+		"""	
+		voter_name = 'voter_' + voter_block['sender_address']
+		# New database manager to manage chain data
+		voter_db = DataManager(CHAIN_DATA_DIR, VOTER_DATA)
+		voter_db.create_table(voter_name)
+		return voter_db
+
+	@staticmethod
+	def remove_voter(voter_block):
+		"""
+		remove voter table given voter's hash address. 
+		"""	
+		voter_name = 'voter_' + voter_block['sender_address']
+		# New database manager to manage chain data
+		voter_db = DataManager(CHAIN_DATA_DIR, VOTER_DATA)
+		voter_db.remove_table(voter_name)
+
+	@staticmethod
+	def get_voter_data(voter_db, voter_block, block_hash=''):
+		"""
+		Output all vote data as json list given voter's hash address . 
+		"""	
+		voter_name = 'voter_' + voter_block['sender_address']
+		#select a block as json given block_hash
+		ls_blocks = voter_db.select_block(voter_name, block_hash)
+		ls_json = []
+		for str_block in ls_blocks:
+			ls_json.append(TypesUtil.string_to_json(str_block[2]))
+		return ls_json
+
+	@staticmethod
+	def add_voter_data(voter_db, voter_block):
+		"""
+		Add voter_block to database . 
+		"""	
+		voter_name = 'voter_' + voter_block['sender_address']
+		# if block not existed, add block to database
+		if( VoteCheckPoint.get_voter_data(voter_db, voter_block, voter_block['hash'])==[] ):
+			voter_db.insert_block(voter_name, voter_block['hash'], 
+								TypesUtil.json_to_string(voter_block))
+
 
 
