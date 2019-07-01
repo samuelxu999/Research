@@ -9,19 +9,19 @@ Created on June.18, 2019
 @Reference: 
 '''
 
-from utilities import TypesUtil
 from collections import OrderedDict
-
+from utilities import TypesUtil
+from crypto_rsa import Crypto_RSA
 from configuration import *
 
-class Block():
+class Block(object):
 	"""One node (roundrobin) adds a new block to the blockchain every
 	BLOCK_PROPOSAL_TIME iterations.
 
 	Args:
 	    parent: parent block
-	    finalized_dynasties: dynasties which have been finalized.
-	                         Only a committed block's dynasty becomes finalized.
+	    transactions: committed transactions in new block.
+	    nonce: nonce proof to meet difficult level.
 	"""
 
 	def __init__(self, parent=None, transactions=[], nonce = 0):
@@ -80,6 +80,36 @@ class Block():
 		print('    previous_hash:',self.previous_hash)
 		print('    transactions:',self.transactions)
 		print('    nonce:',self.nonce)
+
+	def sign(self, sender_private_key, sk_pw):
+		'''
+		Sign block by using sender's private key and password
+		'''
+		try:
+			private_key_byte = TypesUtil.hex_to_string(sender_private_key)
+			private_key = Crypto_RSA.load_private_key(private_key_byte, sk_pw)
+
+			# generate hashed json_block
+			hash_data = TypesUtil.hash_json(self.to_json(),'sha1')
+			sign_value = Crypto_RSA.sign(private_key, hash_data)
+		except:
+			sign_value=''
+		return sign_value
+
+	def verify(self, sender_public_key, signature):
+		"""
+		Verify block signature by using sender's public key
+		"""
+		try:
+			public_key_byte = TypesUtil.hex_to_string(sender_public_key)
+			publick_key = Crypto_RSA.load_public_key(public_key_byte)
+
+			# generate hashed json_block
+			hash_data = TypesUtil.hash_json(self.to_json(),'sha1')
+			verify_sign=Crypto_RSA.verify(publick_key,signature,hash_data)
+		except:
+			verify_sign=False
+		return verify_sign
 
 	@staticmethod
 	def json_to_block(block_json):

@@ -299,11 +299,16 @@ class TypesUtil(object):
 
 	# get hashed json data
 	@staticmethod
-	def hash_json(json_block):
+	def hash_json(json_block, hash_type='sha256'):
 	    """
 	    Create a SHA-256 hash of a json block
 	    """
 	    # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
 	    block_string = json.dumps(json_block, sort_keys=True).encode()
 	    
-	    return hashlib.sha256(block_string).hexdigest()
+	    if(hash_type=='sha1'):
+	    	return hashlib.sha1(block_string).hexdigest()
+	    elif(hash_type=='sha256'):
+	    	return hashlib.sha256(block_string).hexdigest()
+	    else:
+	    	return None

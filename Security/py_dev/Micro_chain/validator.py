@@ -266,7 +266,19 @@ class Validator(object):
 			# generate empty block without transactions
 			new_block = Block(parent_block)				
 
-		return new_block.to_json()
+		json_block = new_block.to_json()
+
+		# add sender address and signature
+		if(self.wallet.accounts!=0):
+			sender = self.wallet.accounts[0]
+			sign_data = new_block.sign(sender['private_key'], 'samuelxu999')
+			json_block['sender_address'] = sender['address']
+			json_block['signature'] = TypesUtil.string_to_hex(sign_data)
+		else:
+			json_block['sender_address'] = 'Null'
+			json_block['signature'] = 'Null'
+
+		return json_block
 
 	def valid_block(self, new_block):
 		"""
@@ -274,7 +286,24 @@ class Validator(object):
 		"""
 		current_block = new_block
 
-		# Check that the Proof of Work is correct given current block data
+		# get node data from self.peer_nodes buffer
+		sender_node = self.get_node(current_block['sender_address'])
+
+		# ======================1: verify block signature ==========================
+		if(sender_node==None):
+			# unknown sender, drop block
+			print('v_sender')
+			return False
+
+		# rebuild block object given json data
+		obj_block = Block.json_to_block(current_block)
+		# if check signature failed, drop block
+		if( not obj_block.verify(sender_node['public_key'], 
+							TypesUtil.hex_to_string(current_block['signature']) ) ):
+			print('v_sign')
+			return
+
+		#=========2: Check that the Proof of Work is correct given current block data =========
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
 
 		# execute valid proof task given consensus algorithm

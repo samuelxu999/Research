@@ -46,7 +46,9 @@ class SrvAPI(object):
          @ msg_data: input message as json format
          @ peer_nodes: peer node set()
         '''
+        headers = {'Content-Type' : 'application/json'}
         for node in list(peer_nodes):
             json_node = TypesUtil.string_to_json(node)
             api_url = 'http://' + json_node['node_url'] + ws_url
-            SrvAPI.POST(api_url, msg_data)
+            #SrvAPI.POST(api_url, msg_data)
+            requests.post(api_url, data=json.dumps(msg_data), headers=headers)

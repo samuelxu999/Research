@@ -93,39 +93,81 @@ def build_transaction():
 
 	return transaction_json
 
-def test_block():
+def build_block():
+	# Instantiate the Wallet
+	mywallet = Wallet()
 	# Instantiate the PeerNodes
 	peer_nodes = PeerNodes()
-	peer_nodes.load_node()
+
+	# load accounts
+	mywallet.load_accounts()
+
+	#----------------- test account --------------------
+	sender = mywallet.accounts[0]
+	recipient = mywallet.accounts[-1]
+	attacker = mywallet.accounts[1]
+
+	# generate transaction
+	sender_address = sender['address']
+	sender_private_key = sender['private_key']
+
 	root_block=Block()
 	transaction_json = build_transaction()
 
-	myblock=Block(root_block, [transaction_json])
-	myblock.print_data()
-	print('OrderedDict format: \n', myblock.to_dict())
-	print('Json format: \n', myblock.to_json())
+	new_block=Block(root_block, [transaction_json])
+	new_block.print_data()
+	print('OrderedDict format: \n', new_block.to_dict())
+	json_block = new_block.to_json()
+	print('Json format: \n', json_block)
 
 	# rebuild block object given json data
-	obj_block = Block.json_to_block(myblock.to_json())
-	print('obj_block.transactions:', obj_block.transactions)
+	obj_block = Block.json_to_block(new_block.to_json())
+	print('obj_block.transactions: \n', obj_block.transactions)
 
+	sign_data = new_block.sign(sender_private_key, 'samuelxu999')
+	json_block['sender_address'] = sender_address
+	json_block['signature'] = TypesUtil.string_to_hex(sign_data)
+
+	return json_block
+
+
+def test_block():
+	# Instantiate the PeerNodes
+	peer_nodes = PeerNodes()
+
+	json_block = build_block()
+	print('Receive block: \n', json_block)
 	# ====================== rebuild transaction ==========================
-	#transaction_data = myblock.transactions[0]
-	transaction_data = transaction_json
+	#transaction_data = new_block.transactions[0]
+	transaction_data = json_block['transactions'][0]
 	dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
 											transaction_data['recipient_address'],
 											transaction_data['time_stamp'],
 											transaction_data['value'])
 	sign_data = TypesUtil.hex_to_string(transaction_data['signature'])
-	sender_node = peer_nodes.get_node(transaction_data['sender_address'])
-
+	#peer_nodes.load_ByAddress(transaction_data['sender_address'])
+	peer_nodes.load_ByAddress(json_block['sender_address'])
+	ls_nodes = list(peer_nodes.get_nodelist())
 	# ====================== verify transaction ==========================
-	if(sender_node!={}):
-		sender_pk= sender_node['public_key']
-		verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
+	if(ls_nodes!=[]):
+		sender_node = TypesUtil.string_to_json(ls_nodes[0])
 	else:
-		verify_data = False
-	print('Verify transaction:', verify_data)
+		sender_node = None
+
+	if(sender_node!=None):
+		sender_pk= sender_node['public_key']
+		verify_trans = Transaction.verify(sender_pk, sign_data, dict_transaction)
+		
+		# rebuild block object given json data
+		obj_block = Block.json_to_block(json_block)
+		verify_block = obj_block.verify(sender_pk, TypesUtil.hex_to_string(json_block['signature']))
+	else:
+		verify_trans = False
+		verify_block = False
+	
+	print('Verify transaction:', verify_trans)
+	print('Verify block:', verify_block)
+
 
 def test_PoW():
 	"""

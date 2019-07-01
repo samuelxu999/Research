@@ -88,6 +88,8 @@ def mine_block():
 
 		response = {
 			'message': "New Block Forged",
+			'sender_address': new_block['sender_address'],
+			'signature': new_block['signature'],
 			'hash': new_block['hash'],
 			'height': new_block['height'],
 			'transactions': new_block['transactions'],

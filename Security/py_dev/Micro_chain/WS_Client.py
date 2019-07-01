@@ -214,7 +214,7 @@ if __name__ == "__main__":
 
     #get_transactions(target_address)
 
-    start_mining(target_address)
+    #start_mining(target_address)
 
     #get_nodes(target_address)
 
