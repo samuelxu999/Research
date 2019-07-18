@@ -40,7 +40,7 @@ class SrvAPI(object):
         return json_response
 
     @staticmethod
-    def broadcast(peer_nodes, msg_data, ws_url):
+    def broadcast_POST(peer_nodes, msg_data, ws_url):
         '''
          broadcast message to peer nodes
          @ msg_data: input message as json format
@@ -52,3 +52,17 @@ class SrvAPI(object):
             api_url = 'http://' + json_node['node_url'] + ws_url
             #SrvAPI.POST(api_url, msg_data)
             requests.post(api_url, data=json.dumps(msg_data), headers=headers)
+
+    @staticmethod
+    def broadcast_GET(peer_nodes, ws_url):
+        '''
+         broadcast message to peer nodes using GET
+         @ msg_data: input message as json format
+         @ peer_nodes: peer node set()
+        '''
+        headers = {'Content-Type' : 'application/json'}
+        for node in list(peer_nodes):
+            json_node = TypesUtil.string_to_json(node)
+            api_url = 'http://' + json_node['node_url'] + ws_url
+            #SrvAPI.POST(api_url, msg_data)
+            requests.get(api_url, data=json.dumps({}), headers=headers)

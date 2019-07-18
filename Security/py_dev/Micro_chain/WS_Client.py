@@ -117,6 +117,16 @@ def start_mining(target_address):
     #transactions = json_response['transactions']
     print(json_response)
 
+def start_voting(target_address, isBroadcast=False):
+	if(not isBroadcast):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/block/vote')
+	#transactions = json_response['transactions']
+	else:
+	#SrvAPI.broadcast(peer_nodes.get_nodelist(), {}, '/test/block/vote')
+		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/block/vote')
+		json_response = {'verify_vote': 'broadcast'}
+	print(json_response)
+
 def get_nodes(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
     nodes = json_response['nodes']
@@ -215,6 +225,8 @@ if __name__ == "__main__":
     #get_transactions(target_address)
 
     #start_mining(target_address)
+
+    #start_voting(target_address, True)
 
     #get_nodes(target_address)
 

@@ -46,6 +46,7 @@ class Validator(object):
 	self.vote_dependencies: used to save pending vote need for dependency
 	self.processed_head: the latest processed descendant of the highest justified checkpoint
 	self.highest_justified_checkpoint: the block with higest justified checkpoint
+	self.highest_finalized_checkpoint: the block with higest finalized checkpoint
 	self.votes: Map {sender -> vote_db object} which contains all the votes data for check
 	self.vote_count: Map {source_hash -> {target_hash -> count}} to count the votes
 	'''
@@ -73,6 +74,7 @@ class Validator(object):
 			#set processed_head and highest_justified_checkpoint as genesis_block
 			self.processed_head = json_data
 			self.highest_justified_checkpoint = json_data
+			self.highest_finalized_checkpoint = json_data
 
 			#add genesis_block as 2-finalized
 			self.add_block(json_data, 2)
@@ -100,6 +102,7 @@ class Validator(object):
 			self.vote_dependencies = {}
 			self.processed_head = json_data
 			self.highest_justified_checkpoint = json_data
+			self.highest_finalized_checkpoint = json_data
 			#self.votes = {}
 			self.vote_count = {}
 			# update chain info
@@ -111,6 +114,7 @@ class Validator(object):
 			self.vote_dependencies = chain_info['vote_dependencies']
 			self.processed_head = chain_info['processed_head']
 			self.highest_justified_checkpoint = chain_info['highest_justified_checkpoint']
+			self.highest_finalized_checkpoint = chain_info['highest_finalized_checkpoint']
 			#self.votes = chain_info['votes']
 			self.vote_count = chain_info['vote_count']
 	
@@ -136,6 +140,7 @@ class Validator(object):
 		print('    main chain size: ', self.processed_head['height']+1)
 		print('    processed head: ', self.processed_head['hash'])
 		print('    highest justified checkpoint: ', self.highest_justified_checkpoint['hash'])
+		print('    highest finalized checkpoint: ', self.highest_finalized_checkpoint['hash'])
 		print('    consensus: 	 ', self.consensus.name)
 
 
@@ -194,6 +199,7 @@ class Validator(object):
 			chain_info['node_id'] = self.node_id
 			chain_info['processed_head'] = self.processed_head
 			chain_info['highest_justified_checkpoint'] = self.highest_justified_checkpoint
+			chain_info['highest_finalized_checkpoint'] = self.highest_finalized_checkpoint
 			chain_info['block_dependencies'] = self.block_dependencies
 			chain_info['vote_dependencies'] = self.vote_dependencies
 			#chain_info['votes'] = self.votes
@@ -231,7 +237,12 @@ class Validator(object):
 		"""
 		Mining task to propose new block
 		"""
+		# remove committed transactions in head block
+		head_block = self.processed_head
+		for transaction in head_block['transactions']:
+			self.transactions.remove(transaction)
 
+		# commit transactions based on COMMIT_TRANS
 		commit_transactions = []
 		if( len(self.transactions)<=COMMIT_TRANS ):
 			commit_transactions = copy.copy(self.transactions)
@@ -239,7 +250,7 @@ class Validator(object):
 		else:
 			commit_transactions = copy.copy(self.transactions[:COMMIT_TRANS])
 
-
+		# set head as last block and used for new block proposal process
 		last_block = self.processed_head
 
 		block_data = {'height': last_block['height'],
@@ -491,21 +502,13 @@ class Validator(object):
 			self.add_dependency(json_block['previous_hash'], json_block)
 			return [False, None]
 
-		# remove committed transactions
-		for transaction in json_block['transactions']:
-			self.transactions.remove(transaction)
 		
 		# append verified block to local chain, status = 0, processed
 		self.add_block(json_block, 0)
 		self.check_processed_head(json_block)
 		#self.save_chainInfo()
 
-		#-----------If it's an epoch block, need check point voting process ------
-		vote = None
-		if( (json_block['height'] % EPOCH_SIZE) == 0):
-			vote = self.vote_checkpoint(json_block)
-
-		return [True, vote]
+		return True
 
 	def vote_checkpoint(self, json_block):
 		"""
@@ -531,7 +534,9 @@ class Validator(object):
 		# This means that it's the first time we see a checkpoint at this height
 		# It also means we never voted for any other checkpoint at this height (rule 1)
 		if(target_obj.epoch <= source_obj.epoch):
-			return None
+			#return None
+			source_block = self.highest_finalized_checkpoint
+			source_obj = Block.json_to_block(source_block)
 
 		# if the target_block is a descendent of the source_block, build a vote
 		if(self.is_ancestor(source_block, target_block)):
@@ -615,20 +620,24 @@ class Validator(object):
 
 		# If there are enough votes, set block as justified
 		if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > (NUM_VALIDATORS * 2) // 3):
+			target_status = target_block[3]
 			# 1) if target was processed, set justified block
-			if( target_block[3]==0 ):
+			if( target_status==0 ):
 				# Mark the target block as 1-justified
 				print('justified target:', json_vote['target_hash'])
 				self.update_blockStatus(json_vote['target_hash'], 1)
+				target_status = 1
 			# 2) update highest_justified_checkpoint as target
 			if( json_vote['epoch_target'] > Block.json_to_block(self.highest_justified_checkpoint).epoch ):
 				print('update highest_justified_checkpoint:', json_vote['target_hash'])
 				self.highest_justified_checkpoint = self.get_block(json_vote['target_hash'])
 
 			# If the source was a direct parent of the target, the source is finalized block
-			if( json_vote['epoch_source'] == (json_vote['epoch_target'] - 1) and target_block[3]==1):
+			source_status = source_block[3]
+			if( json_vote['epoch_source'] == (json_vote['epoch_target'] - 1) and target_status==1 and source_status!=2):
 				# Mark the source block as 2-finalized
 				print('finalized source:', json_vote['source_hash'])
+				self.highest_finalized_checkpoint = self.get_block(json_vote['source_hash'])
 				self.update_blockStatus(json_vote['source_hash'], 2)
 
 		return True

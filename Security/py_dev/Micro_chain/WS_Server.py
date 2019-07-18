@@ -56,7 +56,7 @@ def broadcast_transaction():
 
 	# broadcast transaction to peer nodes
 	#myblockchain.peer_nodes.load_ByAddress()
-	SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), transaction_data, '/test/transaction/verify')
+	SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), transaction_data, '/test/transaction/verify')
 
 	return jsonify({'broadcast_transaction': 'Succeed!'}), 201
 
@@ -84,7 +84,7 @@ def mine_block():
 	if( (myblockchain.consensus==ConsensusType.PoW) or (not Block.isEmptyBlock(new_block)) ):
 		#broadcast new block to peer nodes
 		#myblockchain.peer_nodes.load_ByAddress()
-		SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
+		SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
 
 		response = {
 			'message': "New Block Forged",
@@ -118,13 +118,21 @@ def verify_block():
 	if(block_data=='{}'):
 		abort(401, {'error': 'No block data'})
 
-	verify_result, json_vote = myblockchain.on_receive(block_data, 1)
-
-	# if vote message is available, then broadcast to other validators
-	if(json_vote!= None):
-		SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), json_vote, '/test/vote/verify')
+	verify_result = myblockchain.on_receive(block_data, 1)
 
 	return jsonify({'verify_block': verify_result}), 201
+
+@app.route('/test/block/vote', methods=['GET'])
+def vote_block():
+	json_block = myblockchain.processed_head
+
+	ret_msg = "Not valid for voting epoch"
+	if( (json_block['height'] % EPOCH_SIZE) == 0):
+		vote_data = myblockchain.vote_checkpoint(json_block)	
+		SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
+		ret_msg = vote_data
+
+	return jsonify({'Vote block': ret_msg}), 201
 
 @app.route('/test/vote/verify', methods=['POST'])
 def verify_vote():
@@ -153,7 +161,7 @@ def broadcast_vote():
 
 	# broadcast transaction to peer nodes
 	#myblockchain.peer_nodes.load_ByAddress()
-	SrvAPI.broadcast(myblockchain.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
+	SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
 
 	return jsonify({'broadcast_vote': 'Succeed!'}), 201
 
