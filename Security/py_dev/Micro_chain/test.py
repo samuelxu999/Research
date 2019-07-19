@@ -201,7 +201,8 @@ def test_PoS():
 
 	last_block = chain_data[-1]
 	print(last_block)
-
+	print('get proof value:', POS.get_proof(Transaction.json_to_dict(last_block['transactions']), last_block['previous_hash'], last_block['nonce'],TEST_STAKE_SUM))
+	
 	sum_hit = 0
 	test_run = 1000
 	ran_nonce = random.randint(1, 2**256)

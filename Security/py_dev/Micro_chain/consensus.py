@@ -79,6 +79,23 @@ class POS():
 		return guess_weight < (stake_weight/sum_stake)
 
 	@staticmethod
+	def get_proof(transactions, previous_hash, nonce, sum_stake=1):
+		"""
+		Check if a guessing hash value satisfies the mining difficulty conditions. 
+		@ nonce: the stake deposit value 
+		"""
+		guess_str = (str(transactions)+str(previous_hash)+str(nonce)).encode()
+		guess_hash = hashlib.sha256(guess_str).hexdigest()
+		#print(guess_hash)
+		difficulty =1
+		while(int('f'*difficulty, 16) < sum_stake):
+			difficulty+=1
+
+		guess_weight = int(guess_hash[:difficulty], 16)
+
+		return guess_weight
+
+	@staticmethod
 	def proof_of_stake(parent_block, commit_transactions, nonce, stake_weight, sum_stake):
 		"""
 		Proof of work algorithm

@@ -112,10 +112,15 @@ def get_transactions(target_address):
     transactions = json_response['transactions']
     print(transactions)
 
-def start_mining(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/mining')
-    #transactions = json_response['transactions']
-    print(json_response)
+def start_mining(target_address, isBroadcast=False):
+	if(not isBroadcast):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/mining')
+	#transactions = json_response['transactions']
+	else:
+		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/mining')
+		json_response = {'start mining': 'broadcast'}
+
+	print(json_response)
 
 def start_voting(target_address, isBroadcast=False):
 	if(not isBroadcast):
@@ -147,6 +152,10 @@ def get_chain(target_address):
     else:
         for block in chain_data:
             print(block)
+
+def check_head():
+	SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/chain/checkhead')
+	json_response = {'Reorganize processed_head': 'broadcast'}
 
 def test_valid_transactions(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
@@ -220,11 +229,15 @@ if __name__ == "__main__":
 
     #-------------- localhost ----------------
     target_address = "128.226.77.51:8080"
+
     #send_transaction(target_address, True)
 
     #get_transactions(target_address)
 
     #start_mining(target_address)
+    #start_mining(target_address, True)
+
+    #check_head()
 
     #start_voting(target_address, True)
 

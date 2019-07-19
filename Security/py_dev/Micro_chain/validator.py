@@ -45,6 +45,7 @@ class Validator(object):
 	self.block_dependencies: used to save blocks need for dependency
 	self.vote_dependencies: used to save pending vote need for dependency
 	self.processed_head: the latest processed descendant of the highest justified checkpoint
+	self.current_head: the current received descendant of the highest justified checkpoint
 	self.highest_justified_checkpoint: the block with higest justified checkpoint
 	self.highest_finalized_checkpoint: the block with higest finalized checkpoint
 	self.votes: Map {sender -> vote_db object} which contains all the votes data for check
@@ -71,11 +72,6 @@ class Validator(object):
 
 		# no local chain data, generate a new validator information
 		if( self.chain_db.select_block(CHAIN_TABLE)==[] ):
-			#set processed_head and highest_justified_checkpoint as genesis_block
-			self.processed_head = json_data
-			self.highest_justified_checkpoint = json_data
-			self.highest_finalized_checkpoint = json_data
-
 			#add genesis_block as 2-finalized
 			self.add_block(json_data, 2)
 		
@@ -117,6 +113,9 @@ class Validator(object):
 			self.highest_finalized_checkpoint = chain_info['highest_finalized_checkpoint']
 			#self.votes = chain_info['votes']
 			self.vote_count = chain_info['vote_count']
+		
+		# point current head to processed_head
+		self.current_head = self.processed_head
 	
 	def print_config(self):
 		#list account address
@@ -238,9 +237,10 @@ class Validator(object):
 		Mining task to propose new block
 		"""
 		# remove committed transactions in head block
-		head_block = self.processed_head
+		head_block = self.current_head
 		for transaction in head_block['transactions']:
-			self.transactions.remove(transaction)
+			if(transaction in self.transactions):
+				self.transactions.remove(transaction)
 
 		# commit transactions based on COMMIT_TRANS
 		commit_transactions = []
@@ -651,12 +651,31 @@ class Validator(object):
 
 		Args:
 		    block: latest block processed.'''
-
+		head_block = self.current_head 
 		# we are on the right chain, the head is simply the latest block
-		if self.is_ancestor(self.highest_justified_checkpoint, new_block):
-			self.processed_head = new_block
+		if self.is_ancestor(self.highest_justified_checkpoint, head_block):
+			if(self.consensus==ConsensusType.PoS):
+				# get proof value used for choose current_head
+				new_proof=POS.get_proof(Transaction.json_to_dict(new_block['transactions']), 
+								new_block['previous_hash'], new_block['nonce'],TEST_STAKE_SUM)
+				head_proof=POS.get_proof(Transaction.json_to_dict(head_block['transactions']), 
+								head_block['previous_hash'], head_block['nonce'],TEST_STAKE_SUM)
+				# head is genesis block or new_block have smaller proof value than current head
+				print(new_proof, "--", head_proof)
+				print(head_block['height'], "--", new_block['height'])
+				if(new_proof<head_proof or head_block['height']<new_block['height']):
+					self.current_head = new_block
+					print("Update current_head:", self.current_head['hash'])
+			else:
+				self.processed_head = new_block
+				print("Fix processed_head:", self.processed_head['hash'])
 			#self.main_chain_size += 1
 
+	def fix_processed_head(self):
+		# set processed_head when block proposal epoch finish 
+		if(self.consensus==ConsensusType.PoS):
+			self.processed_head = self.current_head
+			print("Fix processed_head:", self.processed_head['hash'])
 
 	def add_dependency(self, hash_value, json_data, op_type=0):
 		'''

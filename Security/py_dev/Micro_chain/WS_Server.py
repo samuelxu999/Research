@@ -77,6 +77,12 @@ def full_chain():
 	}
 	return jsonify(response), 200
 
+@app.route('/test/chain/checkhead', methods=['GET'])
+def check_head():
+	myblockchain.fix_processed_head()
+
+	return jsonify({'Reorganize processed_head': myblockchain.processed_head}), 200
+
 @app.route('/test/mining', methods=['GET'])
 def mine_block():
 	new_block=myblockchain.mine_block()
@@ -175,7 +181,7 @@ if __name__ == '__main__':
 	port = args.port
 
 	# Instantiate the Blockchain
-	myblockchain = Validator(ConsensusType.PoW)
+	myblockchain = Validator(ConsensusType.PoS)
 	myblockchain.load_chain()
 
 	myblockchain.print_config()
