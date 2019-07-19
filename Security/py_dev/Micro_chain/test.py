@@ -277,20 +277,47 @@ def test_Node():
 		json_node = TypesUtil.string_to_json(node)
 		print('    ' + json_node['address'] + '    ' + json_node['node_url'] )
 
-	#peer_nodes.save_node(PEER_NODES)
-	'''peer_nodes.load_node(PEER_NODES)
-	reload_nodes = peer_nodes.nodes
+	#--------------------------------------- static node test -------------------------------------
+	static_nodes = StaticNodes()
+	static_nodes.load_node()
+
+	static_nodes.register_node('R1_pi_plus_1', 'ceeebaa052718c0a00adb87de857ba63608260e9', 'http://128.226.79.137:8080')
+	static_nodes.register_node('R1_pi_plus_2', '1699600976ec6fc0fe35d54174eb6094e671d2fd', 'http://128.226.79.251:8080')
+	static_nodes.register_node('R1_pi_plus_3', 'f55af09f40768ca05505767cd013b6b9a78579c4', 'http://128.226.88.37:8080')
+	static_nodes.register_node('R1_pi_plus_4', 'e416c382f8ff6d883dec61a12a2ced1b80905992', 'http://128.226.76.62:8080')
+
+	static_nodes.register_node('R2_pi_top', '42ee7f41f06dc972a2e5e8b5facb5e91913fce7d', 'http://128.226.76.114:8080')
+	static_nodes.register_node('R2_tk_top', '083d853e27ef075be81711c4393a8f256bc8e6b1', 'http://128.226.88.211:8080')
+	static_nodes.register_node('R2_tk_bottom', '77352970f5c3203c55b54c390f59f5fe75d7c012', 'http://128.226.88.43:8080')
+	static_nodes.register_node('R2_pi_bottom', 'abefa52a0ffb59072a3e7bf34e182f92fd09a3b1', 'http://128.226.78.148:8080')
+
+	static_nodes.register_node('Desk_pi_1', '45961f1e9ac53a22afdc48e434e542077481a9c4', 'http://128.226.79.127:8080')
+	static_nodes.register_node('Desk_pi_2', '57d1d44a711f1bd5761a78088510dbf9d84502c5', 'http://128.226.78.89:8080')
+	static_nodes.register_node('Desk_pi_plus_1', '0372804d1fc92a000d5ac68623bf32d8255014a6', 'http://128.226.79.249:8080')
+	static_nodes.register_node('Desk_pi_plus_2', '79624546b854a4dcbde53260ab82b06b890337ae', 'http://128.226.88.144:8080')
+
+	static_nodes.register_node('Desktop_1', '727e6834ee81196bd8096c96f09cdbc9d878ce73', 'http://128.226.76.51:8081')
+	static_nodes.register_node('Desktop_2', '30ac4c7067af6b3f5b0ee78d9ec8051ab81bcc4d', 'http://128.226.77.186:8081')
+	static_nodes.register_node('Desktop_3', '5af1d2232756fdff405682ec6f1b785f645cf351', 'http://128.226.88.123:8081')
+	static_nodes.register_node('Desktop_4', '4418f25a11475627585dab84210754a851ee1ac8', 'http://128.226.88.97:8081')
+	static_nodes.register_node('Desktop_Sam', '3be2ea794ffb799f5c7e4a0257d2f27968ddf677', 'http://128.226.77.51:8081')		
+	#print(static_nodes.nodes)
+
+	static_nodes.save_node()
+
+	reload_nodes = static_nodes.nodes
 	#print(reload_nodes)
 
-	print('List loaded nodes:')
+	print('List loaded static nodes:')
 	for node in list(reload_nodes):
-	    json_node = TypesUtil.string_to_json(node)
-	    print('    ' + json_node['address'] + '    ' + json_node['node_url'])
+	    #json_node = TypesUtil.string_to_json(node)
+	    json_node = node
+	    print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
 
 	# ---------------------- search node ----------------------
-	node_address = '1699600976ec6fc0fe35d54174eb6094e671d2fd'
-	print('Search nodes:' + node_address)
-	print(peer_nodes.get_node(node_address))'''
+	node_name = 'R2_pi_top'
+	print('Search nodes:' + node_name)
+	print(static_nodes.get_node(node_name))
 
 def test_Wallet():
     # Instantiate the Wallet

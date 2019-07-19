@@ -15,7 +15,7 @@ import json
 from time import time
 
 from wallet import Wallet
-from nodes import PeerNodes
+from nodes import *
 from transaction import Transaction
 from block import Block
 from vote import VoteCheckPoint
@@ -139,6 +139,20 @@ def get_nodes(target_address):
     for node in nodes:
         print(node)
 
+def add_node(target_address, json_node, isBroadcast=False):
+    if(not isBroadcast):
+        json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/add', json_node)
+    else:
+        json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/add')
+    print(json_response)
+
+def remove_node(target_address, json_node, isBroadcast=False):
+    if(not isBroadcast):
+        json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
+    else:
+        json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
+    print(json_response)
+
 def get_chain(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
     chain_data = json_response['chain']
@@ -227,8 +241,22 @@ if __name__ == "__main__":
     target_address = "128.226.76.62:8080"
     send_transaction(target_address)'''
 
+    #--------------------------------------- load static nodes -------------------------------------
+    '''static_nodes = StaticNodes()
+    static_nodes.load_node()
+
+    print('List loaded static nodes:')
+    for node in list(static_nodes.nodes):
+        #json_node = TypesUtil.string_to_json(node)
+        json_node = node
+        print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
+
     #-------------- localhost ----------------
-    target_address = "128.226.77.51:8080"
+    target_node = static_nodes.get_node('Desktop_1')
+    target_address = target_node['node_url']
+    print(target_address)'''
+
+    target_address = "128.226.77.51:8081"
 
     #send_transaction(target_address, True)
 
@@ -241,6 +269,13 @@ if __name__ == "__main__":
 
     #start_voting(target_address, True)
 
+    # ---------------- add and remove peer node --------------------
+    json_node = {}
+    json_node['address'] = '3be2ea794ffb799f5c7e4a0257d2f27968ddf677'
+    json_node['public_key'] = '2f279'
+    json_node['node_url'] = '128.226.77.51:8081'
+    #add_node(target_address, json_node, True)
+    #remove_node(target_address, json_node, True)
     #get_nodes(target_address)
 
     #get_chain(target_address)

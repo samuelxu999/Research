@@ -114,6 +114,34 @@ def get_nodes():
 	response = {'nodes': nodes}
 	return jsonify(response), 200
 
+@app.route('/test/nodes/add', methods=['POST'])
+def add_node():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	#transaction_data = TypesUtil.string_to_json(req_data)
+	json_node=json.loads(req_data)
+
+	if(json_node=='{}'):
+		abort(401, {'error': 'No node data'})
+
+	myblockchain.peer_nodes.register_node(json_node['address'], json_node['public_key'], json_node['node_url'])
+	myblockchain.peer_nodes.load_ByAddress()
+	return jsonify({'add peer node': json_node['address']}), 201
+
+@app.route('/test/nodes/remove', methods=['POST'])
+def remove_node():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	#transaction_data = TypesUtil.string_to_json(req_data)
+	json_node=json.loads(req_data)
+	
+	if(json_node=='{}'):
+		abort(401, {'error': 'No node data'})
+		
+	myblockchain.peer_nodes.remove_node(json_node['address'])
+	myblockchain.peer_nodes.load_ByAddress()
+	return jsonify({'remove peer node': json_node['address']}), 201
+
 @app.route('/test/block/verify', methods=['POST'])
 def verify_block():
 	# parse data from request.data

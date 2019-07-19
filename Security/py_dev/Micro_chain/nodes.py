@@ -76,18 +76,53 @@ class PeerNodes:
 			list_nodes.add(node[2])
 		return list_nodes
 
-'''	def get_node(self, node_address):
+class StaticNodes(object):
+	def __init__(self):
+
+		#self.nodes = set()
+		self.nodes = []
+
+	def register_node(self, node_name, node_address, node_url):
+		"""
+		Add a new node to the static nodes file  
+		"""
+		# avoid adding duplicate data
+		for node in self.nodes:
+			if( (node_address == node['node_address']) or (node_name == node['node_name']) ):
+				return
+
+		#Checking node_url has valid format
+		node_data={'node_name': node_name,
+					'node_address': node_address,
+					'node_url': ''}
+		parsed_url = urlparse(node_url)
+		if parsed_url.netloc:
+			#self.nodes.add(parsed_url.netloc)
+			node_data['node_url'] = parsed_url.netloc
+			self.nodes.append(node_data)
+
+		elif parsed_url.path:
+			# Accepts an URL without scheme like '192.168.0.5:5000'.
+			#self.nodes.add(parsed_url.path)
+			node_data['node_url'] = parsed_url.path
+			self.nodes.append(node_data)
+
+		else:
+		    raise ValueError('Invalid URL')
+
+	def get_node(self, node_name):
 		"""
 		get node information given node address
 		"""
 		json_node = {}
 		for node in self.nodes:
-			node_data = TypesUtil.string_to_json(node)
-			if(node_data['address']==node_address):
+			#node_data = TypesUtil.string_to_json(node)
+			node_data = node
+			if(node_data['node_name']==node_name):
 				json_node = node_data
 		return json_node
 
-	def save_node(self, node_file=PEER_NODES):
+	def save_node(self, node_file=NODE_STATICS):
 			"""
 			Save the list of nodes to static node file
 			"""
@@ -95,11 +130,11 @@ class PeerNodes:
 			    os.makedirs(NODE_DATA_DIR)
 			FileUtil.List_save(NODE_DATA_DIR+'/'+node_file, list(self.nodes))
 
-	def load_node(self, node_file=PEER_NODES):
+	def load_node(self, node_file=NODE_STATICS):
 			"""
 			load nodes from static node file
 			"""
 			#self.nodes = fname.read()
 			if(os.path.isfile(NODE_DATA_DIR+'/'+node_file)):
-			    self.nodes = set(FileUtil.List_load(NODE_DATA_DIR+'/'+node_file))'''
+			    self.nodes = list(FileUtil.List_load(NODE_DATA_DIR+'/'+node_file))
 
