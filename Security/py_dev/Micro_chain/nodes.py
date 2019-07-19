@@ -123,18 +123,18 @@ class StaticNodes(object):
 		return json_node
 
 	def save_node(self, node_file=NODE_STATICS):
-			"""
-			Save the list of nodes to static node file
-			"""
-			if(not os.path.exists(NODE_DATA_DIR)):
-			    os.makedirs(NODE_DATA_DIR)
-			FileUtil.List_save(NODE_DATA_DIR+'/'+node_file, list(self.nodes))
+		"""
+		Save the list of nodes to static node file
+		"""
+		if(not os.path.exists(NODE_DATA_DIR)):
+		    os.makedirs(NODE_DATA_DIR)
+		FileUtil.List_save(NODE_DATA_DIR+'/'+node_file, list(self.nodes))
 
 	def load_node(self, node_file=NODE_STATICS):
-			"""
-			load nodes from static node file
-			"""
-			#self.nodes = fname.read()
-			if(os.path.isfile(NODE_DATA_DIR+'/'+node_file)):
-			    self.nodes = list(FileUtil.List_load(NODE_DATA_DIR+'/'+node_file))
+		"""
+		load nodes from static node file
+		"""
+		#self.nodes = fname.read()
+		if(os.path.isfile(NODE_DATA_DIR+'/'+node_file)):
+		    self.nodes = list(FileUtil.List_load(NODE_DATA_DIR+'/'+node_file))
 

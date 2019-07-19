@@ -76,3 +76,13 @@ class Wallet(object):
             ls_address.append(account['address'])
         return ls_address
 
+    def get_account(self, address):
+        """
+        get account given address
+        """
+        for account in self.accounts:
+            if(account['address']==address):
+                return account
+        return None
+
+

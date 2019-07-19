@@ -242,7 +242,7 @@ if __name__ == "__main__":
     send_transaction(target_address)'''
 
     #--------------------------------------- load static nodes -------------------------------------
-    '''static_nodes = StaticNodes()
+    static_nodes = StaticNodes()
     static_nodes.load_node()
 
     print('List loaded static nodes:')
@@ -252,11 +252,32 @@ if __name__ == "__main__":
         print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
 
     #-------------- localhost ----------------
-    target_node = static_nodes.get_node('Desktop_1')
+    target_node = static_nodes.get_node('Desktop_Sam')
     target_address = target_node['node_url']
-    print(target_address)'''
+    print(target_address)
 
-    target_address = "128.226.77.51:8081"
+    # Instantiate the Wallet
+    mywallet = Wallet()
+
+    # load accounts
+    mywallet.load_accounts()
+
+    #list account address
+    #print(mywallet.list_address())
+    json_account = mywallet.get_account(target_node['node_address'])
+    #print(json_account)
+
+    # ---------------- add and remove peer node --------------------
+    json_node = {}
+    if(json_account!=None):
+        json_node['address'] = json_account['address']
+        json_node['public_key'] = json_account['public_key']
+        json_node['node_url'] = target_node['node_url']
+    #add_node(target_address, json_node, True)
+    #remove_node(target_address, json_node, True)
+    get_nodes(target_address)
+
+    #target_address = "128.226.77.51:8080"
 
     #send_transaction(target_address, True)
 
@@ -268,15 +289,6 @@ if __name__ == "__main__":
     #check_head()
 
     #start_voting(target_address, True)
-
-    # ---------------- add and remove peer node --------------------
-    json_node = {}
-    json_node['address'] = '3be2ea794ffb799f5c7e4a0257d2f27968ddf677'
-    json_node['public_key'] = '2f279'
-    json_node['node_url'] = '128.226.77.51:8081'
-    #add_node(target_address, json_node, True)
-    #remove_node(target_address, json_node, True)
-    #get_nodes(target_address)
 
     #get_chain(target_address)
 
