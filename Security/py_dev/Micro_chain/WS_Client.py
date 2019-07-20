@@ -21,7 +21,7 @@ from block import Block
 from vote import VoteCheckPoint
 from validator import Validator
 from consensus import POW
-from utilities import TypesUtil
+from utilities import TypesUtil, FileUtil
 from service_api import SrvAPI
 
 
@@ -163,19 +163,20 @@ def remove_node(target_address, json_node, isBroadcast=False):
             except:
                 pass
 
-def get_chain(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-    chain_data = json_response['chain']
-    chain_length = json_response['length']
-    print('Chain length:', chain_length)
+def get_chain(target_address, isDisplay=False):
+	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
+	chain_data = json_response['chain']
+	chain_length = json_response['length']
+	print('Chain length:', chain_length)
 
-    # only list latest 10 blocks
-    if(chain_length>10):
-        for block in chain_data[-10:]:
-            print(block)
-    else:
-        for block in chain_data:
-            print(block)
+	if( isDisplay ):
+	    # only list latest 10 blocks
+	    if(chain_length>10):
+	        for block in chain_data[-10:]:
+	            print(block)
+	    else:
+	        for block in chain_data:
+	            print(block)
 
 def check_head():
 	SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/chain/checkhead')
@@ -281,45 +282,54 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
     get_nodes(target_address)
 
 def Epoch_test(target_address):
-    # Define ls_time_exec to save executing time to log
-    ls_time_exec=[]
+	# Define ls_time_exec to save executing time to log
+	ls_time_exec=[]
 
-    #target_address = "128.226.77.51:8081"
+	#target_address = "128.226.77.51:8081"
 
-    start_time=time.time()   
-    send_transaction(target_address, True)
-    exec_time=time.time()-start_time
-    ls_time_exec.append(format(exec_time*1000, '.3f'))
+	start_time=time.time()   
+	send_transaction(target_address, True)
+	exec_time=time.time()-start_time
+	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-    time.sleep(BOUNDED_TIME)
+	time.sleep(BOUNDED_TIME)
 
-    start_time=time.time()   
-    start_mining(target_address, True)
-    exec_time=time.time()-start_time
-    ls_time_exec.append(format(exec_time*1000, '.3f'))
+	start_time=time.time()   
+	start_mining(target_address, True)
+	exec_time=time.time()-start_time
+	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-    time.sleep(BOUNDED_TIME)
+	time.sleep(BOUNDED_TIME)
 
-    start_time=time.time()   
-    check_head()
-    exec_time=time.time()-start_time
-    ls_time_exec.append(format(exec_time*1000, '.3f'))
+	start_time=time.time()   
+	check_head()
+	exec_time=time.time()-start_time
+	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-    time.sleep(BOUNDED_TIME)
+	time.sleep(BOUNDED_TIME)
 
-    start_time=time.time() 
-    start_voting(target_address, True)
-    exec_time=time.time()-start_time
-    ls_time_exec.append(format(exec_time*1000, '.3f'))
+	start_time=time.time() 
+	start_voting(target_address, True)
+	exec_time=time.time()-start_time
+	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-    print(ls_time_exec)
+	#transfer list to string
+	str_time_exec=" ".join(ls_time_exec)
+	print(str_time_exec)
+	FileUtil.AddLine('exec_time.log', str_time_exec)
 
 if __name__ == "__main__":
 
-    #set_peerNodes('Desktop_Sam', 0, True)
+    #set_peerNodes('Desk_pi_plus_2', 1, True)
 
     target_address = "128.226.77.51:8081"
-    #Epoch_test(target_address)
+
+    '''wait_interval = 1
+    test_run = 1
+    for x in range(test_run):
+    	print("Test run:", x+1)
+    	Epoch_test(target_address)
+    	time.sleep(wait_interval)'''
 
     #get_transactions(target_address)
 

@@ -116,6 +116,7 @@ class Validator(object):
 		
 		# point current head to processed_head
 		self.current_head = self.processed_head
+		self.sum_stake = TEST_STAKE_SUM;
 	
 	def print_config(self):
 		#list account address
@@ -170,6 +171,9 @@ class Validator(object):
 		select a node from peer_nodes buffer given node address
 		'''
 		ls_nodes=list(self.peer_nodes.get_nodelist())
+		# set sum_stake is peer nodes count
+		self.sum_stake = len(ls_nodes)
+
 		json_node = None
 		for node in ls_nodes:
 			json_node = TypesUtil.string_to_json(node)
@@ -268,7 +272,7 @@ class Validator(object):
 		elif(self.consensus==ConsensusType.PoS):
 			# propose new block given stake weight
 			if( POS.proof_of_stake(block_data, commit_transactions, self.node_id, 
-									TEST_STAKE_WEIGHT, TEST_STAKE_SUM )!=0 ):
+									TEST_STAKE_WEIGHT, self.sum_stake )!=0 ):
 				new_block = Block(parent_block, commit_transactions, self.node_id)	
 			else:
 				# generate empty block without transactions
@@ -324,7 +328,7 @@ class Validator(object):
 				return False
 		elif(self.consensus==ConsensusType.PoS):
 			if( not POS.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce'], 
-									TEST_STAKE_WEIGHT, TEST_STAKE_SUM) ):
+									TEST_STAKE_WEIGHT, self.sum_stake) ):
 				print('v_pos')
 				return False
 		else:
@@ -657,9 +661,9 @@ class Validator(object):
 			if(self.consensus==ConsensusType.PoS):
 				# get proof value used for choose current_head
 				new_proof=POS.get_proof(Transaction.json_to_dict(new_block['transactions']), 
-								new_block['previous_hash'], new_block['nonce'],TEST_STAKE_SUM)
+								new_block['previous_hash'], new_block['nonce'],self.sum_stake)
 				head_proof=POS.get_proof(Transaction.json_to_dict(head_block['transactions']), 
-								head_block['previous_hash'], head_block['nonce'],TEST_STAKE_SUM)
+								head_block['previous_hash'], head_block['nonce'],self.sum_stake)
 				# head is genesis block or new_block have smaller proof value than current head
 				print(new_proof, "--", head_proof)
 				print(head_block['height'], "--", new_block['height'])
