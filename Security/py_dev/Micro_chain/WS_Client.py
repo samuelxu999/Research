@@ -280,33 +280,11 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
     
     get_nodes(target_address)
 
-if __name__ == "__main__":
-    #-------------- desktop ----------------
-    '''target_address = "128.226.76.51:8081"
-    send_transaction(target_address)
-    target_address = "128.226.77.186:8081"
-    send_transaction(target_address)
-    target_address = "128.226.88.123:8081"
-    send_transaction(target_address)
-    target_address = "128.226.88.97:8081"
-    send_transaction(target_address)'''
-
-    #-------------- Rpi ----------------
-    '''target_address = "128.226.79.137:8080"
-    send_transaction(target_address)
-    target_address = "128.226.79.251:8080"
-    send_transaction(target_address)
-    target_address = "128.226.88.37:8080"
-    send_transaction(target_address)
-    target_address = "128.226.76.62:8080"
-    send_transaction(target_address)'''
-
-    #set_peerNodes('Desktop_Sam', 0, True)
-
+def Epoch_test(target_address):
     # Define ls_time_exec to save executing time to log
     ls_time_exec=[]
 
-    target_address = "128.226.77.51:8080"
+    #target_address = "128.226.77.51:8081"
 
     start_time=time.time()   
     send_transaction(target_address, True)
@@ -314,10 +292,6 @@ if __name__ == "__main__":
     ls_time_exec.append(format(exec_time*1000, '.3f'))
 
     time.sleep(BOUNDED_TIME)
-
-    #get_transactions(target_address)
-
-    #start_mining(target_address)
 
     start_time=time.time()   
     start_mining(target_address, True)
@@ -339,6 +313,17 @@ if __name__ == "__main__":
     ls_time_exec.append(format(exec_time*1000, '.3f'))
 
     print(ls_time_exec)
+
+if __name__ == "__main__":
+
+    #set_peerNodes('Desktop_Sam', 0, True)
+
+    target_address = "128.226.77.51:8081"
+    #Epoch_test(target_address)
+
+    #get_transactions(target_address)
+
+    #start_mining(target_address)
 
     #get_chain(target_address)
 
