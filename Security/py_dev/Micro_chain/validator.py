@@ -674,7 +674,24 @@ class Validator(object):
 	def fix_processed_head(self):
 		# set processed_head when block proposal epoch finish 
 		if(self.consensus==ConsensusType.PoS):
+			# if none of validator propose block, use empty block as header
+			if(self.processed_head == self.current_head):
+				#generate empty block
+				last_block = self.processed_head
+				parent_block = Block.json_to_block(last_block)
+				json_block = Block(parent_block).to_json()
+				json_block['sender_address'] = 'Null'
+				json_block['signature'] = 'Null'
+				self.add_block(json_block, 0)
+				self.current_head = json_block
+				print("set current_head as emptyblock:", self.current_head)
+			
+			#set processed_head as current_head
 			self.processed_head = self.current_head
+			# remove committed transactions in head block
+			for transaction in self.processed_head['transactions']:
+				if(transaction in self.transactions):
+					self.transactions.remove(transaction)
 			print("Fix processed_head:", self.processed_head['hash'])
 
 	def add_dependency(self, hash_value, json_data, op_type=0):

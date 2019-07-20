@@ -12,7 +12,7 @@ Created on Nov.2, 2017
 
 import requests
 import json
-from time import time
+import time
 
 from wallet import Wallet
 from nodes import *
@@ -49,7 +49,7 @@ def send_transaction(target_address, isBroadcast=False):
     sender_address = sender['address']
     sender_private_key = sender['private_key']
     recipient_address = recipient['address']
-    time_stamp = time()
+    time_stamp = time.time()
     value = 15
 
     mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
@@ -142,16 +142,26 @@ def get_nodes(target_address):
 def add_node(target_address, json_node, isBroadcast=False):
     if(not isBroadcast):
         json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/add', json_node)
+        print(json_response)
     else:
-        json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/add')
-    print(json_response)
+        #json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/add')
+        for target_node in target_address:
+            try:
+                SrvAPI.POST('http://'+target_node+'/test/nodes/add', json_node)
+            except:
+                pass
 
 def remove_node(target_address, json_node, isBroadcast=False):
     if(not isBroadcast):
         json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
+        print(json_response)
     else:
-        json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
-    print(json_response)
+        #json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
+        for target_node in target_address:
+            try:
+                SrvAPI.POST('http://'+target_node+'/test/nodes/remove', json_node)
+            except:
+                pass
 
 def get_chain(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
@@ -219,6 +229,56 @@ def test_valid_block(target_address):
 
     return(json_response['verify_block'])
 
+def set_peerNodes(target_name, op_status=0, isBroadcast=False):
+    #--------------------------------------- load static nodes -------------------------------------
+    static_nodes = StaticNodes()
+    static_nodes.load_node()
+
+    list_address = []
+    print('List loaded static nodes:')
+    for node in list(static_nodes.nodes):
+        #json_node = TypesUtil.string_to_json(node)
+        json_node = node
+        list_address.append(json_node['node_url'])
+        print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
+
+    #print(list_address)
+
+    #-------------- localhost ----------------
+    target_node = static_nodes.get_node(target_name)
+    target_address = target_node['node_url']
+    print(target_address)
+
+    # Instantiate the Wallet
+    mywallet = Wallet()
+
+    # load accounts
+    mywallet.load_accounts()
+
+    #list account address
+    #print(mywallet.list_address())
+    json_account = mywallet.get_account(target_node['node_address'])
+    #print(json_account)
+
+    # ---------------- add and remove peer node --------------------
+    json_node = {}
+    if(json_account!=None):
+        json_node['address'] = json_account['address']
+        json_node['public_key'] = json_account['public_key']
+        json_node['node_url'] = target_node['node_url']
+ 
+    if(op_status==1): 
+        if(not isBroadcast):  
+            add_node(target_address, json_node)
+        else:
+            add_node(list_address, json_node, True)
+    if(op_status==2):
+        if(not isBroadcast):
+            remove_node(target_address, json_node)
+        else:
+            remove_node(list_address, json_node, True)
+    
+    get_nodes(target_address)
 
 if __name__ == "__main__":
     #-------------- desktop ----------------
@@ -241,54 +301,44 @@ if __name__ == "__main__":
     target_address = "128.226.76.62:8080"
     send_transaction(target_address)'''
 
-    #--------------------------------------- load static nodes -------------------------------------
-    static_nodes = StaticNodes()
-    static_nodes.load_node()
+    #set_peerNodes('Desktop_Sam', 0, True)
 
-    print('List loaded static nodes:')
-    for node in list(static_nodes.nodes):
-        #json_node = TypesUtil.string_to_json(node)
-        json_node = node
-        print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
+    # Define ls_time_exec to save executing time to log
+    ls_time_exec=[]
 
-    #-------------- localhost ----------------
-    target_node = static_nodes.get_node('Desktop_Sam')
-    target_address = target_node['node_url']
-    print(target_address)
+    target_address = "128.226.77.51:8080"
 
-    # Instantiate the Wallet
-    mywallet = Wallet()
+    start_time=time.time()   
+    send_transaction(target_address, True)
+    exec_time=time.time()-start_time
+    ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-    # load accounts
-    mywallet.load_accounts()
-
-    #list account address
-    #print(mywallet.list_address())
-    json_account = mywallet.get_account(target_node['node_address'])
-    #print(json_account)
-
-    # ---------------- add and remove peer node --------------------
-    json_node = {}
-    if(json_account!=None):
-        json_node['address'] = json_account['address']
-        json_node['public_key'] = json_account['public_key']
-        json_node['node_url'] = target_node['node_url']
-    #add_node(target_address, json_node, True)
-    #remove_node(target_address, json_node, True)
-    get_nodes(target_address)
-
-    #target_address = "128.226.77.51:8080"
-
-    #send_transaction(target_address, True)
+    time.sleep(BOUNDED_TIME)
 
     #get_transactions(target_address)
 
     #start_mining(target_address)
-    #start_mining(target_address, True)
 
-    #check_head()
+    start_time=time.time()   
+    start_mining(target_address, True)
+    exec_time=time.time()-start_time
+    ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-    #start_voting(target_address, True)
+    time.sleep(BOUNDED_TIME)
+
+    start_time=time.time()   
+    check_head()
+    exec_time=time.time()-start_time
+    ls_time_exec.append(format(exec_time*1000, '.3f'))
+
+    time.sleep(BOUNDED_TIME)
+
+    start_time=time.time() 
+    start_voting(target_address, True)
+    exec_time=time.time()-start_time
+    ls_time_exec.append(format(exec_time*1000, '.3f'))
+
+    print(ls_time_exec)
 
     #get_chain(target_address)
 

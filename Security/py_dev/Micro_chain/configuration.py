@@ -1,6 +1,7 @@
 """List of parameters for the system configuration. """ 
 
-NUM_VALIDATORS = 3 					# number of validators at each checkpoint 
+NUM_VALIDATORS = 5 					# number of validators at each checkpoint 
+BOUNDED_TIME = 5 					# upper bounded time for operation cycle time
 EPOCH_SIZE = 2 						# checkpoint every n blocks
 
 MINING_SENDER = "THE BLOCKCHAIN"	# default chain network address 
