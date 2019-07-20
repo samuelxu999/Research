@@ -281,19 +281,34 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
     
     get_nodes(target_address)
 
-def Epoch_test(target_address):
+def save_testlog(log_data):
+	#save new key files
+	test_dir = 'test_results'
+	if(not os.path.exists(test_dir)):
+	    os.makedirs(test_dir)
+	test_file = test_dir + '/' + 'exec_time.log'
+	FileUtil.AddLine(test_file, log_data)
+
+def Epoch_test(target_address, tx_count=1):
+	'''
+	This test network latency for one epoch life time:
+	'''
 	# Define ls_time_exec to save executing time to log
 	ls_time_exec=[]
 
 	#target_address = "128.226.77.51:8081"
 
-	start_time=time.time()   
-	send_transaction(target_address, True)
+	# S1: send test transactions
+	start_time=time.time()
+	for x in range(tx_count):  
+		send_transaction(target_address, True)
+		time.sleep(1)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
 	time.sleep(BOUNDED_TIME)
 
+	# S2: start mining 
 	start_time=time.time()   
 	start_mining(target_address, True)
 	exec_time=time.time()-start_time
@@ -301,6 +316,7 @@ def Epoch_test(target_address):
 
 	time.sleep(BOUNDED_TIME)
 
+	# S3: fix head of epoch 
 	start_time=time.time()   
 	check_head()
 	exec_time=time.time()-start_time
@@ -308,39 +324,46 @@ def Epoch_test(target_address):
 
 	time.sleep(BOUNDED_TIME)
 
+	# S4: voting block to finalize chain
 	start_time=time.time() 
 	start_voting(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-	#transfer list to string
+	# Prepare log messgae
 	str_time_exec=" ".join(ls_time_exec)
 	print(str_time_exec)
-	FileUtil.AddLine('exec_time.log', str_time_exec)
+	# Save to *.log file
+	save_testlog(str_time_exec)
 
 if __name__ == "__main__":
 
-    #set_peerNodes('Desk_pi_plus_2', 1, True)
+	target_address = "128.226.77.51:8081"
 
-    target_address = "128.226.77.51:8081"
+	op_status = 2
 
-    '''wait_interval = 1
-    test_run = 1
-    for x in range(test_run):
-    	print("Test run:", x+1)
-    	Epoch_test(target_address)
-    	time.sleep(wait_interval)'''
+	if(op_status == 0):
+		set_peerNodes('Desktop_Sam', 1, True)
+	elif(op_status == 1):
+		wait_interval = 1
+		test_run = 1
+		for x in range(test_run):
+			print("Test run:", x+1)
+			Epoch_test(target_address, 1)
+			time.sleep(wait_interval)
+	else:
+		pass
 
-    #get_transactions(target_address)
+	#get_transactions(target_address)
 
-    #start_mining(target_address)
+	#start_mining(target_address)
 
-    #get_chain(target_address)
+	#get_chain(target_address)
 
-    #print('Valid last_block:', test_valid_block(target_address))
+	#print('Valid last_block:', test_valid_block(target_address))
 
-    #print('Valid transactions:', test_valid_transactions(target_address)) 
+	#print('Valid transactions:', test_valid_transactions(target_address)) 
 
-    #send_vote(target_address)   
+	#send_vote(target_address)   
 
-    pass
+	pass
