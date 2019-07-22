@@ -72,7 +72,7 @@ class VisualizeData(object):
 		N = len(xtick_label)
 
 		ind = np.arange(N)  # the x locations for the groups
-		width = 0.30           # the width of the bars
+		width = 0.25           # the width of the bars
 
 		#generate bar axis object
 		fig, ax = plt.subplots()
@@ -163,6 +163,44 @@ class VisualizeData(object):
 		VisualizeData.autolabel(rects_vote, ax)
 		plt.show()
 		pass  
+
+	@staticmethod
+	def plot_groupbars_platform(xtick_label, y_label, legend_label, ls_data):
+		Y_RATIO = 1
+		N = len(xtick_label)
+
+		ind = np.arange(N)  # the x locations for the groups
+		width = 0.3           # the width of the bars
+
+		#generate bar axis object
+		fig, ax = plt.subplots()
+
+		exec_time_fog = []
+		for j in range(len(ls_data[0])):
+			exec_time_fog.append(float(ls_data[0][j])/Y_RATIO)
+
+		rects_fog = ax.bar(ind, exec_time_fog, width, color='b')
+
+		exec_time_edge = []
+		for j in range(len(ls_data[0])):
+			exec_time_edge.append(float(ls_data[1][j])/Y_RATIO)
+   
+		rects_edge = ax.bar(ind + width, exec_time_edge, width, color='g')
+
+		# add some text for labels, title and axes ticks
+		ax.set_ylabel(y_label, fontsize=16)
+		#ax.set_title('Execution time by group', fontsize=18)
+		ax.set_xticks(ind + width/2)
+		ax.set_xticklabels(xtick_label, fontsize=16)
+		#plt.ylim(0, 22)
+
+		#ax.legend((rects_tx[0], rects_block[0], rects_vote[0]), legend_label, loc='upper left', fontsize=18)
+		ax.legend((rects_fog[0], rects_edge[0]), legend_label, loc='upper left', fontsize=18)
+
+		VisualizeData.autolabel(rects_fog, ax)
+		VisualizeData.autolabel(rects_edge, ax)
+		plt.show()
+		pass 
 
 	@staticmethod
 	def autolabel(rects, ax):
@@ -280,9 +318,9 @@ def plot_cost_exec():
 	exec_time_data = []
 
 	test_dir_list = []
-	test_dir_list.append('cost_exec_1K')
-	test_dir_list.append('cost_exec_512K')
-	test_dir_list.append('cost_exec_1M')
+	test_dir_list.append('cost_exec_fog/cost_exec_1K')
+	test_dir_list.append('cost_exec_fog/cost_exec_512K')
+	test_dir_list.append('cost_exec_fog/cost_exec_1M')
 
 	for test_dir in test_dir_list:
 		file_list = []
@@ -301,6 +339,30 @@ def plot_cost_exec():
 
 	VisualizeData.plot_groupbars_cost(x_label, 'Time (ms)', legend_label, exec_time_data)
 
+def plot_cost_platform():
+	exec_time_data = []
+
+	test_dir_list = []
+	test_dir_list.append('cost_exec_fog/cost_exec_1M')
+	test_dir_list.append('cost_exec_edge/cost_exec_1M')
+
+	for test_dir in test_dir_list:
+		file_list = []
+		file_list.append(test_dir + '/exec_verify_tx.log')
+		file_list.append(test_dir + '/exec_mining.log')
+		file_list.append(test_dir + '/exec_verify_block.log')
+		file_list.append(test_dir + '/exec_verify_vote.log')
+		ls_data = []
+		for file_name in file_list:
+			ls_data.append(ave_Totaldelay(file_name)[0])
+		exec_time_data.append(ls_data)
+	#print(exec_time_data)
+
+	x_label=['Verify Transaction', 'Mining Block', 'Verify Block', 'Verify Vote']
+	legend_label=['Desktop', 'Raspberry Pi B+']
+
+	VisualizeData.plot_groupbars_platform(x_label, 'Time (ms)', legend_label, exec_time_data)
+
 if __name__ == "__main__":
 	#--------------- show nodes latency curves--------------------
 	#plot_nodes_latency()
@@ -310,5 +372,6 @@ if __name__ == "__main__":
 
 	#--------------- show performance cost on host--------------------
 	#plot_cost_exec()
+	#plot_cost_platform()
 
 	pass
