@@ -30,7 +30,7 @@ peer_nodes = PeerNodes()
 peer_nodes.load_ByAddress()
 
 
-def send_transaction(target_address, isBroadcast=False):
+def send_transaction(target_address, tx_size=1, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
 
@@ -50,7 +50,8 @@ def send_transaction(target_address, isBroadcast=False):
     sender_private_key = sender['private_key']
     recipient_address = recipient['address']
     time_stamp = time.time()
-    value = 15
+    #value = 15
+    value = TypesUtil.string_to_hex(os.urandom(tx_size))
 
     mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
 
@@ -289,7 +290,7 @@ def save_testlog(log_data):
 	test_file = test_dir + '/' + 'exec_time.log'
 	FileUtil.AddLine(test_file, log_data)
 
-def Epoch_test(target_address, tx_count=1):
+def Epoch_test(target_address, tx_size):
 	'''
 	This test network latency for one epoch life time:
 	'''
@@ -300,9 +301,7 @@ def Epoch_test(target_address, tx_count=1):
 
 	# S1: send test transactions
 	start_time=time.time()
-	for x in range(tx_count):  
-		send_transaction(target_address, True)
-		time.sleep(1)
+	send_transaction(target_address, tx_size, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -340,30 +339,30 @@ if __name__ == "__main__":
 
 	target_address = "128.226.77.51:8081"
 
-	op_status = 2
-
+	op_status = 1
+    #data_size = 2000*1024
+    data_size = 1
 	if(op_status == 0):
 		set_peerNodes('Desktop_Sam', 1, True)
 	elif(op_status == 1):
 		wait_interval = 1
-		test_run = 1
+		test_run = 20
 		for x in range(test_run):
 			print("Test run:", x+1)
-			Epoch_test(target_address, 1)
+			Epoch_test(target_address, data_size)
 			time.sleep(wait_interval)
 	else:
+		#print(TypesUtil.string_to_hex(os.urandom(1000)))
+		#get_transactions(target_address)
+
+		#start_mining(target_address)
+
+		#get_chain(target_address, True)
+
+		#print('Valid last_block:', test_valid_block(target_address))
+
+		#print('Valid transactions:', test_valid_transactions(target_address)) 
+
+		#send_vote(target_address)   
 		pass
-
-	#get_transactions(target_address)
-
-	#start_mining(target_address)
-
-	#get_chain(target_address)
-
-	#print('Valid last_block:', test_valid_block(target_address))
-
-	#print('Valid transactions:', test_valid_transactions(target_address)) 
-
-	#send_vote(target_address)   
-
 	pass
