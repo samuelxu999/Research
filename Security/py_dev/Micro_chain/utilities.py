@@ -186,6 +186,15 @@ class FileUtil(object):
 		# restore original path
 		os.chdir(pwd)
 		return ls_files
+
+	@staticmethod
+	def save_testlog(test_dir, log_file, log_data):
+		#save new key files
+		#test_dir = 'test_results'
+		if(not os.path.exists(test_dir)):
+			os.makedirs(test_dir)
+		test_file = test_dir + '/' + log_file
+		FileUtil.AddLine(test_file, log_data)
 		
 '''
 DatetimeUtil class for format handle between datatime and string

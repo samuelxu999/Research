@@ -282,13 +282,13 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
     
     get_nodes(target_address)
 
-def save_testlog(log_data):
+'''def save_testlog(log_data):
 	#save new key files
 	test_dir = 'test_results'
 	if(not os.path.exists(test_dir)):
 	    os.makedirs(test_dir)
 	test_file = test_dir + '/' + 'exec_time.log'
-	FileUtil.AddLine(test_file, log_data)
+	FileUtil.AddLine(test_file, log_data)'''
 
 def Epoch_test(target_address, tx_size):
 	'''
@@ -333,20 +333,20 @@ def Epoch_test(target_address, tx_size):
 	str_time_exec=" ".join(ls_time_exec)
 	print(str_time_exec)
 	# Save to *.log file
-	save_testlog(str_time_exec)
+	FileUtil.save_testlog('test_results', 'exec_time.log', str_time_exec)
 
 if __name__ == "__main__":
 
 	target_address = "128.226.77.51:8081"
 
 	op_status = 1
-    #data_size = 2000*1024
-    data_size = 1
+	data_size = 1000*1024
+	#data_size = 1024
 	if(op_status == 0):
 		set_peerNodes('Desktop_Sam', 1, True)
 	elif(op_status == 1):
 		wait_interval = 1
-		test_run = 20
+		test_run = 10
 		for x in range(test_run):
 			print("Test run:", x+1)
 			Epoch_test(target_address, data_size)

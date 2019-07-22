@@ -10,6 +10,7 @@ Created on Nov.2, 2017
 @TaskDescription: This module provide encapsulation of server API that handle and response client's request.
 '''
 
+import time
 import datetime
 import json
 from flask import Flask, jsonify
@@ -39,7 +40,10 @@ def verify_transaction():
 	if(transaction_data=='{}'):
 		abort(401, {'error': 'No transaction data'})
 	
+	start_time=time.time()
 	verify_data = myblockchain.on_receive(transaction_data, 0)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
 
 	return jsonify({'verify_transaction': verify_data}), 201
 
@@ -85,7 +89,11 @@ def check_head():
 
 @app.route('/test/mining', methods=['GET'])
 def mine_block():
+	start_time=time.time()
 	new_block=myblockchain.mine_block()
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_mining.log', format(exec_time*1000, '.3f'))
+	
 	#broadcast proposed block
 	if( (myblockchain.consensus==ConsensusType.PoW) or (not Block.isEmptyBlock(new_block)) ):
 		#broadcast new block to peer nodes
@@ -152,7 +160,10 @@ def verify_block():
 	if(block_data=='{}'):
 		abort(401, {'error': 'No block data'})
 
+	start_time=time.time()
 	verify_result = myblockchain.on_receive(block_data, 1)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
 
 	return jsonify({'verify_block': verify_result}), 201
 
@@ -178,7 +189,11 @@ def verify_vote():
 	if(vote_data=='{}'):
 		abort(401, {'error': 'No vote data'})
 
+	start_time=time.time()
 	verify_result = myblockchain.on_receive(vote_data, 2)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
+
 	print('verify_vote:', verify_result)
 
 	return jsonify({'verify_vote': verify_result}), 201
