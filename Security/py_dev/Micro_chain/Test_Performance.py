@@ -264,6 +264,19 @@ def ave_Totaldelay(file_name):
 
 	return ave_exec_time
 
+def cal_throughput(exec_time):
+	Y_RATIO = 1000
+	ls_throughput=[]
+	ls_blocksize = [0.5, 1, 2, 4]
+	i = 0
+	for ls_time in exec_time:
+		#print(ls_time)
+		tmp_data = (float(ls_time[0])+float(ls_time[1])+float(ls_time[3]))/Y_RATIO 
+		ls_throughput.append(format(ls_blocksize[i]*3600/tmp_data, '.0f'))
+		i+=1
+
+	print(ls_throughput)
+
 def plot_blocksize():
 	file_list = []
 	file_list.append('block_size/exec_time_512K.log')
@@ -279,8 +292,9 @@ def plot_blocksize():
 	exec_time_data = []
 	for file_name in file_list:
 		exec_time_data.append(ave_Totaldelay(file_name))
-	#for tmp in exec_time_data:
-	#	print(tmp)
+
+	#calculate throughput
+	cal_throughput(exec_time_data)
 
 	x_label=['512 KB', '1 MB', '2 MB', '4 MB']
 	legend_label=['Commit Transaction', 'Block Proposal', 'Chain Finality']
@@ -309,7 +323,7 @@ def plot_nodes_latency():
 	exec_time_data = []
 	for file_name in file_list:
 		exec_time_data.append(ave_Totaldelay(file_name))
-	#print(exec_time_data)
+	print(exec_time_data)
 
 	obj_label=['Commit Transaction', 'Block Proposal', 'Chain Finality']
 	VisualizeData.plot_MultiLines("", obj_label, 'Time (s)', exec_time_data)
