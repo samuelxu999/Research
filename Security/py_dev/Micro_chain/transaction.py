@@ -14,7 +14,7 @@ import hashlib
 from time import time
 
 from utilities import FileUtil, TypesUtil, DatetimeUtil
-from crypto_rsa import Crypto_RSA
+from CryptoLib.crypto_rsa import Crypto_RSA
 
 class Transaction(object):
 

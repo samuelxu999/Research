@@ -12,7 +12,7 @@ Created on June.27, 2019
 import hashlib
 from utilities import TypesUtil
 from collections import OrderedDict
-from crypto_rsa import Crypto_RSA
+from CryptoLib.crypto_rsa import Crypto_RSA
 from db_adapter import DataManager
 from configuration import *
 

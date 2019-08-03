@@ -11,7 +11,7 @@ Created on June.18, 2019
 
 from collections import OrderedDict
 from utilities import TypesUtil
-from crypto_rsa import Crypto_RSA
+from CryptoLib.crypto_rsa import Crypto_RSA
 from configuration import *
 
 class Block(object):
