@@ -12,6 +12,9 @@ from configuration import *
 from db_adapter import DataManager
 from vote import VoteCheckPoint
 
+from CryptoLib.PVSS import *
+from CryptoLib.crypto_rsa import Crypto_RSA
+
 from time import time
 import random
 import copy
@@ -449,6 +452,115 @@ def test_Vote():
 
 	print(vote_data)
 
+# this function show basic VSS function.
+def VSS_demo():
+	_PRIME = 2**511 - 1
+	_PRIME_EXP = 65537	
+	keys_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
+	#print(keys_numbers)
+	p = keys_numbers['n']
+	s = PVSS.randnt(_PRIME)
+	poly_max = _PRIME
+	t = 3
+	n = 6
+	
+	'''test PVSS function'''
+	secret, shares = PVSS.split_shares(s, t, n, poly_max, p)
+
+	print('secret:                                                     ',
+	      secret[0])
+	print('shares:')
+	if shares:
+	    for share in shares:
+	        print('  ', share)
+
+	print('secret recovered from minimum subset of shares:             ',
+	      PVSS.recover_secret(shares[:t], p))
+	print('secret recovered from a different minimum subset of shares: ',
+	      PVSS.recover_secret(shares[-(t):], p))
+
+
+def test_PVSS():
+	_PRIME_EXP = 65537
+
+	# choose RSA key source 0: From RSA key generator; 1:From saved key_bytes files
+	RSA_key_src = 1
+	key_numbers={}
+	if(RSA_key_src==0):
+		#A) From RSA key generator
+		key_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
+	else:
+		#B) From saved key_bytes files
+		# get key data from wallet
+		# Instantiate the Wallet
+		mywallet = Wallet()
+
+		# load accounts
+		mywallet.load_accounts()	
+
+		#get account data
+		account_data = mywallet.accounts[0]
+		#key_numbers = get_public_numbers_from_files()
+		load_public_key_bytes = TypesUtil.hex_to_string(account_data['public_key'])
+		load_publick_key=Crypto_RSA.load_public_key(load_public_key_bytes)
+
+		# genereate key pairs numbers
+		public_numbers = load_publick_key.public_numbers()
+
+		# add public numbers
+		key_numbers['n']=public_numbers.n
+		key_numbers['e']=public_numbers.e
+		key_numbers['key_size']=load_publick_key.key_size
+
+	print(key_numbers)
+	p = key_numbers['n']
+	e = _PRIME_EXP
+
+	# poly parameter size should be no more than key_size/2
+	poly_max = pow(2, (key_numbers['key_size']/2) )-1
+	s = PVSS.randnt(poly_max)
+	t = 4
+	n = 6
+
+	'''test PVSS function'''
+	poly_secrets, shares = PVSS.split_shares(s, t, n, poly_max, p)
+	print('poly_secrets:')
+	if poly_secrets:
+	    for poly_secret in poly_secrets:
+	        print('  ', poly_secret)	        
+	print('shares:')
+	if shares:
+	    for share in shares:
+	        print('  ', share)
+
+	# Use e as G to construct commitment and verification
+	poly_commits = PVSS.get_poly_commitment(e, poly_secrets, p)
+	print('poly_commitments:')
+	if poly_commits:
+	    for poly_commit in poly_commits:
+	        print('  ', poly_commit)
+
+	share_proofs = PVSS.get_share_proofs(e, shares, p)
+	print('share_proofs:')
+	if share_proofs:
+	    for share_proof in share_proofs:
+	        print('  ', share_proof)
+
+	verify_shares = PVSS.verify_shares(poly_commits, share_proofs, p)
+	print('verify_shares:')
+	if verify_shares:
+	    for verify_share in verify_shares:
+	        print('  ', verify_share)
+
+	print('verify results:')
+	if verify_shares:
+	    for share_proof, verify_share in zip(share_proofs, verify_shares):
+	        print('  ',share_proof == verify_share)
+
+	verify_S0 = PVSS.verify_S0(poly_commits, p)
+	print('verify S0:', verify_S0 == poly_commits[0])
+
+
 
 if __name__ == '__main__':
 	#test_block()
@@ -461,7 +573,8 @@ if __name__ == '__main__':
 	#test_database()
 	#test_Validator()
 	#test_Vote()
-
+	#VSS_demo()
+	#test_PVSS()
 	pass
 
 

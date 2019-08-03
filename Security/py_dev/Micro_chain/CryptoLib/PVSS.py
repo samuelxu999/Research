@@ -11,15 +11,10 @@ https://en.wikipedia.org/wiki/Shamir's_Secret_Sharing
 import random
 import functools
 import math
-from crypto_rsa import Crypto_RSA
 
 # default prime number
 _PRIME = 2**511 - 1
-_PRIME_EXP = 65537
 
-
-# random integer generator
-_RINT = functools.partial(random.SystemRandom().randint, 0)
 
 def _extended_gcd(a, b):
     '''
@@ -104,6 +99,11 @@ def _lagrange_interpolate(x, x_s, y_s, p):
     Public Verifiable Security Share Class
 '''
 class PVSS(object):
+	@staticmethod
+	def randnt(poly_max):
+		# random integer generator
+		RINT = functools.partial(random.SystemRandom().randint, 0)
+		return  RINT(poly_max)
 
 	@staticmethod
 	def split_shares(secret_s, minimum_t, shares_n, poly_max, prime=_PRIME):
@@ -129,7 +129,7 @@ class PVSS(object):
 		poly = [secret_s]
 
 		# random choose poly no great than poly_max
-		poly += [_RINT(poly_max) for i in range(minimum_t-1)]
+		poly += [PVSS.randnt(poly_max) for i in range(minimum_t-1)]
 
 		# calculate poly points for each i as format (i, s(i))
 		points = [(i, _eval_at(poly, i, prime))
@@ -197,122 +197,3 @@ class PVSS(object):
 	@staticmethod
 	def verify_S0(poly_commits, prime=_PRIME):
 		return _eval_commit_at(poly_commits, 0, prime)
-
-def get_public_numbers_from_files():
-	#define public numbers
-	key_numbers={}
-	load_public_key_bytes = Crypto_RSA.load_key_bytes('public_key_file')
-
-	reload_publick_key=Crypto_RSA.load_public_key(load_public_key_bytes)
-
-	# genereate key pairs numbers
-	public_numbers = reload_publick_key.public_numbers()
-
-	# add public numbers
-	key_numbers['n']=public_numbers.n
-	key_numbers['e']=public_numbers.e
-	key_numbers['key_size']=reload_publick_key.key_size
-
-	return key_numbers
-
-# this function show basic VSS function.
-def VSS_demo():
-	
-	keys_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
-	#print(keys_numbers)
-	p = keys_numbers['n']
-	s = _RINT(_PRIME)
-	poly_max = _PRIME
-	t = 3
-	n = 6
-	
-	'''test PVSS function'''
-	secret, shares = PVSS.split_shares(s, t, n, poly_max, p)
-
-	print('secret:                                                     ',
-	      secret[0])
-	print('shares:')
-	if shares:
-	    for share in shares:
-	        print('  ', share)
-
-	print('secret recovered from minimum subset of shares:             ',
-	      PVSS.recover_secret(shares[:t], p))
-	print('secret recovered from a different minimum subset of shares: ',
-	      PVSS.recover_secret(shares[-(t):], p))
-
-def test():
-	
-	# choose RSA key source 0: From RSA key generator; 1:From saved key_bytes files
-	RSA_key_src = 0
-
-	if(RSA_key_src==0):
-		#A) From RSA key generator
-		keys_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
-	else:
-		#B) From saved key_bytes files
-		keys_numbers = get_public_numbers_from_files()
-	
-
-	print(keys_numbers)
-	p = keys_numbers['n']
-	e = _PRIME_EXP
-
-	# poly parameter size should be no more than key_size/2
-	poly_max = pow(2, (keys_numbers['key_size']/2) )-1
-	s = _RINT(poly_max)
-	t = 3
-	n = 6
-	
-	'''test PVSS function'''
-	poly_secrets, shares = PVSS.split_shares(s, t, n, poly_max, p)
-	print('poly_secrets:')
-	if poly_secrets:
-	    for poly_secret in poly_secrets:
-	        print('  ', poly_secret)	        
-	print('shares:')
-	if shares:
-	    for share in shares:
-	        print('  ', share)
-
-	# Use e as G to construct commitment and verification
-	poly_commits = PVSS.get_poly_commitment(e, poly_secrets, p)
-	print('poly_commitments:')
-	if poly_commits:
-	    for poly_commit in poly_commits:
-	        print('  ', poly_commit)
-
-	share_proofs = PVSS.get_share_proofs(e, shares, p)
-	print('share_proofs:')
-	if share_proofs:
-	    for share_proof in share_proofs:
-	        print('  ', share_proof)
-
-	verify_shares = PVSS.verify_shares(poly_commits, share_proofs, p)
-	print('verify_shares:')
-	if verify_shares:
-	    for verify_share in verify_shares:
-	        print('  ', verify_share)
-
-	print('verify results:')
-	if verify_shares:
-	    for share_proof, verify_share in zip(share_proofs, verify_shares):
-	        print('  ',share_proof == verify_share)
-
-	verify_S0 = PVSS.verify_S0(poly_commits, p)
-	print('verify S0:', verify_S0 == poly_commits[0])
-
-
-#Call main function   
-if __name__ == "__main__":
-	'''if(len(sys.argv)<3):
-		print("Usage: %s key @available @needed" %(sys.argv[0]))
-	else:
-		#read (n k) from argument
-		availale_size=int(sys.argv[1])
-		needed_size=int(sys.argv[2])
-		testSSSS(availale_size,needed_size)'''
-	#VSS_demo()		
-	test()
-	
-	pass
