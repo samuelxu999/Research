@@ -478,17 +478,18 @@ def VSS_demo():
 	      PVSS.recover_secret(shares[:t], p))
 	print('secret recovered from a different minimum subset of shares: ',
 	      PVSS.recover_secret(shares[-(t):], p))
+	print('Verify recovered secret:', PVSS.recover_secret(shares[:t], p) == s )
 
 
 def test_PVSS():
-	_PRIME_EXP = 65537
 
 	# choose RSA key source 0: From RSA key generator; 1:From saved key_bytes files
 	RSA_key_src = 1
 	key_numbers={}
+
 	if(RSA_key_src==0):
 		#A) From RSA key generator
-		key_numbers = Crypto_RSA.generate_key_numbers(_PRIME_EXP, 512)
+		key_numbers = Crypto_RSA.generate_key_numbers(65537, 512)
 	else:
 		#B) From saved key_bytes files
 		# get key data from wallet
@@ -514,7 +515,7 @@ def test_PVSS():
 
 	print(key_numbers)
 	p = key_numbers['n']
-	e = _PRIME_EXP
+	e = key_numbers['e']
 
 	# poly parameter size should be no more than key_size/2
 	poly_max = pow(2, (key_numbers['key_size']/2) )-1
