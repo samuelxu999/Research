@@ -18,6 +18,8 @@ import math
 FileUtil class for handling curve fit operation
 '''
 
+MAX_OUTLIER = 4
+
 def valid_perr(pcov):
 	'''
 	Function: validate if pcov is valid by checking nan in perr
@@ -32,6 +34,18 @@ def valid_perr(pcov):
 	else:
 		perr_isNan = np.isnan(pcov)
 	return not (True in perr_isNan)
+
+def fit_data(fit_type, x_vect, y_vect):
+	if(fit_type =='sigmoid'):
+		popt, pcov, x, y, fit_ydata = CurveFit.sigm_fit(x_vect, y_vect)
+	elif(fit_type =='gussain'):
+		popt, pcov, x, y, fit_ydata = CurveFit.gauss_fit(x_vect, y_vect)
+	elif(fit_type =='polynom'):
+		pcov, x, y, fit_ydata = CurveFit.poly_fit(x_vect, y_vect, poly_n=2)
+	else:
+		pcov = [nan]
+	return pcov, x, y, fit_ydata 
+
 
 class FitValidation(object):
 	@staticmethod
@@ -60,14 +74,7 @@ class FitValidation(object):
 		#ydata = np.array(y_vect)
 		RMSE_Fit = 1.0
 		try:
-			if(fit_type =='sigmoid'):
-				popt, pcov, x, y, fit_ydata = CurveFit.sigm_fit(x_vect, y_vect)
-			elif(fit_type =='gussain'):
-				popt, pcov, x, y, fit_ydata = CurveFit.gauss_fit(x_vect, y_vect)
-			elif(fit_type =='polynom'):
-				pcov, x, y, fit_ydata = CurveFit.poly_fit(x_vect, y_vect, poly_n=2)
-			else:
-				pcov = [nan]
+			pcov, x, y, fit_ydata = fit_data(fit_type, x_vect, y_vect)
 			#print(popt)
 			#print(pcov)
 			if(valid_perr(pcov)):
@@ -86,12 +93,26 @@ class FitValidation(object):
 					        ydata_opt.append(y_vect[i]);
 					        xdata_opt.append(x_vect[i]);
 
-					PlotUtil.Plotfit(xdata_opt, ydata_opt, x, y, 'Year', 'Percentage (%)', 
+					# Check of removed outlier points excel MAX_OUTLIER
+					if((len(x_vect)-len(xdata_opt))<MAX_OUTLIER):
+						#Refit to calculate new estimated_params
+						pcov_new, x_new, y_new, fit_ydata_new = fit_data(fit_type, xdata_opt, ydata_opt)
+						
+						#recalculate rmse
+						RMSE_Fit=np.sqrt(np.mean((ydata_opt-fit_ydata_new)**2))
+					else:
+						RMSE_Fit = 1.0
+					
+					# Bad fitting condition, do not plot curve
+					if(RMSE_Fit<1.0):
+						PlotUtil.Plotfit_Opt(x_vect, y_vect, xdata_opt, ydata_opt, x, y, 'Year', 'Percentage (%)', 
 										plt_title=fig_title, is_show=showfig, is_savefig=savefig, datafile=fig_file)
+					else:
+						PlotUtil.PlotData(pre_dataset, 'Year', 'Percentage (%)', 
+									is_show=showfig, is_savefig=savefig, datafile=fig_file)
 				else:
 					PlotUtil.Plotfit(x_vect, y_vect, x, y, 'Year', 'Percentage (%)', 
 										plt_title=fig_title, is_show=showfig, is_savefig=savefig, datafile=fig_file)
-
 
 			else:
 				PlotUtil.PlotData(pre_dataset, 'Year', 'Percentage (%)', 

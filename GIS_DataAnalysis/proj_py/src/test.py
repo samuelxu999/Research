@@ -20,6 +20,8 @@ def test_validation(dataset_config):
 	ls_files = FileUtil.list_files(dataset_config['dataset'], dataset_config['datatype'])
 
 	batch_test = False
+
+
 	if(not batch_test):
 		#==================== single test ==========================
 		test_file = ls_files[3]
@@ -68,7 +70,7 @@ def test_validation(dataset_config):
 		
 			# ------------- plot and save optimized fitting curve ---------
 			figfile = dataset_config['test_dir'] + test_file
-			FitValidation.valid_curvefit(pre_dataset, RMSE_row[1], 
+			FitValidation.valid_curvefit(pre_dataset, RMSE_row[1], is_optimized=True,
 										showfig=False, savefig=True, fig_file=figfile)
 	
 		#print(RMSE_list)

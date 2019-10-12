@@ -147,7 +147,8 @@ PlotUtil class for data visualization
 '''
 class PlotUtil(object):
 	@staticmethod
-	def PlotData(ls_dataset, x_label, y_label, font_size=14, is_show=True, is_savefig=False, datafile=''):
+	def PlotData(ls_dataset, x_label, y_label, 
+				font_size=14, is_show=True, is_savefig=False, datafile=''):
 		'''
 		Function: plot data on fig
 		@arguments: 
@@ -178,7 +179,9 @@ class PlotUtil(object):
 		plt.close()
 
 	@staticmethod
-	def Plotfit(xdata, ydata, x, y, x_label, y_label, plt_title='', font_size=14, is_show=True, is_savefig=False, datafile=''):
+	def Plotfit(xdata, ydata, x, y,
+				 x_label, y_label, plt_title='', font_size=14, 
+				 is_show=True, is_savefig=False, datafile=''):
 		'''
 		Function: plot data and fit curve on fig
 		@arguments: 
@@ -190,6 +193,39 @@ class PlotUtil(object):
 		fig, ax = plt.subplots()
 		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 		ax.plot(xdata, ydata, '.', color='b', label='data')
+		#plt.scatter(xdata, ydata, s=80, facecolors='none', edgecolors='b')
+		#ax.plot(xdata_opt, ydata_opt, '*', color='g', label='data')
+		ax.plot(x, y, color='r', label='fit')
+		plt.xlabel(x_label, fontsize=font_size)
+		plt.ylabel(y_label, fontsize=font_size) 
+		plt.ylim(-0.05, 1.05)
+		plt.title(plt_title)
+		
+		if( is_show ):
+			plt.show()
+		if( is_savefig ):
+			figname = os.path.splitext(datafile)[0] +'.png'
+			fig.savefig(figname)
+		plt.close()
+
+	@staticmethod
+	def Plotfit_Opt(xdata, ydata, xdata_opt, ydata_opt, x, y,
+				 x_label, y_label, plt_title='', font_size=14, 
+				 is_show=True, is_savefig=False, datafile=''):
+		'''
+		Function: plot data and fit curve on fig with optimization
+		@arguments: 
+		(in) [xdata, ydata]:   			original data
+		(in) [xdata_opt, ydata_opt]:   	optimized data
+		(in) [x, y]:   					fit data: y=fit_fun(x)
+		'''
+
+		matplotlib.rcParams.update({'font.size': 12})
+		fig, ax = plt.subplots()
+		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+		#ax.plot(xdata, ydata, 'o', color='b', label='data')
+		plt.scatter(xdata, ydata, s=80, facecolors='none', edgecolors='b')
+		ax.plot(xdata_opt, ydata_opt, '*', color='g', label='data')
 		ax.plot(x, y, color='r', label='fit')
 		plt.xlabel(x_label, fontsize=font_size)
 		plt.ylabel(y_label, fontsize=font_size) 
