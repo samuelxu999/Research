@@ -315,9 +315,19 @@ class RF_Nepal(object):
 		print(merged_results.shape)
 
 		# save predict_results matrix to local file
-		merged_file = data_config['dataset'] + data_config['predictset'] + 'merged_predict.npy'
+		merged_file = data_config['dataset'] + 'merged_predict.npy'
 		np.save(merged_file, merged_results)
 
+	@staticmethod
+	def Load_predict(data_config={}):
+		if(data_config=={}):
+			print("data_config is empty!")
+			return
+		# load predict_results matrix from local file
+		merged_file = data_config['dataset'] + data_config['predict_merge']
+		merged_results=np.load(merged_file)
+
+		return merged_results
 
 
 	
