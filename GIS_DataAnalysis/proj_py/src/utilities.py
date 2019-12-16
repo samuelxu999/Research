@@ -15,6 +15,8 @@ from openpyxl import load_workbook
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MaxNLocator
+import numpy as np
+import csv
 
 '''
 FileUtil class for handling file read and write
@@ -103,6 +105,36 @@ class FileUtil(object):
 		print(dataset[0:10])'''
 		return ls_dataset
 
+	@staticmethod
+	def csv_read(csv_file):
+		'''
+		Function: Read data from csv file
+		@arguments: 
+		(out) np_dataset:   	return np.array object
+		(in) csv_file:   		csv file path
+		'''
+		ls_dataset = []
+		with open(csv_file, 'r') as csvFile:
+			csv_reader = csv.reader(csvFile, delimiter=',')
+			for row in csv_reader:
+				ls_dataset.append(row)
+		# transfer to np array and return
+		np_dataset = np.array(ls_dataset)
+		return np_dataset
+
+	@staticmethod
+	def csv_write(csv_file, dataset):
+		'''
+		Function: Write data to csv file
+		@arguments: 
+		(in) dataset:   	np.array data
+		(in) csv_file:   	csv file path
+		'''
+		ls_dataset = []
+		with open(csv_file, 'a') as csvFile:
+			csv_writer = csv.writer(csvFile, delimiter=',')
+			for row in dataset:
+				csv_writer.writerow(row)
 '''
 DataUtil class for handling data preparation
 '''
@@ -238,3 +270,4 @@ class PlotUtil(object):
 			figname = os.path.splitext(datafile)[0] +'.png'
 			fig.savefig(figname)
 		plt.close()
+
