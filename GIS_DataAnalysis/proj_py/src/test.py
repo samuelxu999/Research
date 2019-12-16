@@ -11,7 +11,6 @@ Created on Oct.9, 2019
 
 from curve_validation import Curve_Validation
 from RF_Nepal import RF_Nepal
-import numpy as np
 
 def test_validation():
 	data_config= {}
