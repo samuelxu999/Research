@@ -9,48 +9,59 @@ Created on Dec.16, 2019
 @Reference: https://medium.com/@urban_institute/using-multiprocessing-to-make-python-code-faster-23ea5ef996ba
 '''
 
-import time
+import time, math
 import multiprocessing 
 from RF_Nepal import RF_Nepal
+from utilities import FileUtil
 
 
 def multiprocessing_func(data_config):
 	# print(data_config)
 	RF_Nepal.RF_predict(data_config)
-    
 
-if __name__ == '__main__':
 
-	# ----------------- Prepare data config -----------------------
-	data_config= {}
-	data_config['dataset'] = "../training_set/"
-	data_config['file_traindata'] = "trainset.dat"
-	data_config['file_tif'] = "141041_Kathmandu_Charikot_subset.tif"
-	data_config['coefset'] = "TS_Coefficients/"
-	# data_config['pixel_range'] = [4,6]
-	data_config['year_range'] = [2018,1986]
-	data_config['predictset'] = "RF_Predicate/"
-	data_config['predict_matrix'] = "predict_matrix"
+'''
+Multiprocess task class
+'''
+class Multi_ProcessRF(object):
+	@staticmethod
+	def multi_processRF(data_config={}):
 
-	# ----------------- Set process ranges and pix step -----------------------
-	pix_range_step = 3
+		# ----------------- Set process ranges and pix step -----------------------
+		pix_range_step = data_config['pix_range_step']
 
-	process_range = 3
+		# Get coefset data file list
+		ls_files = FileUtil.list_files(data_config['dataset'] + data_config['coefset'], '*.csv')
 
-	# ----------------- evalualte time cost -----------------------
-	starttime = time.time()
+		# calculate pixel number
+		# pixel_num = len(ls_files)
+		pixel_num = 14
 
-	processes = []
+		# set process_range and final_range that are used to split predicate into multiple process
+		process_range = math.floor(pixel_num/pix_range_step)
 
-	# ----------------- Start multiprocessing tasks -----------------------
-	for run_index in range(0, process_range):
-		data_config['pixel_range'] = [run_index*pix_range_step,(run_index+1)*range_step]
-		p = multiprocessing.Process(target=multiprocessing_func, args=(data_config,))
-		processes.append(p)
-		p.start()
+		final_range = pixel_num%pix_range_step
 
-	for process in processes:
-		process.join()
+		# print(process_range, final_range)
+		# ----------------- evalualte time cost -----------------------
+		starttime = time.time()
 
-	print('That took {} seconds'.format(time.time() - starttime))
-	pass
+		processes = []
+
+		# ----------------- Start multiprocessing tasks -----------------------
+		for run_index in range(0, process_range):
+			data_config['pixel_range'] = [run_index*pix_range_step,(run_index+1)*pix_range_step]
+			p = multiprocessing.Process(target=multiprocessing_func, args=(data_config,))
+			processes.append(p)
+			p.start()
+		
+		if( final_range!=0 ):
+			data_config['pixel_range'] = [process_range*pix_range_step,process_range*pix_range_step+final_range]
+			p = multiprocessing.Process(target=multiprocessing_func, args=(data_config,))
+			processes.append(p)
+			p.start()
+
+		for process in processes:
+			process.join()
+
+		print('That took {} seconds'.format(time.time() - starttime))

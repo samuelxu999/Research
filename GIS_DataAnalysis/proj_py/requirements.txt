@@ -1,0 +1,10 @@
+pandas
+numpy
+scipy
+openpyxl
+matplotlib
+georasters==0.5.15
+scikit-learn
+urbanaccess 
+pandana
+dill

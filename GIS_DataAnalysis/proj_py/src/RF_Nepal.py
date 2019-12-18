@@ -228,8 +228,10 @@ class RF_Nepal(object):
 		predict_results = np.zeros( (pixel_range, D_ref1[1], year_range), dtype=np.float)
 		print(predict_results.shape)
 
+		print("------------- pixel_id:", data_config['pixel_range'][0]+1, "-", \
+				data_config['pixel_range'][1]+1,"-----------------------")
+
 		for pixel_id in range(data_config['pixel_range'][0], data_config['pixel_range'][1]):
-			print("------------- pixel_id:", pixel_id+1, "-----------------------")
 
 			# read sample data from excel
 			tmp_file = "row_"+ str(pixel_id+1) + ".csv"
@@ -292,9 +294,11 @@ class RF_Nepal(object):
 			# get range from predict_file name
 			tmp_range = test_file.split('.')[0].split('_')[2:4]
 
-			list_range.append( (tmp_range[0], tmp_range[1]) )
+			list_range.append( (int(tmp_range[0]), int(tmp_range[1])) )
 
 		list_range.sort()
+
+		# print(list_range)
 
 		list_np_predict=[]
 		# For each npy files to merge matrix
@@ -304,15 +308,15 @@ class RF_Nepal(object):
 			# Load predict_results matrix to local file
 			predict_file = data_config['dataset'] + data_config['predictset'] + \
 							data_config['predict_matrix'] + '_' + \
-							pixel_range[0] + '_' + \
-							pixel_range[1] + '.npy' 
-			predict_file = data_config['dataset'] + data_config['predictset'] + test_file
+							str(pixel_range[0]) + '_' + \
+							str(pixel_range[1]) + '.npy' 
+			# print(predict_file)
 			predict_results = np.load(predict_file)
 			# print(predict_results.shape)
 
 			list_np_predict.append(predict_results)
 		merged_results = np.concatenate( list_np_predict, axis=0 )
-		print(merged_results.shape)
+		print("Merged results shape:", merged_results.shape)
 
 		# save predict_results matrix to local file
 		merged_file = data_config['dataset'] + 'merged_predict.npy'
@@ -328,17 +332,3 @@ class RF_Nepal(object):
 		merged_results=np.load(merged_file)
 
 		return merged_results
-
-
-	
-
-# if __name__ == "__main__":
-# 	# --------------------- configuration for work path and folder ---------------------------
-# 	data_config= {}
-# 	data_config['dataset'] = "../training_set/"
-# 	data_config['file_tif'] = "141041_Kathmandu_Charikot_subset.tif"
-# 	data_config['file_xls'] = "Samples_Charikot_1012.xlsx"
-# 	data_config['file_traindata'] = "trainset.dat"
-# 	data_config['coefset'] = "TS_Coefficients/"
-# 	TrainNepal.create_training_table(data_config)
-# 	pass

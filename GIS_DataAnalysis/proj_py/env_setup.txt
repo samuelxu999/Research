@@ -1,0 +1,29 @@
+# This document tutor you how to setup environment for GIS analysis tools
+
+# Install dependencies:
+	$sudo apt-get update -y
+	$sudo apt-get install build-essential
+	sudo apt-get install -y python3-rtree
+	sudo apt-get install sqlite3 libsqlite3-dev
+
+
+# ----------------------- Python configuration --------------------------------
+# Install python2 tools and configurations
+sudo apt-get install -y python-tk python-pip python-dev python-setuptools
+
+# Install python3 tools and configurations
+sudo apt-get install -y python3-tk python3-pip python3-dev python3-setuptools
+
+# ------------------------ install GDAL, which support georasters -------------
+sudo apt-get install python-gdal
+sudo apt-get install python3-gdal
+sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
+sudo apt-get update
+sudo apt-get install gdal-bin -y
+sudo apt-get install libgdal-dev -y
+export CPLUS_INCLUDE_PATH=/usr/include/gdal
+export C_INCLUDE_PATH=/usr/include/gdal
+sudo python3.6 -m pip install GDAL
+
+# --------------------------- Install python packages ------------------------
+sudo python3.6 -m pip install -r requirements.txt
