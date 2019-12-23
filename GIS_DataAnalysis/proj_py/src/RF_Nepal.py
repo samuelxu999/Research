@@ -15,6 +15,7 @@ import numpy as np
 from datetime import datetime,timedelta
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
+import scipy.io
 
 def read_data_xls(file_xls):
 	'''
@@ -322,6 +323,9 @@ class RF_Nepal(object):
 		merged_file = data_config['dataset'] + 'merged_predict.npy'
 		np.save(merged_file, merged_results)
 
+		merged_mat = data_config['dataset'] + 'merged_predict.mat'
+		scipy.io.savemat(merged_mat, {'merged_results': merged_results})
+
 	@staticmethod
 	def Load_predict(data_config={}):
 		if(data_config=={}):
@@ -329,6 +333,10 @@ class RF_Nepal(object):
 			return
 		# load predict_results matrix from local file
 		merged_file = data_config['dataset'] + data_config['predict_merge']
-		merged_results=np.load(merged_file)
+		merged_results_np=np.load(merged_file)
 
-		return merged_results
+		# load predict_results matrix from .mat
+		merged_mat = data_config['dataset'] + 'merged_predict.mat'
+		merged_results_mat=scipy.io.loadmat(merged_mat)
+
+		return merged_results_np, merged_results_mat

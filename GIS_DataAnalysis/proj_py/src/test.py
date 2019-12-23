@@ -57,9 +57,9 @@ def test_Load_predict():
 	data_config= {}
 	data_config['dataset'] = "../training_set/"
 	data_config['predict_merge'] = "merged_predict.npy"
-	np_merged_results = RF_Nepal.Load_predict(data_config)
-	print("Loaded Merged results shape:", np_merged_results.shape)
-	# print(np_merged_results[0][0])
+	np_merged_results, mat_merged_results = RF_Nepal.Load_predict(data_config)
+	print("Loaded Merged results npy shape:", np_merged_results.shape)
+	print("Loaded Merged results mat shape:", mat_merged_results['merged_results'].shape)
 
 def test_Multi_Process_RF():
 	# ----------------- Prepare data config -----------------------
