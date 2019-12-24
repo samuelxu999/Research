@@ -34,8 +34,10 @@ class Multi_ProcessRF(object):
 		ls_files = FileUtil.list_files(data_config['dataset'] + data_config['coefset'], '*.csv')
 
 		# calculate pixel number
-		# pixel_num = len(ls_files)
-		pixel_num = 14
+		pixel_num = len(ls_files)
+		print('Total pixel number:', pixel_num)
+		
+		# pixel_num = 14
 
 		# set process_range and final_range that are used to split predicate into multiple process
 		process_range = math.floor(pixel_num/pix_range_step)

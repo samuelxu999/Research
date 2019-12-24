@@ -213,7 +213,7 @@ class RF_Nepal(object):
 		ref1_data = gr.from_file(file_tiff)
 		# get dimension of ref1_data
 		D_ref1 = ref1_data.shape
-		# print(D_ref1)
+		# print(data_config['file_tif'] , "data shape:", D_ref1)
 
 		# --------------------------- Train model ------------------------------------------------
 		# Instantiate model with 1000 decision trees
@@ -241,13 +241,21 @@ class RF_Nepal(object):
 			# print(csv_data.shape)
 			# print(csv_data[:,67])
 			j_range = D_ref1[1]
-			# j_range = 10
+
+			# 1) handle zeor record csv data.
+			if(csv_data.shape[0]==0):
+				print("zero record csv:", tmp_file)
+				predict_results[pixel_id-data_config['pixel_range'][0],:,:] = 0.0
+				break
+
+			# 2) find data index in csv data
 			for j in range(0, j_range):
+
 				T = np.where( csv_data[:,67] == str(j) )[0]
 				# chech if T is empty
 				if(len(T)!=0):
 					# --------------------- Make Predictions on the Test Set --------------
-					if( csv_data[T[0],0]== '0' and csv_data[T[0],1]== '737334' ):
+					if( csv_data[T[0],0]== '0' ):
 						# print("condition 1")
 						test_features = csv_data[T[0],11:51].reshape((1,40))
 						predictions = rf.predict(test_features)
@@ -269,7 +277,7 @@ class RF_Nepal(object):
 							# print(low_year)
 							# print(up_year)
 							predict_results[pixel_id-data_config['pixel_range'][0],j,low_year:up_year] = predictions 
-					# print(predict_results[pixel_id,j,:])
+				# print(predict_results[pixel_id,j,:])
 
 		# save predict_results matrix to local file
 		predict_file = data_config['dataset'] + data_config['predictset'] + \

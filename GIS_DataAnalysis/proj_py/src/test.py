@@ -36,7 +36,7 @@ def test_RF_predict():
 	data_config['file_traindata'] = "trainset.dat"
 	data_config['file_tif'] = "141041_Kathmandu_Charikot_subset.tif"
 	data_config['coefset'] = "TS_Coefficients/"
-	data_config['pixel_range'] = [4,6]
+	data_config['pixel_range'] = [27,30]
 	data_config['year_range'] = [2018,1986]
 	data_config['predictset'] = "RF_Predicate/"
 	data_config['predict_matrix'] = "predict_matrix"
@@ -60,6 +60,7 @@ def test_Load_predict():
 	np_merged_results, mat_merged_results = RF_Nepal.Load_predict(data_config)
 	print("Loaded Merged results npy shape:", np_merged_results.shape)
 	print("Loaded Merged results mat shape:", mat_merged_results['merged_results'].shape)
+	print(np_merged_results[-1])
 
 def test_Multi_Process_RF():
 	# ----------------- Prepare data config -----------------------
@@ -72,7 +73,7 @@ def test_Multi_Process_RF():
 	data_config['year_range'] = [2018,1986]
 	data_config['predictset'] = "RF_Predicate/"
 	data_config['predict_matrix'] = "predict_matrix"
-	data_config['pix_range_step'] = 3
+	data_config['pix_range_step'] = 10
 
 	Multi_ProcessRF.multi_processRF(data_config)
 
