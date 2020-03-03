@@ -241,22 +241,23 @@ def test_SimValidator():
     print('Valid block: ', SimValidator.valid_block(new_block, myblockchain.chain))
 
 def test_Node():
+	#===================================== peer node test ========================================
 	# Instantiate the PeerNodes
 	peer_nodes = PeerNodes()
 
 	# ----------------------- register node -------------------------------
 	peer_nodes.register_node('ceeebaa052718c0a00adb87de857ba63608260e9',
 	    '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414b396a6a6e486e332f70492f596c6e4175454c492b35574b34394c397776510a5950346471516e514a7a66312f634d34416a726835484e706f5974622b326a6c33336a6b684850662f2b784f694f52346b4a685658526b434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
-	    'http://128.226.77.51:8080')
+	    '128.226.88.210:8080')
 	peer_nodes.register_node('1699600976ec6fc0fe35d54174eb6094e671d2fd',
 	    '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414d58736e354f706b57706e3359695a386257753749397168363873784439370a2b2f4f5374616270305a464e365745475a415452316f397051684273727041416f656f4d4876717871784d2f645a636e7a43377a4f394d434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
-	    'http://128.226.77.51:8081')
+	    '128.226.88.210:8081')
 	peer_nodes.register_node('f55af09f40768ca05505767cd013b6b9a78579c4',
 	    '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414e393072576d52506b6e46446b6d51536368414f74594434686f675a4d57330a6f4b4d77626559306a322f4966705a642b614447414863754c317534463443314d712b426354765239336b4b34573657346b6e59383145434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
-	    'http://128.226.77.51:8082')
+	    '128.226.88.210:8082')
 	peer_nodes.register_node('e416c382f8ff6d883dec61a12a2ced1b80905992',
 	    '2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d4677774451594a4b6f5a496876634e41514542425141445377417753414a42414c3146677174546e7941393154586d5134656c7a4f2b334578486232716f450a6d454b4c52697830794e386772634d4a31493776413161315937416c4957437745644e69583956486c7654772f346c5a2b64374f356a38434177454141513d3d0a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a',
-	    'http://128.226.77.51:8083')
+	    '128.226.88.210:8083')
 
 	peer_nodes.load_ByAddress()
 	nodes = peer_nodes.get_nodelist()    
@@ -266,7 +267,7 @@ def test_Node():
 	    json_node = TypesUtil.string_to_json(node)
 	    print('    ' + json_node['address'] + '    ' + json_node['node_url'] )
 
-	# ------------------ update and remove test -------------------
+	# ------------------ update and remove peer node test -------------------
 	json_data = {}
 	#peer_nodes.update_node('ceeebaa052718c0a00adb87de857ba63608260e9', TypesUtil.json_to_string('{}'))
 	peer_nodes.update_status('ceeebaa052718c0a00adb87de857ba63608260e9', 1)
@@ -280,34 +281,29 @@ def test_Node():
 		json_node = TypesUtil.string_to_json(node)
 		print('    ' + json_node['address'] + '    ' + json_node['node_url'] )
 
-	#--------------------------------------- static node test -------------------------------------
+	#===================================== Static node test ========================================
 	static_nodes = StaticNodes()
 	static_nodes.load_node()
 
-	static_nodes.register_node('R1_pi_plus_1', 'ceeebaa052718c0a00adb87de857ba63608260e9', 'http://128.226.79.137:8080')
-	static_nodes.register_node('R1_pi_plus_2', '1699600976ec6fc0fe35d54174eb6094e671d2fd', 'http://128.226.79.251:8080')
-	static_nodes.register_node('R1_pi_plus_3', 'f55af09f40768ca05505767cd013b6b9a78579c4', 'http://128.226.88.37:8080')
-	static_nodes.register_node('R1_pi_plus_4', 'e416c382f8ff6d883dec61a12a2ced1b80905992', 'http://128.226.76.62:8080')
+	# load test node information from local 'static-nodes.json'
+	json_nodes = FileUtil.JSON_load('static-nodes.json')
 
-	static_nodes.register_node('R2_pi_top', '42ee7f41f06dc972a2e5e8b5facb5e91913fce7d', 'http://128.226.76.114:8080')
-	static_nodes.register_node('R2_tk_top', '083d853e27ef075be81711c4393a8f256bc8e6b1', 'http://128.226.88.211:8080')
-	static_nodes.register_node('R2_tk_bottom', '77352970f5c3203c55b54c390f59f5fe75d7c012', 'http://128.226.88.43:8080')
-	static_nodes.register_node('R2_pi_bottom', 'abefa52a0ffb59072a3e7bf34e182f92fd09a3b1', 'http://128.226.78.148:8080')
+	node_name = 'Desktop_dell7071'
+	if(node_name not in json_nodes):
+		node_data={}
+	else:
+		node_data = json_nodes[node_name]
+	
 
-	static_nodes.register_node('Desk_pi_1', '45961f1e9ac53a22afdc48e434e542077481a9c4', 'http://128.226.79.127:8080')
-	static_nodes.register_node('Desk_pi_2', '57d1d44a711f1bd5761a78088510dbf9d84502c5', 'http://128.226.78.89:8080')
-	static_nodes.register_node('Desk_pi_plus_1', '0372804d1fc92a000d5ac68623bf32d8255014a6', 'http://128.226.79.249:8080')
-	static_nodes.register_node('Desk_pi_plus_2', '79624546b854a4dcbde53260ab82b06b890337ae', 'http://128.226.88.144:8080')
-
-	static_nodes.register_node('Desktop_1', '727e6834ee81196bd8096c96f09cdbc9d878ce73', 'http://128.226.76.51:8081')
-	static_nodes.register_node('Desktop_2', '30ac4c7067af6b3f5b0ee78d9ec8051ab81bcc4d', 'http://128.226.77.186:8081')
-	static_nodes.register_node('Desktop_3', '5af1d2232756fdff405682ec6f1b785f645cf351', 'http://128.226.88.123:8081')
-	static_nodes.register_node('Desktop_4', '4418f25a11475627585dab84210754a851ee1ac8', 'http://128.226.88.97:8081')
-	static_nodes.register_node('Desktop_Sam', '3be2ea794ffb799f5c7e4a0257d2f27968ddf677', 'http://128.226.77.51:8081')		
+	if( node_data !={}):
+		static_nodes.register_node(node_name, node_data['address'], node_data['ip'])
+	
 	#print(static_nodes.nodes)
 
+	# ---------------------- save node test ----------------------
 	static_nodes.save_node()
 
+	# reload static_nodes buffer for print
 	reload_nodes = static_nodes.nodes
 	#print(reload_nodes)
 
@@ -317,8 +313,8 @@ def test_Node():
 	    json_node = node
 	    print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
 
-	# ---------------------- search node ----------------------
-	node_name = 'R2_pi_top'
+	# ---------------------- search node test ----------------------
+	# node_name = 'R2_pi_top'
 	print('Search nodes:' + node_name)
 	print(static_nodes.get_node(node_name))
 
@@ -564,18 +560,18 @@ def test_PVSS():
 
 
 if __name__ == '__main__':
-	#test_block()
-	#test_PoW()
-	#test_PoS()
-	#test_SimValidator()
-	#test_transaction()
-	#test_Node()
-	#test_Wallet()
-	#test_database()
-	#test_Validator()
-	#test_Vote()
-	#VSS_demo()
-	#test_PVSS()
+	# test_block()
+	# test_PoW()
+	# test_PoS()
+	# test_SimValidator()
+	# test_transaction()
+	# test_Node()
+	# test_Wallet()
+	# test_database()
+	# test_Validator()
+	# test_Vote()
+	# VSS_demo()
+	# test_PVSS()
 	pass
 
 

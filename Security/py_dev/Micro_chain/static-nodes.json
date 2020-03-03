@@ -1,0 +1,92 @@
+{
+	"Desktop_dell7071": 
+	{
+		"address": "ec45439ac60a36bbb2d2bdba59e7d0a193159034",
+		"ip": "128.226.88.210:8080"
+	},
+	"Desktop_Sam": 
+	{
+		"address": "3be2ea794ffb799f5c7e4a0257d2f27968ddf677",
+		"ip": "128.226.77.51:8080"
+	},
+	"Desktop_1": 
+	{
+		"address": "727e6834ee81196bd8096c96f09cdbc9d878ce73",
+		"ip": "128.226.76.51:8080"
+	},
+	"Desktop_2": 
+	{
+		"address": "30ac4c7067af6b3f5b0ee78d9ec8051ab81bcc4d",
+		"ip": "128.226.77.186:8080"
+	},
+	"Desktop_3": 
+	{
+		"address": "5af1d2232756fdff405682ec6f1b785f645cf351",
+		"ip": "128.226.88.123:8080"
+	},
+	"Desktop_4": 
+	{
+		"address": "4418f25a11475627585dab84210754a851ee1ac8",
+		"ip": "128.226.88.97:8080"
+	},
+	"R1_pi_plus_1": 
+	{
+		"address": "ceeebaa052718c0a00adb87de857ba63608260e9",
+		"ip": "128.226.79.137:8080"
+	},
+	"R1_pi_plus_2": 
+	{
+		"address": "1699600976ec6fc0fe35d54174eb6094e671d2fd",
+		"ip": "128.226.79.251:8080"
+	},
+	"R1_pi_plus_3": 
+	{
+		"address": "f55af09f40768ca05505767cd013b6b9a78579c4",
+		"ip": "128.226.88.37:8080"
+	},
+	"R1_pi_plus_4": 
+	{
+		"address": "e416c382f8ff6d883dec61a12a2ced1b80905992",
+		"ip": "128.226.76.114:8080"
+	},
+	"R2_pi_top": 
+	{
+		"address": "42ee7f41f06dc972a2e5e8b5facb5e91913fce7d",
+		"ip": "128.226.79.137:8080"
+	},
+	"RR2_pi_bottom": 
+	{
+		"address": "abefa52a0ffb59072a3e7bf34e182f92fd09a3b1",
+		"ip": "128.226.78.148:8080"
+	},
+	"R2_tk_top": 
+	{
+		"address": "083d853e27ef075be81711c4393a8f256bc8e6b1",
+		"ip": "128.226.78.138:8080"
+	},
+	"R2_tk_bottom": 
+	{
+		"address": "77352970f5c3203c55b54c390f59f5fe75d7c012",
+		"ip": "128.226.88.119:8080"
+	},
+	"Desk_pi_1": 
+	{
+		"address": "45961f1e9ac53a22afdc48e434e542077481a9c4",
+		"ip": "128.226.79.127:8080"
+	},
+	"Desk_pi_2": 
+	{
+		"address": "57d1d44a711f1bd5761a78088510dbf9d84502c5",
+		"ip": "128.226.78.89:8080"
+	},
+	"Desk_pi_plus_1": 
+	{
+		"address": "0372804d1fc92a000d5ac68623bf32d8255014a6",
+		"ip": "128.226.79.249:8080"
+	},
+	"Desk_pi_plus_2": 
+	{
+		"address": "79624546b854a4dcbde53260ab82b06b890337ae",
+		"ip": "128.226.88.144:8080"
+	}
+}

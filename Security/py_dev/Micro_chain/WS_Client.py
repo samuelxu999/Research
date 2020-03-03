@@ -248,6 +248,10 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 
     #-------------- localhost ----------------
     target_node = static_nodes.get_node(target_name)
+
+    if( target_node=={}):
+        return
+
     target_address = target_node['node_url']
     print(target_address)
 
@@ -337,13 +341,13 @@ def Epoch_test(target_address, tx_size):
 
 if __name__ == "__main__":
 
-	target_address = "128.226.77.51:8081"
+	target_address = "128.226.88.210:8080"
 
 	op_status = 1
-	data_size = 1000*1024
-	#data_size = 1024
+	# data_size = 1000*1024
+	data_size = 1024
 	if(op_status == 0):
-		set_peerNodes('Desktop_Sam', 1, True)
+		set_peerNodes('Desktop_dell7071', 1, True)
 	elif(op_status == 1):
 		wait_interval = 1
 		test_run = 10
