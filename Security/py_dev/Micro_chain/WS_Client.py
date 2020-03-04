@@ -66,7 +66,7 @@ def send_transaction(target_address, tx_size=1, isBroadcast=False):
     #send transaction
     transaction_json = mytransaction.to_json()
     transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
-    #print(transaction_json)
+    # print(transaction_json)
     if(not isBroadcast):
         json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/verify', 
         						transaction_json)
@@ -341,32 +341,35 @@ def Epoch_test(target_address, tx_size):
 
 if __name__ == "__main__":
 
-	target_address = "128.226.88.210:8080"
+    target_address = "128.226.88.210:8080"
 
-	op_status = 1
-	# data_size = 1000*1024
-	data_size = 1024
-	if(op_status == 0):
-		set_peerNodes('Desktop_dell7071', 1, True)
-	elif(op_status == 1):
-		wait_interval = 1
-		test_run = 10
-		for x in range(test_run):
-			print("Test run:", x+1)
-			Epoch_test(target_address, data_size)
-			time.sleep(wait_interval)
-	else:
-		#print(TypesUtil.string_to_hex(os.urandom(1000)))
-		#get_transactions(target_address)
+    op_status = 1
+    # data_size = 1000*1024
+    data_size = 1024
+    if(op_status == 0):
+    	set_peerNodes('Desktop_dell7071', 2, True)
+    elif(op_status == 1):
+    	wait_interval = 1
+    	test_run = 5
+    	for x in range(test_run):
+    		print("Test run:", x+1)
+    		Epoch_test(target_address, data_size)
+    		time.sleep(wait_interval)
+    else:
+        # send_transaction(target_address, 10, True)
+        # get_transactions(target_address)
 
-		#start_mining(target_address)
+        # start_mining(target_address, True)
 
-		#get_chain(target_address, True)
+        # check_head()
 
-		#print('Valid last_block:', test_valid_block(target_address))
+        # start_voting(target_address, True)
 
-		#print('Valid transactions:', test_valid_transactions(target_address)) 
+        # get_chain(target_address, True)
 
-		#send_vote(target_address)   
-		pass
-	pass
+        # print('Valid last_block:', test_valid_block(target_address))
+
+        # print('Valid transactions:', test_valid_transactions(target_address)) 
+
+        # send_vote(target_address)   
+        pass
