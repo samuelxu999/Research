@@ -253,7 +253,7 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
         return
 
     target_address = target_node['node_url']
-    print(target_address)
+    # print(target_address)
 
     # Instantiate the Wallet
     mywallet = Wallet()

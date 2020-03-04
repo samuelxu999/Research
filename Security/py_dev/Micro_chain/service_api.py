@@ -17,7 +17,7 @@ from utilities import TypesUtil
 
 class ReqThread (threading.Thread):
     '''
-    Threading class to handle request by multiple threads pool
+    Threading class to handle requests by multiple threads pool
     '''
     def __init__(self, threadID, ReqType, argv):
         threading.Thread.__init__(self)
