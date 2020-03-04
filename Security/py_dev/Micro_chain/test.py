@@ -288,15 +288,25 @@ def test_Node():
 	# load test node information from local 'static-nodes.json'
 	json_nodes = FileUtil.JSON_load('static-nodes.json')
 
-	node_name = 'Desktop_dell7071'
-	if(node_name not in json_nodes):
-		node_data={}
-	else:
-		node_data = json_nodes[node_name]
-	
+	statics_node_op = 0
 
-	if( node_data !={}):
-		static_nodes.register_node(node_name, node_data['address'], node_data['ip'])
+	if(statics_node_op==1):
+		# case 1) add one node given name
+		node_name = 'Desk_pi_plus_2'
+		if(node_name not in json_nodes):
+			node_data={}
+		else:
+			node_data = json_nodes[node_name]	
+
+		if( node_data !={}):
+			static_nodes.register_node(node_name, node_data['address'], node_data['ip'])
+	else:
+		# case 2) add all nodes
+		for (node_name, node_data) in json_nodes.items():
+			# print("Name: " + node_name)
+			# print("Data: " + str(node_data))
+			if( node_data !={}):
+				static_nodes.register_node(node_name, node_data['address'], node_data['ip'])
 	
 	#print(static_nodes.nodes)
 
@@ -314,7 +324,7 @@ def test_Node():
 	    print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
 
 	# ---------------------- search node test ----------------------
-	# node_name = 'R2_pi_top'
+	node_name = 'R2_pi_top'
 	print('Search nodes:' + node_name)
 	print(static_nodes.get_node(node_name))
 
