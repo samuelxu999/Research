@@ -118,7 +118,7 @@ def start_mining(target_address, isBroadcast=False):
 		json_response=SrvAPI.GET('http://'+target_address+'/test/mining')
 	#transactions = json_response['transactions']
 	else:
-		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/mining')
+		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/mining', True)
 		json_response = {'start mining': 'broadcast'}
 
 	print(json_response)
@@ -129,7 +129,7 @@ def start_voting(target_address, isBroadcast=False):
 	#transactions = json_response['transactions']
 	else:
 	#SrvAPI.broadcast(peer_nodes.get_nodelist(), {}, '/test/block/vote')
-		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/block/vote')
+		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/block/vote', True)
 		json_response = {'verify_vote': 'broadcast'}
 	print(json_response)
 
@@ -153,16 +153,16 @@ def add_node(target_address, json_node, isBroadcast=False):
                 pass
 
 def remove_node(target_address, json_node, isBroadcast=False):
-    if(not isBroadcast):
-        json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
-        print(json_response)
-    else:
-        #json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
-        for target_node in target_address:
-            try:
-                SrvAPI.POST('http://'+target_node+'/test/nodes/remove', json_node)
-            except:
-                pass
+	if(not isBroadcast):
+		json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
+		print(json_response)
+	else:
+		#json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
+		for target_node in target_address:
+			try:
+				SrvAPI.POST('http://'+target_node+'/test/nodes/remove', json_node)
+			except:
+				pass
 
 def get_chain(target_address, isDisplay=False):
 	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
@@ -344,10 +344,10 @@ if __name__ == "__main__":
     target_address = "128.226.88.210:8080"
 
     op_status = 1
-    # data_size = 1000*1024
+    # data_size = 2*1024*1024
     data_size = 1024
     if(op_status == 0):
-    	set_peerNodes('Desktop_dell7071', 2, True)
+    	set_peerNodes('R2_tk_top', 1, True)
     elif(op_status == 1):
     	wait_interval = 1
     	test_run = 5
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     		Epoch_test(target_address, data_size)
     		time.sleep(wait_interval)
     else:
-        # send_transaction(target_address, 10, True)
+        # send_transaction(target_address, data_size, True)
         # get_transactions(target_address)
 
         # start_mining(target_address, True)
