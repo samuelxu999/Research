@@ -343,6 +343,9 @@ class Validator(object):
 		# ------------------- verify vote before accept it ------------------
 		verify_result = False
 
+		if(json_vote==None or json_vote=='{}'):
+			return verify_result
+
 		#rebuild vote object given json data
 		new_vote = VoteCheckPoint.json_to_vote(json_vote)
 
