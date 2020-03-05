@@ -67,16 +67,16 @@ def verify_transaction():
 	if(transaction_data=='{}'):
 		abort(401, {'error': 'No transaction data'})
 	
-	# start_time=time.time()
-	# verify_data = myblockchain.on_receive(transaction_data, 0)
-	# exec_time=time.time()-start_time
-	# FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
+	start_time=time.time()
+	verify_data = myblockchain.on_receive(transaction_data, 0)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
 	
-	# return jsonify({'verify_transaction': verify_data}), 201
+	return jsonify({'verify_transaction': verify_data}), 201
 
-	p_thread = RecThread(transaction_data, 0)
-	p_thread.start()
-	return jsonify({'verify_transaction': 'Succeed!'}), 201
+	# p_thread = RecThread(transaction_data, 0)
+	# p_thread.start()
+	# return jsonify({'verify_transaction': 'Succeed!'}), 201
 
 #GET req
 @app.route('/test/transaction/broadcast', methods=['POST'])
@@ -188,15 +188,15 @@ def verify_block():
 	if(block_data=='{}'):
 		abort(401, {'error': 'No block data'})
 
-	# start_time=time.time()
-	# verify_result = myblockchain.on_receive(block_data, 1)
-	# exec_time=time.time()-start_time
-	# FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
+	start_time=time.time()
+	verify_result = myblockchain.on_receive(block_data, 1)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
 
-	# return jsonify({'verify_block': verify_result}), 201
-	p_thread = RecThread(block_data, 1)
-	p_thread.start()
-	return jsonify({'verify_block': 'Succeed!'}), 201
+	return jsonify({'verify_block': verify_result}), 201
+	# p_thread = RecThread(block_data, 1)
+	# p_thread.start()
+	# return jsonify({'verify_block': 'Succeed!'}), 201
 
 @app.route('/test/block/vote', methods=['GET'])
 def vote_block():
@@ -219,17 +219,17 @@ def verify_vote():
 	if(vote_data=='{}'):
 		abort(401, {'error': 'No vote data'})
 
-	# start_time=time.time()
-	# verify_result = myblockchain.on_receive(vote_data, 2)
-	# exec_time=time.time()-start_time
-	# FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
+	start_time=time.time()
+	verify_result = myblockchain.on_receive(vote_data, 2)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
 
-	# print('verify_vote:', verify_result)
+	print('verify_vote:', verify_result)
 
-	# return jsonify({'verify_vote': verify_result}), 201
-	p_thread = RecThread(vote_data, 2)
-	p_thread.start()
-	return jsonify({'verify_vote': 'Succeed!'}), 201
+	return jsonify({'verify_vote': verify_result}), 201
+	# p_thread = RecThread(vote_data, 2)
+	# p_thread.start()
+	# return jsonify({'verify_vote': 'Succeed!'}), 201
 
 #GET req
 @app.route('/test/vote/broadcast', methods=['POST'])
@@ -262,5 +262,5 @@ if __name__ == '__main__':
 
 	myblockchain.print_config()
 
-	app.run(host='0.0.0.0', port=port, debug=True)
+	app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
 
