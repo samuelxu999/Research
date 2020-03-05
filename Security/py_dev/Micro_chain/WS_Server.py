@@ -13,6 +13,7 @@ Created on Nov.2, 2017
 import time
 import datetime
 import json
+import threading
 from flask import Flask, jsonify
 from flask import abort,make_response,request
 
@@ -23,6 +24,32 @@ from validator import Validator
 from consensus import *
 from service_api import SrvAPI
 
+class RecThread (threading.Thread):
+	'''
+	Threading class to handle on_receive by multiple threads
+	'''
+	def __init__(self, argv, RecType):
+		threading.Thread.__init__(self)
+		self.RecType = RecType
+		self.argv = argv
+
+	#The run() method is the entry point for a thread.
+	def run(self):
+		# Add task operation here
+		start_time=time.time()
+		verify_data = myblockchain.on_receive(self.argv, self.RecType)
+		exec_time=time.time()-start_time
+
+		# Launch request given RecType
+		# 0: transaction message processing
+		if(self.RecType ==0):
+			FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
+		# 1: block message processing
+		elif(self.RecType ==1):
+			FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
+		# 2: vote message processing
+		else:
+			FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
 
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
@@ -40,12 +67,16 @@ def verify_transaction():
 	if(transaction_data=='{}'):
 		abort(401, {'error': 'No transaction data'})
 	
-	start_time=time.time()
-	verify_data = myblockchain.on_receive(transaction_data, 0)
-	exec_time=time.time()-start_time
-	FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
+	# start_time=time.time()
+	# verify_data = myblockchain.on_receive(transaction_data, 0)
+	# exec_time=time.time()-start_time
+	# FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
+	
+	# return jsonify({'verify_transaction': verify_data}), 201
 
-	return jsonify({'verify_transaction': verify_data}), 201
+	p_thread = RecThread(transaction_data, 0)
+	p_thread.start()
+	return jsonify({'verify_transaction': 'Succeed!'}), 201
 
 #GET req
 @app.route('/test/transaction/broadcast', methods=['POST'])
@@ -126,7 +157,6 @@ def get_nodes():
 def add_node():
 	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
-	#transaction_data = TypesUtil.string_to_json(req_data)
 	json_node=json.loads(req_data)
 
 	if(json_node=='{}'):
@@ -140,7 +170,6 @@ def add_node():
 def remove_node():
 	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
-	#transaction_data = TypesUtil.string_to_json(req_data)
 	json_node=json.loads(req_data)
 	
 	if(json_node=='{}'):
@@ -154,18 +183,20 @@ def remove_node():
 def verify_block():
 	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
-	#transaction_data = TypesUtil.string_to_json(req_data)
 	block_data=json.loads(req_data)
 	
 	if(block_data=='{}'):
 		abort(401, {'error': 'No block data'})
 
-	start_time=time.time()
-	verify_result = myblockchain.on_receive(block_data, 1)
-	exec_time=time.time()-start_time
-	FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
+	# start_time=time.time()
+	# verify_result = myblockchain.on_receive(block_data, 1)
+	# exec_time=time.time()-start_time
+	# FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
 
-	return jsonify({'verify_block': verify_result}), 201
+	# return jsonify({'verify_block': verify_result}), 201
+	p_thread = RecThread(block_data, 1)
+	p_thread.start()
+	return jsonify({'verify_block': 'Succeed!'}), 201
 
 @app.route('/test/block/vote', methods=['GET'])
 def vote_block():
@@ -183,20 +214,22 @@ def vote_block():
 def verify_vote():
 	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
-	#transaction_data = TypesUtil.string_to_json(req_data)
 	vote_data=json.loads(req_data)
 	
 	if(vote_data=='{}'):
 		abort(401, {'error': 'No vote data'})
 
-	start_time=time.time()
-	verify_result = myblockchain.on_receive(vote_data, 2)
-	exec_time=time.time()-start_time
-	FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
+	# start_time=time.time()
+	# verify_result = myblockchain.on_receive(vote_data, 2)
+	# exec_time=time.time()-start_time
+	# FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
 
-	print('verify_vote:', verify_result)
+	# print('verify_vote:', verify_result)
 
-	return jsonify({'verify_vote': verify_result}), 201
+	# return jsonify({'verify_vote': verify_result}), 201
+	p_thread = RecThread(vote_data, 2)
+	p_thread.start()
+	return jsonify({'verify_vote': 'Succeed!'}), 201
 
 #GET req
 @app.route('/test/vote/broadcast', methods=['POST'])
