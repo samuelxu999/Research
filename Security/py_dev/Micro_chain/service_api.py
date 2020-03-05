@@ -91,8 +91,8 @@ class SrvAPI(object):
             p_thread.start()
 
         # The join() waits for all threads to terminate.
-        # for p_thread in threads_pool:
-        #         p_thread.join()
+        for p_thread in threads_pool:
+                p_thread.join()
 
     @staticmethod
     def broadcast_GET(peer_nodes, ws_url):
@@ -123,5 +123,5 @@ class SrvAPI(object):
             p_thread.start()
 
         # The join() waits for all threads to terminate.
-        # for p_thread in threads_pool:
-        #         p_thread.join()
+        for p_thread in threads_pool:
+                p_thread.join()
