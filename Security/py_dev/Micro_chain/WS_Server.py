@@ -24,32 +24,6 @@ from validator import Validator
 from consensus import *
 from service_api import SrvAPI
 
-class RecThread (threading.Thread):
-	'''
-	Threading class to handle on_receive by multiple threads
-	'''
-	def __init__(self, argv, RecType):
-		threading.Thread.__init__(self)
-		self.RecType = RecType
-		self.argv = argv
-
-	#The run() method is the entry point for a thread.
-	def run(self):
-		# Add task operation here
-		start_time=time.time()
-		verify_data = myblockchain.on_receive(self.argv, self.RecType)
-		exec_time=time.time()-start_time
-
-		# Launch request given RecType
-		# 0: transaction message processing
-		if(self.RecType ==0):
-			FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
-		# 1: block message processing
-		elif(self.RecType ==1):
-			FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
-		# 2: vote message processing
-		else:
-			FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
 
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
@@ -73,10 +47,6 @@ def verify_transaction():
 	FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
 	
 	return jsonify({'verify_transaction': verify_data}), 201
-
-	# p_thread = RecThread(transaction_data, 0)
-	# p_thread.start()
-	# return jsonify({'verify_transaction': 'Succeed!'}), 201
 
 #GET req
 @app.route('/test/transaction/broadcast', methods=['POST'])
@@ -194,9 +164,6 @@ def verify_block():
 	FileUtil.save_testlog('test_results', 'exec_verify_block.log', format(exec_time*1000, '.3f'))
 
 	return jsonify({'verify_block': verify_result}), 201
-	# p_thread = RecThread(block_data, 1)
-	# p_thread.start()
-	# return jsonify({'verify_block': 'Succeed!'}), 201
 
 @app.route('/test/block/vote', methods=['GET'])
 def vote_block():
@@ -227,9 +194,6 @@ def verify_vote():
 	print('verify_vote:', verify_result)
 
 	return jsonify({'verify_vote': verify_result}), 201
-	# p_thread = RecThread(vote_data, 2)
-	# p_thread.start()
-	# return jsonify({'verify_vote': 'Succeed!'}), 201
 
 #GET req
 @app.route('/test/vote/broadcast', methods=['POST'])

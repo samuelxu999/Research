@@ -63,11 +63,13 @@ class SrvAPI(object):
         return json_response
 
     @staticmethod
-    def broadcast_POST(peer_nodes, msg_data, ws_url):
+    def broadcast_POST(peer_nodes, msg_data, ws_url, isjoin=False):
         '''
-         broadcast message to peer nodes
-         @ msg_data: input message as json format
+         broadcast POST request to peer nodes
          @ peer_nodes: peer node set()
+         @ msg_data: input message as json format
+         @ ws_url: webservice url for RPC 
+         @ isjoin: join request threads or not
         '''
         headers = {'Content-Type' : 'application/json'}
 
@@ -89,17 +91,20 @@ class SrvAPI(object):
 
             # The start() method starts a thread by calling the run method.
             p_thread.start()
-
-        # The join() waits for all threads to terminate.
-        for p_thread in threads_pool:
-                p_thread.join()
+            
+        if(isjoin):
+            # The join() waits for all threads to terminate.
+            for p_thread in threads_pool:
+                    p_thread.join()
 
     @staticmethod
-    def broadcast_GET(peer_nodes, ws_url):
+    def broadcast_GET(peer_nodes, ws_url, isjoin=False):
         '''
-         broadcast message to peer nodes using GET
-         @ msg_data: input message as json format
+         broadcast GET request to peer nodes
          @ peer_nodes: peer node set()
+         @ msg_data: input message as json format
+         @ ws_url: webservice url for RPC 
+         @ isjoin: join request threads or not
         '''
         headers = {'Content-Type' : 'application/json'}
 
@@ -122,6 +127,7 @@ class SrvAPI(object):
             # The start() method starts a thread by calling the run method.
             p_thread.start()
 
-        # The join() waits for all threads to terminate.
-        for p_thread in threads_pool:
-                p_thread.join()
+        if(isjoin):
+            # The join() waits for all threads to terminate.
+            for p_thread in threads_pool:
+                    p_thread.join()
