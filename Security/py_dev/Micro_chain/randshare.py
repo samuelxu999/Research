@@ -77,21 +77,28 @@ class RandShare(object):
 		json_shares['node_shares']=node_shares
 		return json_shares
 
-	def save_sharesInfo(self, json_shares):
+	@staticmethod
+	def save_sharesInfo(json_shares, op_type=0):
 			"""
 			Save the random shares information to static json file
 			"""
 
 			if(not os.path.exists(RANDOM_DATA_DIR)):
 			    os.makedirs(RANDOM_DATA_DIR)
-			FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO, json_shares)
+			if(op_type==0):
+				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO, json_shares)
+			else:
+				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST, json_shares)
 
-	def load_sharesInfo(self):
+	@staticmethod
+	def load_sharesInfo(op_type=0):
 			"""
 			load validator information from static json file
 			"""
-			if(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO)):
+			if(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO) and op_type==0):
 			    return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO)
+			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST) and op_type==1):
+				return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST)
 			else:
 				return None
 
@@ -106,10 +113,10 @@ class RandShare(object):
 
 def test_randshare():
 	myrandshare = RandShare()
-	#myrandshare.print_config()
-	#json_shares=myrandshare.create_shares()
-	#myrandshare.save_sharesInfo(json_shares)
-	load_json_shares=myrandshare.load_sharesInfo()
+	# myrandshare.print_config()
+	# json_shares=myrandshare.create_shares()
+	# RandShare.save_sharesInfo(json_shares)
+	load_json_shares=RandShare.load_sharesInfo()
 	#print(load_json_shares['node_shares']['f55af09f40768ca05505767cd013b6b9a78579c4'])
 
 
@@ -161,6 +168,6 @@ def test_randshare():
 
 
 if __name__ == '__main__':
-	#test_randshare()
+	# test_randshare()
 
 	pass

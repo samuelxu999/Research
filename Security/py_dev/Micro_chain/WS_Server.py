@@ -23,6 +23,7 @@ from block import Block
 from validator import Validator
 from consensus import *
 from service_api import SrvAPI
+from randshare import RandShare
 
 
 # ================================= Instantiate the server =====================================
@@ -211,6 +212,43 @@ def broadcast_vote():
 
 	return jsonify({'broadcast_vote': 'Succeed!'}), 201
 
+@app.route('/test/randshare/fetch', methods=['POST'])
+def fetch_randshare():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	json_node=json.loads(req_data)
+
+	if(json_node=='{}'):
+		abort(401, {'error': 'No node data'})
+
+	load_json_shares=RandShare.load_sharesInfo()
+	node_shares = load_json_shares['node_shares']
+
+	if json_node['address'] in node_shares:
+		shares=node_shares[json_node['address']]
+	else:
+		shares={}
+	host_node=myblockchain.wallet.list_address()[0]
+	response = {host_node: shares}
+	return jsonify(response), 200
+
+def disp_randomshare(json_shares):
+	''' randshare function'''	
+	print('poly_secrets:')
+	poly_secrets = json_shares['poly_secrets']
+	if poly_secrets:
+	    for poly_secret in poly_secrets:
+	        print('  ', poly_secret)	
+
+	print('node_shares:')
+	node_shares = json_shares['node_shares']
+	nodes = myrandshare.peer_nodes.get_nodelist()
+	if node_shares:
+		shares=[]
+		for node in nodes:
+			json_node = TypesUtil.string_to_json(node)
+			shares.append(node_shares[json_node['address']])
+			print('  ', json_node['address'], ': ', node_shares[json_node['address']])
 
 if __name__ == '__main__':
 	from argparse import ArgumentParser
@@ -225,6 +263,12 @@ if __name__ == '__main__':
 	myblockchain.load_chain()
 
 	myblockchain.print_config()
+
+	# Instantiate RandShare 
+	myrandshare = RandShare()
+	load_json_shares=RandShare.load_sharesInfo()
+	# display random shares
+	disp_randomshare(load_json_shares);
 
 	app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
 

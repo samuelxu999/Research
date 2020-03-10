@@ -23,6 +23,7 @@ from validator import Validator
 from consensus import POW
 from utilities import TypesUtil, FileUtil
 from service_api import SrvAPI
+from randshare import RandShare
 
 
 # Instantiate the PeerNodes
@@ -286,6 +287,17 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
     
     get_nodes(target_address)
 
+def fetch_randshare(target_address):
+	# Instantiate the Wallet
+	mywallet = Wallet()
+	mywallet.load_accounts()
+	# get host address
+	json_node={}
+	json_node['address'] = mywallet.accounts[0]['address']
+	# print(json_node)
+	json_response=SrvAPI.POST('http://'+target_address+'/test/randshare/fetch', json_node)
+	return json_response
+
 '''def save_testlog(log_data):
 	#save new key files
 	test_dir = 'test_results'
@@ -341,35 +353,51 @@ def Epoch_test(target_address, tx_size):
 
 if __name__ == "__main__":
 
-    target_address = "128.226.88.210:8080"
+	target_address = "128.226.88.210:8080"
 
-    op_status = 1
-    # data_size = 2*1024*1024
-    data_size = 1024
-    if(op_status == 0):
-    	set_peerNodes('R2_tk_top', 1, True)
-    elif(op_status == 1):
-    	wait_interval = 1
-    	test_run = 5
-    	for x in range(test_run):
-    		print("Test run:", x+1)
-    		Epoch_test(target_address, data_size)
-    		time.sleep(wait_interval)
-    else:
-        # send_transaction(target_address, data_size, True)
-        # get_transactions(target_address)
+	# |------------------------ test case type ---------------------------------|
+	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
+	# |-------------------------------------------------------------------------|
+	op_status = 3
 
-        # start_mining(target_address, True)
+	# data_size = 2*1024*1024
+	data_size = 1024
 
-        # check_head()
+	if(op_status == 0):
+		set_peerNodes('R2_tk_top', 1, True)
+	elif(op_status == 1):
+		wait_interval = 1
+		test_run = 5
+		for x in range(test_run):
+			print("Test run:", x+1)
+			Epoch_test(target_address, data_size)
+			time.sleep(wait_interval)
+	elif(op_status == 2):
+		# send_transaction(target_address, data_size, True)
+		# get_transactions(target_address)
 
-        # start_voting(target_address, True)
+		# start_mining(target_address, True)
 
-        # get_chain(target_address, True)
+		# check_head()
 
-        # print('Valid last_block:', test_valid_block(target_address))
+		# start_voting(target_address, True)
 
-        # print('Valid transactions:', test_valid_transactions(target_address)) 
+		# get_chain(target_address, True)
 
-        # send_vote(target_address)   
-        pass
+		# print('Valid last_block:', test_valid_block(target_address))
+
+		# print('Valid transactions:', test_valid_transactions(target_address)) 
+
+		# send_vote(target_address) 
+		pass  
+	else:
+		host_shares=RandShare.load_sharesInfo(1)
+		if( host_shares == None):
+			host_shares = {}
+		print(host_shares)
+		fetch_share=fetch_randshare(target_address)
+		for (node_name, share_data) in fetch_share.items():
+			host_shares[node_name]=share_data
+		# update host shares 
+		RandShare.save_sharesInfo(host_shares, 1)
+		pass
