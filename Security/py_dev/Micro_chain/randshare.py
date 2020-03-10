@@ -62,19 +62,46 @@ class RandShare(object):
 			json_node = TypesUtil.string_to_json(node)
 			print('    ', json_node['address'] + '    ' + json_node['node_url'])
 
-	def create_shares(self):
+	def create_shares(self, share_secret=0):
+		# split shares given share_secret
+		if(share_secret!=0):
+			self.s = share_secret
+		poly_secrets, shares = PVSS.split_shares(self.s, self.t, self.n, self.poly_max, self.p)	
 
-		'''test PVSS function'''
-		poly_secrets, shares = PVSS.split_shares(self.s, self.t, self.n, self.poly_max, self.p)
+		# used to build json shares data
 		json_shares={}
+
+		# 1) get poly_secrets
 		json_shares['poly_secrets']=poly_secrets
 		nodes = self.peer_nodes.get_nodelist()
+
+		# 2) get poly_commitments
+		poly_commits=self.poly_commits(poly_secrets)
+		ls_poly_commits=[]
+		if poly_commits:
+			for poly_commit in poly_commits:
+				ls_poly_commits.append(poly_commit)
+		json_shares['poly_commitments']=ls_poly_commits
+
+		# 3) assign shares for peer node
 		node_shares={}
+		node_proofs={}
 		if shares:
 			for share, node in zip(shares, nodes):
+				# used for calculate share_proofs
+				ls_shares=[]
+				ls_shares.append(list(share))
+				proof = self.share_proofs(ls_shares)
+
+				# get node json data
 				json_node = TypesUtil.string_to_json(node)
+
+				# assign node with share and proof data
 				node_shares[json_node['address']]=share
+				node_proofs[json_node['address']]=proof[0]
 		json_shares['node_shares']=node_shares
+		json_shares['node_proofs']=node_proofs
+
 		return json_shares
 
 	@staticmethod
@@ -110,6 +137,21 @@ class RandShare(object):
 
 	def verify_shares(self, poly_commits, share_proofs):
 		return PVSS.verify_shares(poly_commits, share_proofs, self.p)
+
+	def verify_S(self, poly_commits, share_index):
+		return PVSS.verify_S(poly_commits, share_index, self.p)
+
+	def recover_secret(self, node_shares):
+		return PVSS.recover_secret(node_shares, self.p)
+
+	@staticmethod
+	def get_public_numbers(hex_public_key):
+		# get key_numbers from saved account_data
+		load_public_key_bytes = TypesUtil.hex_to_string(hex_public_key)
+		load_publick_key=Crypto_RSA.load_public_key(load_public_key_bytes)
+
+		# genereate key pairs numbers
+		return load_publick_key.public_numbers()
 
 def test_randshare():
 	myrandshare = RandShare()
@@ -163,8 +205,16 @@ def test_randshare():
 	    for share_proof, verify_share in zip(share_proofs, verify_shares):
 	        print('  ',share_proof == verify_share)
 
-	#verify_S0 = PVSS.verify_S0(poly_commits, p)
-	#print('verify S0:', verify_S0 == poly_commits[0])
+	share_index = 0
+	verify_S = myrandshare.verify_S(poly_commits, share_index)
+	if(share_index>0):
+		print('verify S', share_index, ':', verify_S==share_proofs[share_index-1][1])
+	else:
+		print('verify S', share_index, ':', verify_S==poly_commits[0])
+
+	secret=myrandshare.recover_secret(shares)
+	print('secret recovered from node shares:', secret)
+	print('verify recovered secret', secret==poly_secrets[0])
 
 
 if __name__ == '__main__':

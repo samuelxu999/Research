@@ -221,15 +221,28 @@ def fetch_randshare():
 	if(json_node=='{}'):
 		abort(401, {'error': 'No node data'})
 
+	# used to save share data including node_shares, poly_commitments and share_proofs
+	# 1) get node_shares
 	load_json_shares=RandShare.load_sharesInfo()
 	node_shares = load_json_shares['node_shares']
 
+	# 2) get poly_commitments
+	poly_commitments = load_json_shares['poly_commitments']
+
+	# 3) get share_proofs
+	node_proofs = load_json_shares['node_proofs']
+
+
+	# prepare return json_share
+	json_share = {}
 	if json_node['address'] in node_shares:
-		shares=node_shares[json_node['address']]
-	else:
-		shares={}
+		# shares=node_shares[json_node['address']]
+		json_share['poly_commitments'] = poly_commitments
+		json_share['node_shares'] = node_shares[json_node['address']]
+		json_share['node_proofs'] = node_proofs[json_node['address']]
+
 	host_node=myblockchain.wallet.list_address()[0]
-	response = {host_node: shares}
+	response = {host_node: json_share}
 	return jsonify(response), 200
 
 def disp_randomshare(json_shares):
@@ -249,6 +262,21 @@ def disp_randomshare(json_shares):
 			json_node = TypesUtil.string_to_json(node)
 			shares.append(node_shares[json_node['address']])
 			print('  ', json_node['address'], ': ', node_shares[json_node['address']])
+	
+	# get poly_commits
+	poly_commits = myrandshare.poly_commits(poly_secrets)
+	print('poly_commitments:')
+	if poly_commits:
+		for poly_commit in poly_commits:
+			print('  ', poly_commit)
+
+	# get share_proofs
+	share_proofs = myrandshare.share_proofs(shares)
+	print('share_proofs:')
+	share_proofs.sort(key=lambda tup: tup[0])
+	if share_proofs:
+		for share_proof in share_proofs:
+			print('  ', share_proof)
 
 if __name__ == '__main__':
 	from argparse import ArgumentParser
@@ -268,7 +296,7 @@ if __name__ == '__main__':
 	myrandshare = RandShare()
 	load_json_shares=RandShare.load_sharesInfo()
 	# display random shares
-	disp_randomshare(load_json_shares);
+	# disp_randomshare(load_json_shares);
 
 	app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
 

@@ -391,13 +391,40 @@ if __name__ == "__main__":
 		# send_vote(target_address) 
 		pass  
 	else:
+
+		# ---------------------------- verify share and proof --------------------
+		# read cached randshare 
 		host_shares=RandShare.load_sharesInfo(1)
 		if( host_shares == None):
 			host_shares = {}
-		print(host_shares)
-		fetch_share=fetch_randshare(target_address)
-		for (node_name, share_data) in fetch_share.items():
-			host_shares[node_name]=share_data
-		# update host shares 
-		RandShare.save_sharesInfo(host_shares, 1)
+		# print(host_shares)
+
+		host_address='f55af09f40768ca05505767cd013b6b9a78579c4'
+		# get peer node information
+		peer_nodes = PeerNodes()
+		peer_nodes.load_ByAddress(host_address)
+		json_nodes = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
+		# get public numbers given peer's pk
+		public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
+
+		# get share information
+		shares = host_shares[host_address]
+		poly_commits = shares['poly_commitments']
+		share_proofs = shares['node_proofs']
+		# print(poly_commits)
+		# print(share_proofs)
+
+		# instantiate RandShare to verify share proof.
+		myrandshare = RandShare()
+		myrandshare.p = public_numbers.n
+		share_index = share_proofs[0]
+		verify_S = myrandshare.verify_S(poly_commits, share_index)
+		print('verify S', share_index, ':', verify_S==share_proofs[1])
+
+		# ---------- request for share from peers and cache to local -------------
+		# fetch_share=fetch_randshare(target_address)
+		# for (node_name, share_data) in fetch_share.items():
+		# 	host_shares[node_name]=share_data
+		# # update host shares 
+		# RandShare.save_sharesInfo(host_shares, 1)
 		pass

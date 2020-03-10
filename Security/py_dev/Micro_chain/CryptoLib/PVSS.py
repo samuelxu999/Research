@@ -195,5 +195,8 @@ class PVSS(object):
 		return verify_points
 
 	@staticmethod
-	def verify_S0(poly_commits, prime=_PRIME):
-		return _eval_commit_at(poly_commits, 0, prime)
+	def verify_S(poly_commits, share_index, prime=_PRIME):
+		'''
+		verify single share proof given share_index and poly_commits
+		'''
+		return _eval_commit_at(poly_commits, share_index, prime)
