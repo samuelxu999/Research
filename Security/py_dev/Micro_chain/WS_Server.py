@@ -30,7 +30,7 @@ from randshare import RandShare
 app = Flask(__name__)
 #CORS(app)
 
-#========================================== Request handler ===============================================
+#===================================== Validator RPC handler ===================================
 #GET req
 @app.route('/test/transaction/verify', methods=['POST'])
 def verify_transaction():
@@ -212,6 +212,21 @@ def broadcast_vote():
 
 	return jsonify({'broadcast_vote': 'Succeed!'}), 201
 
+# ====================================== Random share RPC handler==================================
+@app.route('/test/randshare/create', methods=['GET'])
+def create_randshare():
+	myrandshare = RandShare()
+
+	# get host node address
+	# host_node=myblockchain.wallet.list_address()[0]
+	# int_share = TypesUtil.hex_to_int(host_node)
+
+	json_shares=myrandshare.create_shares()
+	RandShare.save_sharesInfo(json_shares)
+
+	return jsonify({'create_randshare': 'Succeed!'}), 201
+
+
 @app.route('/test/randshare/fetch', methods=['POST'])
 def fetch_randshare():
 	# parse data from request.data
@@ -240,6 +255,7 @@ def fetch_randshare():
 		json_share['poly_commitments'] = poly_commitments
 		json_share['node_shares'] = node_shares[json_node['address']]
 		json_share['node_proofs'] = node_proofs[json_node['address']]
+		json_share['status'] = 0
 
 	host_node=myblockchain.wallet.list_address()[0]
 	response = {host_node: json_share}
@@ -310,10 +326,10 @@ if __name__ == '__main__':
 	myblockchain.print_config()
 
 	# Instantiate RandShare 
-	myrandshare = RandShare()
-	load_json_shares=RandShare.load_sharesInfo()
-	# display random shares
-	# disp_randomshare(load_json_shares);
+	# myrandshare = RandShare()
+	# json_sharesInfo=RandShare.load_sharesInfo()
+	# # display random shares
+	# disp_randomshare(json_sharesInfo)
 
 	app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
 

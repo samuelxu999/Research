@@ -152,6 +152,14 @@ class RandShare(object):
 	def recover_secret(self, node_shares):
 		return PVSS.recover_secret(node_shares, self.p)
 
+	def calculate_random(self, secrets):
+		random_secret = 0;
+		for secret in secrets:
+			random_secret+=secret
+			random_secret %= self.p
+		return random_secret
+
+
 	@staticmethod
 	def get_public_numbers(hex_public_key):
 		# get key_numbers from saved account_data
@@ -164,11 +172,14 @@ class RandShare(object):
 def test_randshare():
 	myrandshare = RandShare()
 	# myrandshare.print_config()
-	# json_shares=myrandshare.create_shares()
+	# int_share = TypesUtil.hex_to_int('ceeebaa052718c0a00adb87de857ba63608260e9')
+	# json_shares=myrandshare.create_shares(int_share)
 	# RandShare.save_sharesInfo(json_shares)
 	load_json_shares=RandShare.load_sharesInfo()
 	#print(load_json_shares['node_shares']['f55af09f40768ca05505767cd013b6b9a78579c4'])
 
+	if(load_json_shares==None):
+		return
 
 	''' randshare function'''	
 	print('poly_secrets:')
@@ -223,6 +234,11 @@ def test_randshare():
 	secret=myrandshare.recover_secret(shares)
 	print('secret recovered from node shares:', secret)
 	print('verify recovered secret', secret==poly_secrets[0])
+
+
+	ls_secret = [secret,1]
+	random_secret=myrandshare.calculate_random(ls_secret)
+	print('New random secret:',random_secret)
 
 
 if __name__ == '__main__':
