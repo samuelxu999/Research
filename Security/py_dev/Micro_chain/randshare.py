@@ -108,24 +108,32 @@ class RandShare(object):
 	def save_sharesInfo(json_shares, op_type=0):
 			"""
 			Save the random shares information to static json file
+			@op_type: 0-split shares; 1-distribute and verify shares; 2-recover shares
 			"""
 
 			if(not os.path.exists(RANDOM_DATA_DIR)):
 			    os.makedirs(RANDOM_DATA_DIR)
 			if(op_type==0):
 				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO, json_shares)
-			else:
+			elif(op_type==1):
 				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST, json_shares)
+			elif(op_type==2):
+				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_RECOVERED, json_shares)
+			else:
+				pass
 
 	@staticmethod
 	def load_sharesInfo(op_type=0):
 			"""
 			load validator information from static json file
+			@op_type: 0-split shares; 1-distribute and verify shares; 2-recover shares
 			"""
 			if(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO) and op_type==0):
 			    return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO)
 			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST) and op_type==1):
 				return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST)
+			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_RECOVERED) and op_type==2):
+				return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_RECOVERED)
 			else:
 				return None
 

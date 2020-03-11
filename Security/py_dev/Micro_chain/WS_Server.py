@@ -245,6 +245,23 @@ def fetch_randshare():
 	response = {host_node: json_share}
 	return jsonify(response), 200
 
+@app.route('/test/randshare/recovered', methods=['GET'])
+def recovered_randshare():
+	# used to save share data including node_shares, poly_commitments and share_proofs
+	# 1) get node_shares
+	load_json_shares=RandShare.load_sharesInfo()
+	node_shares = load_json_shares['node_shares']
+
+	# get host node address
+	host_node=myblockchain.wallet.list_address()[0]
+
+	# prepare return json_share
+	ls_shares = []
+	for (node_name, node_data) in node_shares.items():
+		ls_shares.append(node_data)
+	response = {host_node: ls_shares}
+	return jsonify(response), 200
+
 def disp_randomshare(json_shares):
 	''' randshare function'''	
 	print('poly_secrets:')

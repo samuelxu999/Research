@@ -298,6 +298,11 @@ def fetch_randshare(target_address):
 	json_response=SrvAPI.POST('http://'+target_address+'/test/randshare/fetch', json_node)
 	return json_response
 
+def recovered_randshare(target_address):
+	# print(json_node)
+	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/recovered')
+	return json_response
+
 '''def save_testlog(log_data):
 	#save new key files
 	test_dir = 'test_results'
@@ -351,6 +356,86 @@ def Epoch_test(target_address, tx_size):
 	# Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time.log', str_time_exec)
 
+# request for share from peers and cache to local
+def cache_fetch_share():
+	# read cached randshare
+	host_shares=RandShare.load_sharesInfo(1)
+	if( host_shares == None):
+		host_shares = {}
+	fetch_share=fetch_randshare(target_address)
+	for (node_name, share_data) in fetch_share.items():
+		host_shares[node_name]=share_data
+	# update host shares 
+	RandShare.save_sharesInfo(host_shares, 1)
+
+# verify share and proof 
+def test_verify_share():
+	# read cached randshare 
+	host_shares=RandShare.load_sharesInfo(1)
+	if( host_shares == None):
+		host_shares = {}
+	# print(host_shares)
+
+	host_address='f55af09f40768ca05505767cd013b6b9a78579c4'
+	# get peer node information
+	peer_nodes = PeerNodes()
+	peer_nodes.load_ByAddress(host_address)
+	json_nodes = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
+	# get public numbers given peer's pk
+	public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
+
+	# get share information
+	shares = host_shares[host_address]
+	poly_commits = shares['poly_commitments']
+	share_proofs = shares['node_proofs']
+	# print(poly_commits)
+	# print(share_proofs)
+
+	# instantiate RandShare to verify share proof.
+	myrandshare = RandShare()
+	myrandshare.p = public_numbers.n
+	share_index = share_proofs[0]
+	verify_S = myrandshare.verify_S(poly_commits, share_index)
+	print('verify S', share_index, ':', verify_S==share_proofs[1])
+
+# request for recovered shares from peers and cache to local 
+def cache_recovered_shares():
+	# read cached randshare
+	recovered_shares=RandShare.load_sharesInfo(2)
+	if( recovered_shares == None):
+		recovered_shares = {}
+	host_recovered_shares=recovered_randshare(target_address)
+	for (node_name, share_data) in host_recovered_shares.items():
+		recovered_shares[node_name]=share_data
+	# update host shares 
+	RandShare.save_sharesInfo(recovered_shares, 2)
+
+# test recovered shares
+def test_recovered_shares():		
+	# read cached randshare
+	recovered_shares=RandShare.load_sharesInfo(2)
+	if( recovered_shares == None):
+		recovered_shares = {}
+	# print(recovered_shares)
+
+	host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
+	# get peer node information
+	peer_nodes = PeerNodes()
+	peer_nodes.load_ByAddress(host_address)
+	json_nodes = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
+	# get public numbers given peer's pk
+	public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
+
+	# get shares information
+	shares = recovered_shares[host_address]
+	# print(shares)
+	# instantiate RandShare to verify share proof.
+	myrandshare = RandShare()
+	myrandshare.p = public_numbers.n
+
+	secret=myrandshare.recover_secret(shares)
+	print('secret recovered from node shares:', secret)
+
 if __name__ == "__main__":
 
 	target_address = "128.226.88.210:8080"
@@ -391,40 +476,9 @@ if __name__ == "__main__":
 		# send_vote(target_address) 
 		pass  
 	else:
-
-		# ---------------------------- verify share and proof --------------------
-		# read cached randshare 
-		host_shares=RandShare.load_sharesInfo(1)
-		if( host_shares == None):
-			host_shares = {}
-		# print(host_shares)
-
-		host_address='f55af09f40768ca05505767cd013b6b9a78579c4'
-		# get peer node information
-		peer_nodes = PeerNodes()
-		peer_nodes.load_ByAddress(host_address)
-		json_nodes = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
-		# get public numbers given peer's pk
-		public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
-
-		# get share information
-		shares = host_shares[host_address]
-		poly_commits = shares['poly_commitments']
-		share_proofs = shares['node_proofs']
-		# print(poly_commits)
-		# print(share_proofs)
-
-		# instantiate RandShare to verify share proof.
-		myrandshare = RandShare()
-		myrandshare.p = public_numbers.n
-		share_index = share_proofs[0]
-		verify_S = myrandshare.verify_S(poly_commits, share_index)
-		print('verify S', share_index, ':', verify_S==share_proofs[1])
-
-		# ---------- request for share from peers and cache to local -------------
-		# fetch_share=fetch_randshare(target_address)
-		# for (node_name, share_data) in fetch_share.items():
-		# 	host_shares[node_name]=share_data
-		# # update host shares 
-		# RandShare.save_sharesInfo(host_shares, 1)
+		# cache_fetch_share()
+		# test_verify_share()
+		# cache_recovered_shares()
+		# test_recovered_shares()
+		
 		pass

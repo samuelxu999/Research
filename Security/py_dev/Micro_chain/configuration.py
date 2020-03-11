@@ -24,6 +24,7 @@ NODE_DATABASE = "node_db"			# local node database file name
 NODE_TABLE = "Node_table"			# node data table name
 NODE_STATICS = "static_nodes"		# statics node data file name
 
-RANDOM_DATA_DIR = 'randomdata'			# random share data folder
-RANDSHARE_INFO = "randshare_info.json"		# random PVSS node share information file name (.json)
-RANDSHARE_HOST = "randshare_host.json"		# random PVSS host share information file name (.json)
+RANDOM_DATA_DIR = 'randomdata'							# random share data folder
+RANDSHARE_INFO = "randshare_info.json"					# random PVSS node share information file name (.json)
+RANDSHARE_HOST = "randshare_host.json"					# random PVSS host share information file name (.json)
+RANDSHARE_RECOVERED = "randshare_recovered.json"		# random PVSS recoverd shares information file name (.json)
