@@ -220,9 +220,11 @@ def create_randshare():
 	# get host node address
 	# host_node=myblockchain.wallet.list_address()[0]
 	# int_share = TypesUtil.hex_to_int(host_node)
-
+	start_time=time.time()
 	json_shares=myrandshare.create_shares()
 	RandShare.save_sharesInfo(json_shares)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_create_shares.log', format(exec_time*1000, '.3f'))
 
 	return jsonify({'create_randshare': 'Succeed!'}), 201
 
