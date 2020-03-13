@@ -23,14 +23,14 @@ from validator import Validator
 from consensus import POW
 from utilities import TypesUtil, FileUtil
 from service_api import SrvAPI
-from randshare import RandShare
+from randshare import RandShare, RandOP
 
 
 # Instantiate the PeerNodes
 peer_nodes = PeerNodes()
 peer_nodes.load_ByAddress()
 
-# ====================================== validator test ==================================
+# ====================================== client side REST API ==================================
 def send_transaction(target_address, tx_size=1, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
@@ -302,8 +302,20 @@ def recovered_randshare(target_address):
 	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/recovered')
 	return json_response
 
-def create_randshare(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/create')
+def fetchvote_randshare(target_address):
+	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/fetchvote')
+	return json_response
+
+def vote_randshare(target_address):
+	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/vote')
+	return json_response
+
+def create_randshare(target_address, isBroadcast=False):
+	if(not isBroadcast):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/create')
+	else:
+		SrvAPI.broadcast_GET(target_address, '/test/randshare/create', True)
+		json_response = {'broadcast_create_randshare': 'Succeed!'}
 	return json_response
 
 '''def save_testlog(log_data):
@@ -314,6 +326,7 @@ def create_randshare(target_address):
 	test_file = test_dir + '/' + 'exec_time.log'
 	FileUtil.AddLine(test_file, log_data)'''
 
+# ====================================== validator test ==================================
 def Epoch_validator(target_address, tx_size, phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
@@ -363,19 +376,19 @@ def Epoch_validator(target_address, tx_size, phase_delay=BOUNDED_TIME):
 # request for share from peers and cache to local
 def cache_fetch_share(target_address):
 	# read cached randshare
-	host_shares=RandShare.load_sharesInfo(1)
+	host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
 	if( host_shares == None):
 		host_shares = {}
 	fetch_share=fetch_randshare(target_address)
 	for (node_name, share_data) in fetch_share.items():
 		host_shares[node_name]=share_data
 	# update host shares 
-	RandShare.save_sharesInfo(host_shares, 1)
+	RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
 
 # verify share and proof 
 def verify_share(host_address):
 	# read cached randshare 
-	host_shares=RandShare.load_sharesInfo(1)
+	host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
 	if( host_shares == None):
 		host_shares = {}
 	# print(host_shares)
@@ -403,24 +416,36 @@ def verify_share(host_address):
 	if(verify_S==share_proofs[1]):
 		host_shares[host_address]['status']=1
 		# update host shares 
-		RandShare.save_sharesInfo(host_shares, 1)
+		RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
 
 # request for recovered shares from peers and cache to local 
 def cache_recovered_shares(target_address):
 	# read cached randshare
-	recovered_shares=RandShare.load_sharesInfo(2)
+	recovered_shares=RandShare.load_sharesInfo(RandOP.RandRecovered)
 	if( recovered_shares == None):
 		recovered_shares = {}
 	host_recovered_shares=recovered_randshare(target_address)
 	for (node_name, share_data) in host_recovered_shares.items():
 		recovered_shares[node_name]=share_data
 	# update host shares 
-	RandShare.save_sharesInfo(recovered_shares, 2)
+	RandShare.save_sharesInfo(recovered_shares, RandOP.RandRecovered)
+
+# request for vote shares from peers and cache to local 
+def cache_vote_shares(target_address):
+	# read cached randshare
+	vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
+	if( vote_shares == None):
+		vote_shares = {}
+	host_vote_shares=fetchvote_randshare(target_address)
+	for (node_name, share_data) in host_vote_shares.items():
+		vote_shares[node_name]=share_data
+	# update host shares 
+	RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
 
 # test recovered shares
 def recovered_shares(host_address):		
 	# read cached randshare
-	recovered_shares=RandShare.load_sharesInfo(2)
+	recovered_shares=RandShare.load_sharesInfo(RandOP.RandRecovered)
 	if( recovered_shares == None):
 		recovered_shares = {}
 	# print(recovered_shares)
@@ -475,9 +500,10 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	# 1) create shares
 	start_time=time.time()
-	for peer_node in list(peer_nodes.get_nodelist()):
-		json_node = TypesUtil.string_to_json(peer_node)
-		create_randshare(json_node['node_url'])
+	# for peer_node in list(peer_nodes.get_nodelist()):
+	# 	json_node = TypesUtil.string_to_json(peer_node)
+	# 	create_randshare(json_node['node_url'])
+	create_randshare(peer_nodes.get_nodelist(), True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -503,7 +529,21 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 4) retrive shares from peers for secret recover process
+	# 4) retrive vote shares from peers and verify them
+	start_time=time.time()
+	for peer_node in list(peer_nodes.get_nodelist()):
+		json_node = TypesUtil.string_to_json(peer_node)
+		cache_vote_shares(json_node['node_url'])
+		# vote_randshare(json_node['node_url'])
+	# calculate voted shares 
+	verify_vote = RandShare.verify_vote_shares()
+	print(verify_vote)
+	exec_time=time.time()-start_time
+	ls_time_exec.append(format(exec_time*1000, '.3f'))
+
+	time.sleep(phase_delay)
+
+	# 5) retrive shares from peers for secret recover process
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
@@ -513,7 +553,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 5) recover secret of each peer
+	# 6) recover secret of each peer
 	ls_secret=[]
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
@@ -524,7 +564,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 6) calculate new random
+	# 7) calculate new random
 	start_time=time.time()
 	new_random(ls_secret)
 	exec_time=time.time()-start_time
@@ -549,7 +589,7 @@ if __name__ == "__main__":
 	if(op_status == 0):
 		set_peerNodes('R2_tk_top', 1, True)
 	elif(op_status == 1):
-		# data_size = 2*1024*1024
+		# data_size = 1024*1024
 		data_size = 1024
 		wait_interval = 1
 		test_run = 5
@@ -583,8 +623,12 @@ if __name__ == "__main__":
 		# cache_recovered_shares(target_address)
 		# recovered_shares(host_address)
 		# print(create_randshare(target_address))
+		# cache_vote_shares(target_address)
+		# print(verify_vote_shares())
+		# vote_randshare(target_address)
+
 		wait_interval = 1
-		test_run = 5
+		test_run = 1
 
 		for x in range(test_run):
 			print("Test run:", x+1)

@@ -6,12 +6,20 @@ Created on Aug 5, 2019
 @TaskDescription: Random share based on PVSS and BFT agreement
 '''
 import math
+from enum import Enum
 from wallet import Wallet
 from nodes import *
 from CryptoLib.PVSS import *
 from CryptoLib.crypto_rsa import Crypto_RSA
 from utilities import TypesUtil
 from configuration import *
+
+# Define random share operation type
+class RandOP(Enum):
+    RandSplit = 0 
+    RandDistribute = 1
+    RandVote = 2
+    RandRecovered = 3
 
 class RandShare(object):
 	def __init__(self):
@@ -105,7 +113,7 @@ class RandShare(object):
 		return json_shares
 
 	@staticmethod
-	def save_sharesInfo(json_shares, op_type=0):
+	def save_sharesInfo(json_shares, op_type=RandOP.RandSplit):
 			"""
 			Save the random shares information to static json file
 			@op_type: 0-split shares; 1-distribute and verify shares; 2-recover shares
@@ -113,29 +121,48 @@ class RandShare(object):
 
 			if(not os.path.exists(RANDOM_DATA_DIR)):
 			    os.makedirs(RANDOM_DATA_DIR)
-			if(op_type==0):
+			if(op_type==RandOP.RandSplit):
 				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO, json_shares)
-			elif(op_type==1):
+			elif(op_type==RandOP.RandDistribute):
 				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST, json_shares)
-			elif(op_type==2):
+			elif(op_type==RandOP.RandVote):
+				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_VOTE, json_shares)
+			elif(op_type==RandOP.RandRecovered):
 				FileUtil.JSON_save(RANDOM_DATA_DIR+'/'+RANDSHARE_RECOVERED, json_shares)
 			else:
 				pass
 
 	@staticmethod
-	def load_sharesInfo(op_type=0):
+	def load_sharesInfo(op_type=RandOP.RandSplit):
 			"""
 			load validator information from static json file
 			@op_type: 0-split shares; 1-distribute and verify shares; 2-recover shares
 			"""
-			if(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO) and op_type==0):
+			if(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO) and op_type==RandOP.RandSplit):
 			    return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_INFO)
-			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST) and op_type==1):
+			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST) and op_type==RandOP.RandDistribute):
 				return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_HOST)
-			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_RECOVERED) and op_type==2):
+			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_VOTE) and op_type==RandOP.RandVote):
+				return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_VOTE)
+			elif(os.path.isfile(RANDOM_DATA_DIR+'/'+RANDSHARE_RECOVERED) and op_type==RandOP.RandRecovered):
 				return FileUtil.JSON_load(RANDOM_DATA_DIR+'/'+RANDSHARE_RECOVERED)
 			else:
 				return None
+	@staticmethod
+	def verify_vote_shares():
+		# read cached randshare
+		vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
+		verify_vote = {}
+		if( vote_shares != None):
+			# For each cell in vote table to calculate vote result
+			for (host_name, vote_data) in vote_shares.items():
+				if(host_name not in verify_vote):
+					verify_vote[host_name]=0
+				for (node_name, status) in vote_data.items():
+					if(node_name not in verify_vote):
+						verify_vote[node_name]=0
+					verify_vote[node_name]+=status
+		return verify_vote
 
 	def poly_commits(self, poly_secrets):
 		return PVSS.get_poly_commitment(self.e, poly_secrets, self.p)

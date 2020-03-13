@@ -23,7 +23,7 @@ from block import Block
 from validator import Validator
 from consensus import *
 from service_api import SrvAPI
-from randshare import RandShare
+from randshare import RandShare, RandOP
 
 
 # ================================= Instantiate the server =====================================
@@ -279,6 +279,43 @@ def recovered_randshare():
 		ls_shares.append(node_data)
 	response = {host_node: ls_shares}
 	return jsonify(response), 200
+
+@app.route('/test/randshare/fetchvote', methods=['GET'])
+def fetch_vote_randshare():
+	# used to get vote shares of peer
+	# 1) get shares host
+	load_json_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
+
+	# get host node address
+	host_node=myblockchain.wallet.list_address()[0]
+
+	# prepare return json_share
+	host_shares = {}
+	for (node_name, node_data) in load_json_shares.items():
+		host_shares[node_name]=node_data['status']
+	response = {host_node: host_shares}
+	return jsonify(response), 200
+
+# 4) retrive vote shares from peers and locally cache for verify vote 
+@app.route('/test/randshare/vote', methods=['GET'])
+def vote_randshare():
+	start_time=time.time()
+	for peer_node in list(myblockchain.peer_nodes.get_nodelist()):
+		json_node = TypesUtil.string_to_json(peer_node)
+		# cache_vote_shares(json_node['node_url'])
+		# read cached randshare
+		vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
+		if( vote_shares == None):
+			vote_shares = {}
+		# host_vote_shares=fetchvote_randshare(json_node['node_url'])
+		host_vote_shares = SrvAPI.GET('http://'+json_node['node_url']+'/test/randshare/fetchvote')
+		for (node_name, share_data) in host_vote_shares.items():
+			vote_shares[node_name]=share_data
+		# update host shares 
+		RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_fetchvote_shares.log', format(exec_time*1000, '.3f'))
+	return jsonify({'vote_randshare': 'Succeed!'}), 200
 
 def disp_randomshare(json_shares):
 	''' randshare function'''	
