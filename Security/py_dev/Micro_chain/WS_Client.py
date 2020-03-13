@@ -43,13 +43,14 @@ def send_transaction(target_address, tx_size=1, isBroadcast=False):
 
     #----------------- test transaction --------------------
     sender = mywallet.accounts[0]
-    recipient = mywallet.accounts[-1]
-    attacker = mywallet.accounts[1]
+    # recipient = mywallet.accounts[-1]
+    # attacker = mywallet.accounts[1]
 
     # generate transaction
     sender_address = sender['address']
     sender_private_key = sender['private_key']
-    recipient_address = recipient['address']
+    # recipient_address = recipient['address']
+    recipient_address = '72cf2287a019af0f480311bdfd01d5ed83f96a86'
     time_stamp = time.time()
     #value = 15
     value = TypesUtil.string_to_hex(os.urandom(tx_size))
@@ -88,8 +89,8 @@ def send_vote(target_address, isBroadcast=False):
 
     #----------------- test transaction --------------------
     sender = mywallet.accounts[0]
-    recipient = mywallet.accounts[-1]
-    attacker = mywallet.accounts[1]
+    # recipient = mywallet.accounts[-1]
+    # attacker = mywallet.accounts[1]
 
     my_vote = VoteCheckPoint('385816343cc08cbc5350f4d1c92d2768e3be237ab364fb3bfc1dccde341205a2', 
                             'fc4341bb9867b7d389d84cd32a0e298cad595c806dd9477d0403ccc59f929138', 
@@ -557,15 +558,15 @@ if __name__ == "__main__":
 	# |------------------------ test case type ---------------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
-	op_status = 3
+	op_status = 1
 
 	if(op_status == 0):
-		set_peerNodes('R2_tk_top', 1, True)
+		set_peerNodes('R1_pi4_4', 1, True)
 	elif(op_status == 1):
 		# data_size = 1024*1024
 		data_size = 1024
 		wait_interval = 1
-		test_run = 5
+		test_run = 1
 
 		for x in range(test_run):
 			print("Test run:", x+1)

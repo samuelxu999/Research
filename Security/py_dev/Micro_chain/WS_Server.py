@@ -378,7 +378,7 @@ def cache_vote_randshare():
 	# 3) update vote shares 
 	RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
 	exec_time=time.time()-start_time
-	FileUtil.save_testlog('test_results', 'exec_fetchvote_shares.log', format(exec_time*1000, '.3f'))
+	FileUtil.save_testlog('test_results', 'exec_cachevote_shares.log', format(exec_time*1000, '.3f'))
 	return jsonify({'vote_randshare': 'Succeed!'}), 200
 
 def disp_randomshare(json_shares):
