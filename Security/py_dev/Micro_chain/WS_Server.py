@@ -228,7 +228,7 @@ def create_randshare():
 
 	return jsonify({'create_randshare': 'Succeed!'}), 201
 
-
+# request for share from peers
 @app.route('/test/randshare/fetch', methods=['POST'])
 def fetch_randshare():
 	# parse data from request.data
@@ -263,6 +263,68 @@ def fetch_randshare():
 	response = {host_node: json_share}
 	return jsonify(response), 200
 
+# request for share from peers and cache to local
+@app.route('/test/randshare/cachefetched', methods=['GET'])
+def cachefetched_randshare():
+	start_time=time.time()
+	# 1) read cached host_shares
+	host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
+	if( host_shares == None):
+		host_shares = {}
+	# get host address
+	host_node=myblockchain.wallet.list_address()[0]
+	# 2) for each peer node to fetch host share information
+	for peer_node in list(myblockchain.peer_nodes.get_nodelist()):
+		json_peer = TypesUtil.string_to_json(peer_node)
+		# fetch_share=fetch_randshare(target_address)
+		json_node={}
+		json_node['address'] = host_node
+		# print(json_node)
+		fetch_share=SrvAPI.POST('http://'+json_peer['node_url']+'/test/randshare/fetch', json_node)
+
+		for (node_name, share_data) in fetch_share.items():
+			host_shares[node_name]=share_data
+	# 3) update host shares 
+	RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_cachefetched_shares.log', format(exec_time*1000, '.3f'))
+	return jsonify({'cachefetched_randshare': 'Succeed!'}), 200
+
+# verify share and proof 
+@app.route('/test/randshare/verify', methods=['GET'])
+def verify_randshare():
+	start_time=time.time()
+	# 1) read cached randshare 
+	host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
+	if( host_shares == None):
+		host_shares = {}
+	# 2) for each peer node to verify shares
+	for peer_node in list(myblockchain.peer_nodes.get_nodelist()):
+		json_node = TypesUtil.string_to_json(peer_node)
+		# get public numbers given peer's pk
+		public_numbers = RandShare.get_public_numbers(json_node['public_key'])
+		host_address = json_node['address']
+		# get share information
+		shares = host_shares[host_address]
+		poly_commits = shares['poly_commitments']
+		share_proofs = shares['node_proofs']
+		# print(poly_commits)
+		# print(share_proofs)
+
+		# instantiate RandShare to verify share proof.
+		myrandshare = RandShare()
+		myrandshare.p = public_numbers.n
+		share_index = share_proofs[0]
+		verify_S = myrandshare.verify_S(poly_commits, share_index)
+		# print('verify S', share_index, ':', verify_S==share_proofs[1])
+		if(verify_S==share_proofs[1]):
+			host_shares[host_address]['status']=1
+			# update host shares 
+	RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_verify_shares.log', format(exec_time*1000, '.3f'))
+	return jsonify({'verify_randshare': 'Succeed!'}), 200
+
 @app.route('/test/randshare/recovered', methods=['GET'])
 def recovered_randshare():
 	# used to save share data including node_shares, poly_commitments and share_proofs
@@ -280,6 +342,7 @@ def recovered_randshare():
 	response = {host_node: ls_shares}
 	return jsonify(response), 200
 
+# request for vote shares from peers
 @app.route('/test/randshare/fetchvote', methods=['GET'])
 def fetch_vote_randshare():
 	# used to get vote shares of peer
@@ -296,23 +359,24 @@ def fetch_vote_randshare():
 	response = {host_node: host_shares}
 	return jsonify(response), 200
 
-# 4) retrive vote shares from peers and locally cache for verify vote 
-@app.route('/test/randshare/vote', methods=['GET'])
-def vote_randshare():
+# retrive vote shares from peers and locally cache for verify vote 
+@app.route('/test/randshare/cachevote', methods=['GET'])
+def cache_vote_randshare():
 	start_time=time.time()
+	# 1) read cached vote shares
+	vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
+	if( vote_shares == None):
+		vote_shares = {}
+	# 2) for each peer node to fetch vote information
 	for peer_node in list(myblockchain.peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
 		# cache_vote_shares(json_node['node_url'])
-		# read cached randshare
-		vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
-		if( vote_shares == None):
-			vote_shares = {}
 		# host_vote_shares=fetchvote_randshare(json_node['node_url'])
 		host_vote_shares = SrvAPI.GET('http://'+json_node['node_url']+'/test/randshare/fetchvote')
 		for (node_name, share_data) in host_vote_shares.items():
 			vote_shares[node_name]=share_data
-		# update host shares 
-		RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
+	# 3) update vote shares 
+	RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
 	exec_time=time.time()-start_time
 	FileUtil.save_testlog('test_results', 'exec_fetchvote_shares.log', format(exec_time*1000, '.3f'))
 	return jsonify({'vote_randshare': 'Succeed!'}), 200
