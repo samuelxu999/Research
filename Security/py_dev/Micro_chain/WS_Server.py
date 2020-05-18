@@ -14,8 +14,10 @@ import time
 import datetime
 import json
 import threading
+import logging
 from flask import Flask, jsonify
 from flask import abort,make_response,request
+from argparse import ArgumentParser
 
 from utilities import FileUtil, TypesUtil, DatetimeUtil
 from transaction import Transaction
@@ -25,6 +27,7 @@ from consensus import *
 from service_api import SrvAPI
 from randshare import RandShare, RandOP
 
+logger = logging.getLogger(__name__)
 
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
@@ -192,7 +195,7 @@ def verify_vote():
 	exec_time=time.time()-start_time
 	FileUtil.save_testlog('test_results', 'exec_verify_vote.log', format(exec_time*1000, '.3f'))
 
-	print('verify_vote:', verify_result)
+	# print('verify_vote:', verify_result)
 
 	return jsonify({'verify_vote': verify_result}), 201
 
@@ -383,13 +386,13 @@ def cache_vote_randshare():
 
 def disp_randomshare(json_shares):
 	''' randshare function'''	
-	print('poly_secrets:')
+	logger.info('poly_secrets:')
 	poly_secrets = json_shares['poly_secrets']
 	if poly_secrets:
 	    for poly_secret in poly_secrets:
-	        print('  ', poly_secret)	
+	        logger.info('    {}'.format(poly_secret))
 
-	print('node_shares:')
+	logger.info('node_shares:')
 	node_shares = json_shares['node_shares']
 	nodes = myrandshare.peer_nodes.get_nodelist()
 	if node_shares:
@@ -397,30 +400,35 @@ def disp_randomshare(json_shares):
 		for node in nodes:
 			json_node = TypesUtil.string_to_json(node)
 			shares.append(node_shares[json_node['address']])
-			print('  ', json_node['address'], ': ', node_shares[json_node['address']])
+			logger.info('    {}: {}'.format(json_node['address'], node_shares[json_node['address']]))
 	
 	# get poly_commits
 	poly_commits = myrandshare.poly_commits(poly_secrets)
-	print('poly_commitments:')
+	logger.info('poly_commitments:')
 	if poly_commits:
 		for poly_commit in poly_commits:
-			print('  ', poly_commit)
+			logger.info('    {}'.format(poly_commit))
 
 	# get share_proofs
 	share_proofs = myrandshare.share_proofs(shares)
-	print('share_proofs:')
+	logger.info('share_proofs:')
 	share_proofs.sort(key=lambda tup: tup[0])
 	if share_proofs:
 		for share_proof in share_proofs:
-			print('  ', share_proof)
+			logger.info('    {}'.format(share_proof))
 
 if __name__ == '__main__':
-	from argparse import ArgumentParser
+	# FORMAT = "%(asctime)s %(levelname)s %(filename)s(l:%(lineno)d) - %(message)s"
+	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+	LOG_LEVEL = logging.INFO
+	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
-	parser = ArgumentParser()
-	parser.add_argument('-p', '--port', default=8080, type=int, help='port to listen on')
+	parser = ArgumentParser(description="Run microchain websocket server.")
+	parser.add_argument('-p', '--port', default=8080, type=int, help="port to listen on.")
+	parser.add_argument("--debug", action="store_true", help="if set, debug model will be used.")
+	parser.add_argument("--threaded", action="store_true", help="if set, support threading requests.")
 	args = parser.parse_args()
-	port = args.port
+	# port = args.port
 
 	# Instantiate the Blockchain
 	myblockchain = Validator(ConsensusType.PoS)
@@ -428,11 +436,11 @@ if __name__ == '__main__':
 
 	myblockchain.print_config()
 
-	# Instantiate RandShare 
+	# # Instantiate RandShare 
 	# myrandshare = RandShare()
 	# json_sharesInfo=RandShare.load_sharesInfo()
 	# # display random shares
 	# disp_randomshare(json_sharesInfo)
 
-	app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
+	app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
 

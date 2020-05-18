@@ -473,16 +473,16 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	peer_nodes = PeerNodes()
 	peer_nodes.load_ByAddress()
 
-	# 1) create shares
-	start_time=time.time()
-	# for peer_node in list(peer_nodes.get_nodelist()):
-	# 	json_node = TypesUtil.string_to_json(peer_node)
-	# 	create_randshare(json_node['node_url'])
-	create_randshare(peer_nodes.get_nodelist(), True)
-	exec_time=time.time()-start_time
-	ls_time_exec.append(format(exec_time*1000, '.3f'))
+	# # 1) create shares
+	# start_time=time.time()
+	# # for peer_node in list(peer_nodes.get_nodelist()):
+	# # 	json_node = TypesUtil.string_to_json(peer_node)
+	# # 	create_randshare(json_node['node_url'])
+	# create_randshare(peer_nodes.get_nodelist(), True)
+	# exec_time=time.time()-start_time
+	# ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-	time.sleep(phase_delay)
+	# time.sleep(phase_delay)
 
 	# 2) fetch shares
 	start_time=time.time()
@@ -558,23 +558,24 @@ if __name__ == "__main__":
 	# |------------------------ test case type ---------------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
-	op_status = 1
+	op_status = 2
 
 	if(op_status == 0):
-		set_peerNodes('R1_pi4_4', 1, True)
+		set_peerNodes('R2_tk_top', 2, True)
 	elif(op_status == 1):
 		# data_size = 1024*1024
 		data_size = 1024
 		wait_interval = 1
-		test_run = 1
+		test_run = 2
 
 		for x in range(test_run):
 			print("Test run:", x+1)
 			Epoch_validator(target_address, data_size)
 			time.sleep(wait_interval)
 	elif(op_status == 2):
-		# send_transaction(target_address, data_size, True)
-		# get_transactions(target_address)
+		send_transaction(target_address, 128, True)
+		time.sleep(1)
+		get_transactions(target_address)
 
 		# start_mining(target_address, True)
 
