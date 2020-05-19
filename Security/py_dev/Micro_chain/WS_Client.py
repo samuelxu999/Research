@@ -558,10 +558,10 @@ if __name__ == "__main__":
 	# |------------------------ test case type ---------------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
-	op_status = 2
+	op_status = 1
 
 	if(op_status == 0):
-		set_peerNodes('R2_tk_top', 2, True)
+		set_peerNodes('R2_pi_top', 2, True)
 	elif(op_status == 1):
 		# data_size = 1024*1024
 		data_size = 1024
@@ -570,7 +570,7 @@ if __name__ == "__main__":
 
 		for x in range(test_run):
 			print("Test run:", x+1)
-			Epoch_validator(target_address, data_size)
+			Epoch_validator(target_address, data_size, 5)
 			time.sleep(wait_interval)
 	elif(op_status == 2):
 		send_transaction(target_address, 128, True)

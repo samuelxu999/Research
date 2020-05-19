@@ -428,7 +428,6 @@ if __name__ == '__main__':
 	parser.add_argument("--debug", action="store_true", help="if set, debug model will be used.")
 	parser.add_argument("--threaded", action="store_true", help="if set, support threading requests.")
 	args = parser.parse_args()
-	# port = args.port
 
 	# Instantiate the Blockchain
 	myblockchain = Validator(ConsensusType.PoS)
