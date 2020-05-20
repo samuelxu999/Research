@@ -14,6 +14,7 @@ import os
 import binascii
 import threading
 import logging
+import time
 
 import hashlib
 import json
@@ -31,6 +32,7 @@ from vote import VoteCheckPoint
 from db_adapter import DataManager
 from consensus import *
 from configuration import *
+from service_api import SrvAPI
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +57,20 @@ class Validator(object):
 	
 	self.votes: 						Map {sender -> vote_db object} which contains all the votes data for check
 	self.vote_count: 					Map {source_hash -> {target_hash -> count}} to count the votes
+
+	self.sum_stake:						Summary of stake that all validators, used for PoS;
+	self.committee_size:				Number of validators to participant the consensus committee;
+	self.block_epoch:					Block proposal epoch size, used for set finalized checkpoint;
 	
 	self.msg_buf: 						Buffer messages which are procossed by daemon function process_msg(self)
 	self.rev_thread: 					daemon thread object to handle process_msg(self)
 	--------------------------------------------------------------------------------------------------------------
 	''' 
 
-	def __init__(self, consensus=ConsensusType.PoW):
+	def __init__(self, 	consensus=ConsensusType.PoW, 
+						block_epoch=EPOCH_SIZE, 
+						pause_epoch=1, 
+						phase_delay=BOUNDED_TIME):
 
 		# Instantiate the Wallet
 		self.wallet = Wallet()
@@ -125,8 +134,11 @@ class Validator(object):
 		
 		# point current head to processed_head
 		self.current_head = self.processed_head
+
+		# set total stake and number of validators
 		self.sum_stake = TEST_STAKE_SUM;
-		self.num_validators = NUM_VALIDATORS;
+		self.committee_size = NUM_VALIDATORS;
+		self.block_epoch = block_epoch;
 
 		''' 
 		Threading as daemon to process received message.
@@ -141,6 +153,24 @@ class Validator(object):
 		self.rev_thread.daemon = True
 		# Start the daemonized method execution
 		self.rev_thread.start()   
+
+		''' 
+		Threading as daemon to process consensus protocol.
+		The exec_consensus() method will be started and it will run in the background
+		until the application exits.
+		'''
+		# the flag used to trigger consensus protocol execution.
+		self.runConsensus = False
+		# set pause threshold for check synchronization
+		self.pause_epoch = pause_epoch
+		# set delay time between operations in consensus protocol.
+		self.phase_delay = phase_delay
+		# define a thread to handle received messages by executing process_msg()
+		self.consensus_thread = threading.Thread(target=self.exec_consensus, args=())
+		# Set as daemon thread
+		self.consensus_thread.daemon = True
+		# Start the daemonized method execution
+		self.consensus_thread.start()   
 	
 	def process_msg(self):
 		'''
@@ -149,7 +179,7 @@ class Validator(object):
 		# this variable is used as waiting time when there is no message for process.
 		idle_time=0.0
 		while(True):
-			# --------idle time incremental strategy, the maximum is 1 seconds ------
+			# ========= idle time incremental strategy, the maximum is 1 seconds ========
 			if( len(self.msg_buf)==0 ):
 				idle_time+=0.1
 				if(idle_time>1.0):
@@ -160,7 +190,7 @@ class Validator(object):
 			# reset idle time as 0
 			idle_time = 0.0
 
-			# -------- Choose a message from buffer and process it ----------
+			# ============= Choose a message from buffer and process it ==================
 			msg_data = self.msg_buf[0]
 			if(msg_data[0]==1):
 				self.add_block(msg_data[1], msg_data[2])
@@ -170,30 +200,92 @@ class Validator(object):
 			
 			self.msg_buf.remove(msg_data)
 
+	def exec_consensus(self):
+		'''
+		daemon thread function: execute consensus protocol
+		'''
+		# used as waiting time as pending consensus protocol execution.
+		idle_time=0.0
+		# Used to synchronization after certain epoch height.
+		pause_epoch=0
+		while(True):
+			# ========= idle time incremental strategy, the maximum is 1 seconds ========
+			if(not self.runConsensus):
+				idle_time+=0.1
+				if(idle_time>1.0):
+					idle_time=1.0
+				time.sleep(idle_time)
+				pause_epoch=0
+				continue
+
+			# reset idle time as 0
+			idle_time = 0.0
+
+			# ========================== Run consensus protocol ==========================
+			json_head=self.processed_head
+			logger.info("Consensus run at height: {}      status: {}".format(json_head['height'], 
+																		self.runConsensus))
+			# ------------S1: execute proof-of-work to mine new block--------------------
+			start_time=time.time()
+			new_block=self.mine_block()
+			exec_time=time.time()-start_time
+			FileUtil.save_testlog('test_results', 'exec_mining.log', format(exec_time*1000, '.3f'))
+			
+			# broadcast proposed block to peer nodes
+			if( (self.consensus==ConsensusType.PoW) or 
+				(not Block.isEmptyBlock(new_block)) ):
+				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
+
+			time.sleep(self.phase_delay)
+
+			# ------------S2: fix head of current block generation epoch ----------------
+			self.fix_processed_head()
+
+			time.sleep(self.phase_delay)
+
+			# ------------S3: voting block to finalize chain ----------------------------
+			json_head= self.processed_head
+
+			# only vote if current height arrive multiple of EPOCH_SIZE
+			if( (json_head['height'] % self.block_epoch) == 0):
+				vote_data = self.vote_checkpoint(json_head)	
+				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
+				pause_epoch+=1
+
+			time.sleep(self.phase_delay)
+		
+			# if pause_epoch arrives threshold. stop consensus for synchronization
+			if(pause_epoch==self.pause_epoch):
+				self.runConsensus=False
+				logger.info("Consensus run status: {}".format(self.runConsensus))
+
+
 	def print_config(self):
 		'''
 		Show validator configuration and information
 		'''		
 		accounts = self.wallet.list_address()
-		logger.info("Current accounts:")
+		logger.info("Current accounts: {}".format(len(accounts)))
 		if accounts:
 			i=0
 			for account in accounts:
 			    logger.info("[{}]: {}".format(i, account) )
 			    i+=1
 
-		logger.info("Peer nodes:")
 		nodes = self.peer_nodes.get_nodelist()
+		logger.info("Peer nodes: {}".format(len(nodes)))
 		for node in nodes:
 			json_node = TypesUtil.string_to_json(node)
 			logger.info('    {}    {}'.format(json_node['address'], json_node['node_url']) )
 
 		# Instantiate the Blockchain
 		logger.info("Chain information:")
-		logger.info("    uuid:            {}".format(self.node_id))
-		logger.info("    main chain size: {}".format(self.processed_head['height']+1))
-		logger.info("    processed head:  {}".format(self.processed_head['hash']))
-		logger.info("    consensus:       {}".format( self.consensus.name) )
+		logger.info("    uuid:                         {}".format(self.node_id))
+		logger.info("    main chain size:              {}".format(self.processed_head['height']+1))
+		logger.info("    processed head:               {}".format(self.processed_head['hash']))
+		logger.info("    consensus:                    {}".format( self.consensus.name) )
+		logger.info("    block proposal epoch:         {}".format( self.block_epoch) )
+		logger.info("    pause epoch size:             {}".format( self.pause_epoch) )
 		logger.info("    highest justified checkpoint: {}".format(self.highest_justified_checkpoint['hash']) )
 		logger.info("    highest finalized checkpoint: {}".format(self.highest_finalized_checkpoint['hash']) )
 
@@ -228,8 +320,8 @@ class Validator(object):
 		# set sum_stake is peer nodes count
 		self.sum_stake = len(ls_nodes)
 
-		# set number of validators is peer nodes count 
-		self.num_validators = len(ls_nodes)
+		# set committee size as peer nodes count 
+		self.committee_size = len(ls_nodes)
 
 		json_node = None
 		for node in ls_nodes:
@@ -386,6 +478,11 @@ class Validator(object):
 			return
 
 		#=========2: Check that the Proof of Work is correct given current block data =========
+		# reject block with empty transactions
+		if(current_block['transactions']==[]):
+			logger.info("Invalid block with empty txs from sender: {}".format(current_block['sender_address']))
+			return False
+
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
 
 		# execute valid proof task given consensus algorithm
@@ -604,7 +701,8 @@ class Validator(object):
 			@json_vote: return a vote json message
 		"""
 		logger.info('Vote for block: {}    height: {}'.format(json_block['hash'], json_block['height']))
-		if( (json_block['height'] % EPOCH_SIZE) != 0):
+		# if( (json_block['height'] % EPOCH_SIZE) != 0):
+		if( (json_block['height'] % self.block_epoch) != 0):
 			return None
 
 		# get target block object as voting block
@@ -617,7 +715,7 @@ class Validator(object):
 		# If the block is an epoch block of a higher epoch than what we've seen so far
 		# This means that it's the first time we see a checkpoint at this height
 		# It also means we never voted for any other checkpoint at this height (rule 1)
-		if(target_obj.epoch <= source_obj.epoch):
+		if(target_obj.get_epoch(self.block_epoch) <= source_obj.get_epoch(self.block_epoch)):
 			#return None
 			source_block = self.highest_finalized_checkpoint
 			source_obj = Block.json_to_block(source_block)
@@ -629,7 +727,7 @@ class Validator(object):
 			sender_node = self.wallet.accounts[0]
 
 			new_vote = VoteCheckPoint(source_block['hash'], target_block['hash'], 
-			                        source_obj.epoch, target_obj.epoch, sender_node['address'])
+			                        source_obj.get_epoch(self.block_epoch), target_obj.get_epoch(self.block_epoch), sender_node['address'])
 			json_vote = new_vote.to_json()
 
 			# sign vote
@@ -719,7 +817,7 @@ class Validator(object):
 
 		# If there are enough votes, set block as justified
 		# if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > (NUM_VALIDATORS * 2) // 3):
-		if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > (self.num_validators * 2) // 3):
+		if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > (self.committee_size * 2) // 3):
 			target_status = target_block[3]
 			# 1) if target was processed, set justified block
 			if( target_status==0 ):
@@ -728,7 +826,7 @@ class Validator(object):
 				self.update_blockStatus(json_vote['target_hash'], 1)
 				target_status = 1
 			# 2) update highest_justified_checkpoint as target
-			if( json_vote['epoch_target'] > Block.json_to_block(self.highest_justified_checkpoint).epoch ):
+			if( json_vote['epoch_target'] > Block.json_to_block(self.highest_justified_checkpoint).get_epoch(self.block_epoch) ):
 				logger.info("Update highest_justified_checkpoint: {}".format(json_vote['target_hash']))
 				self.highest_justified_checkpoint = self.get_block(json_vote['target_hash'])
 

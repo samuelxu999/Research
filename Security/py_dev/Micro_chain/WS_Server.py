@@ -34,6 +34,19 @@ app = Flask(__name__)
 #CORS(app)
 
 #===================================== Validator RPC handler ===================================
+@app.route('/test/consensus/run', methods=['POST'])
+def consensus_run():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	json_data=json.loads(req_data)
+
+	if(json_data=='{}'):
+		abort(401, {'error': 'No node data'})
+
+	myblockchain.runConsensus = json_data['consensus_run']
+
+	return jsonify({'consensus_run': myblockchain.runConsensus}), 201
+
 #GET req
 @app.route('/test/transaction/verify', methods=['POST'])
 def verify_transaction():
@@ -174,7 +187,8 @@ def vote_block():
 	json_block = myblockchain.processed_head
 
 	ret_msg = "Not valid for voting epoch"
-	if( (json_block['height'] % EPOCH_SIZE) == 0):
+	# if( (json_block['height'] % EPOCH_SIZE) == 0):
+	if( (json_block['height'] % myblockchain.block_epoch) == 0):
 		vote_data = myblockchain.vote_checkpoint(json_block)	
 		SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
 		ret_msg = vote_data
@@ -386,13 +400,13 @@ def cache_vote_randshare():
 
 def disp_randomshare(json_shares):
 	''' randshare function'''	
-	logger.info('poly_secrets:')
+	logger.info("poly_secrets:")
 	poly_secrets = json_shares['poly_secrets']
 	if poly_secrets:
 	    for poly_secret in poly_secrets:
 	        logger.info('    {}'.format(poly_secret))
 
-	logger.info('node_shares:')
+	logger.info("node_shares:")
 	node_shares = json_shares['node_shares']
 	nodes = myrandshare.peer_nodes.get_nodelist()
 	if node_shares:
@@ -404,14 +418,14 @@ def disp_randomshare(json_shares):
 	
 	# get poly_commits
 	poly_commits = myrandshare.poly_commits(poly_secrets)
-	logger.info('poly_commitments:')
+	logger.info("poly_commitments:")
 	if poly_commits:
 		for poly_commit in poly_commits:
 			logger.info('    {}'.format(poly_commit))
 
 	# get share_proofs
 	share_proofs = myrandshare.share_proofs(shares)
-	logger.info('share_proofs:')
+	logger.info("share_proofs:")
 	share_proofs.sort(key=lambda tup: tup[0])
 	if share_proofs:
 		for share_proof in share_proofs:
@@ -424,13 +438,25 @@ if __name__ == '__main__':
 	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
 	parser = ArgumentParser(description="Run microchain websocket server.")
-	parser.add_argument('-p', '--port', default=8080, type=int, help="port to listen on.")
-	parser.add_argument("--debug", action="store_true", help="if set, debug model will be used.")
-	parser.add_argument("--threaded", action="store_true", help="if set, support threading requests.")
+	parser.add_argument('-p', '--port', default=8080, type=int, 
+						help="port to listen on.")
+	parser.add_argument('--blockepoch', default=2, type=int, 
+						help="Block proposal round epoch size.")
+	parser.add_argument('--pauseepoch', default=2, type=int, 
+						help="Checkpoint epoch size for pending consensus and synchronization.")
+	parser.add_argument('--phasedelay', default=3, type=int, 
+						help="Delay time between operations of consensus protocol.")
+	parser.add_argument("--debug", action="store_true", 
+						help="if set, debug model will be used.")
+	parser.add_argument("--threaded", action="store_true", 
+						help="if set, support threading requests.")
 	args = parser.parse_args()
 
 	# Instantiate the Blockchain
-	myblockchain = Validator(ConsensusType.PoS)
+	myblockchain = Validator(consensus=ConsensusType.PoS, 
+							block_epoch=args.blockepoch,
+							pause_epoch=args.pauseepoch,
+							phase_delay=args.phasedelay)
 	myblockchain.load_chain()
 
 	myblockchain.print_config()

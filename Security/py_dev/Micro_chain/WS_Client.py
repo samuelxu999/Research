@@ -31,6 +31,19 @@ peer_nodes = PeerNodes()
 peer_nodes.load_ByAddress()
 
 # ====================================== client side REST API ==================================
+def run_consensus(target_address, exec_consensus, isBroadcast=False):
+	json_msg={}
+	json_msg['consensus_run']=exec_consensus
+
+	if(not isBroadcast):
+		json_response=SrvAPI.POST('http://'+target_address+'/test/consensus/run', json_msg)
+		json_response = {'run_consensus': target_address, 'status': json_msg['consensus_run']}
+	else:
+		SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_msg, '/test/consensus/run', True)
+		json_response = {'run_consensus': 'broadcast', 'status': json_msg['consensus_run']}
+	print(json_response)
+
+
 def send_transaction(target_address, tx_size=1, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
@@ -176,10 +189,10 @@ def get_chain(target_address, isDisplay=False):
 	    # only list latest 10 blocks
 	    if(chain_length>10):
 	        for block in chain_data[-10:]:
-	            print(block)
+	            print("{}\n".format(block))
 	    else:
 	        for block in chain_data:
-	            print(block)
+	            print("{}\n".format(block))
 
 def check_head():
 	SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/chain/checkhead')
@@ -558,24 +571,27 @@ if __name__ == "__main__":
 	# |------------------------ test case type ---------------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
-	op_status = 1
+	op_status = 2
 
 	if(op_status == 0):
-		set_peerNodes('R2_pi_top', 2, True)
+		set_peerNodes('R2_pi4_4', 1, True)
 	elif(op_status == 1):
 		# data_size = 1024*1024
 		data_size = 1024
 		wait_interval = 1
-		test_run = 2
+		test_run = 10
 
 		for x in range(test_run):
 			print("Test run:", x+1)
 			Epoch_validator(target_address, data_size, 5)
 			time.sleep(wait_interval)
 	elif(op_status == 2):
-		send_transaction(target_address, 128, True)
-		time.sleep(1)
-		get_transactions(target_address)
+		# data_size = 1024*1024
+		# data_size = 1024
+		# send_transaction(target_address, data_size, True)
+		# time.sleep(1)
+		# get_transactions(target_address)
+		# run_consensus(target_address, True, True)
 
 		# start_mining(target_address, True)
 
@@ -590,6 +606,7 @@ if __name__ == "__main__":
 		# print('Valid transactions:', test_valid_transactions(target_address)) 
 
 		# send_vote(target_address) 
+
 		pass  
 	else:
 		# host_address='ceeebaa052718c0a00adb87de857ba63608260e9'

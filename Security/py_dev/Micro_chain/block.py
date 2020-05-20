@@ -111,6 +111,12 @@ class Block(object):
 			verify_sign=False
 		return verify_sign
 
+	def get_epoch(self, epoch_size=EPOCH_SIZE):
+		"""
+		return the epoch height
+		"""
+		return(self.height // epoch_size)
+
 	@staticmethod
 	def json_to_block(block_json):
 		"""
@@ -132,10 +138,3 @@ class Block(object):
 		if( (block_json['height'] >0) and block_json['nonce']==0):
 			return True
 		return False
-
-	@property
-	def epoch(self):
-		return(self.height // EPOCH_SIZE)
-
-
-
