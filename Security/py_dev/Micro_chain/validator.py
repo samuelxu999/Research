@@ -126,6 +126,7 @@ class Validator(object):
 		# point current head to processed_head
 		self.current_head = self.processed_head
 		self.sum_stake = TEST_STAKE_SUM;
+		self.num_validators = NUM_VALIDATORS;
 
 		''' 
 		Threading as daemon to process received message.
@@ -226,6 +227,9 @@ class Validator(object):
 		ls_nodes=list(self.peer_nodes.get_nodelist())
 		# set sum_stake is peer nodes count
 		self.sum_stake = len(ls_nodes)
+		
+		# set number of validators is peer nodes count 
+		self.num_validators = len(ls_nodes)
 
 		json_node = None
 		for node in ls_nodes:
@@ -714,7 +718,8 @@ class Validator(object):
 		self.vote_count[json_vote['source_hash']].get(json_vote['target_hash'], 0) + 1
 
 		# If there are enough votes, set block as justified
-		if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > (NUM_VALIDATORS * 2) // 3):
+		# if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > (NUM_VALIDATORS * 2) // 3):
+		if (self.vote_count[json_vote['source_hash']][json_vote['target_hash']] > (self.num_validators * 2) // 3):
 			target_status = target_block[3]
 			# 1) if target was processed, set justified block
 			if( target_status==0 ):
