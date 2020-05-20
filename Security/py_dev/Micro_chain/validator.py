@@ -223,7 +223,7 @@ class Validator(object):
 
 			# ========================== Run consensus protocol ==========================
 			json_head=self.processed_head
-			logger.info("Consensus run at height: {}      status: {}".format(json_head['height'], 
+			logger.info("Consensus run at height: {}    status: {}".format(json_head['height'], 
 																		self.runConsensus))
 			# ------------S1: execute proof-of-work to mine new block--------------------
 			start_time=time.time()
@@ -235,12 +235,10 @@ class Validator(object):
 			if( (self.consensus==ConsensusType.PoW) or 
 				(not Block.isEmptyBlock(new_block)) ):
 				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
-
 			time.sleep(self.phase_delay)
 
 			# ------------S2: fix head of current block generation epoch ----------------
 			self.fix_processed_head()
-
 			time.sleep(self.phase_delay)
 
 			# ------------S3: voting block to finalize chain ----------------------------
@@ -251,8 +249,7 @@ class Validator(object):
 				vote_data = self.vote_checkpoint(json_head)	
 				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
 				pause_epoch+=1
-
-			time.sleep(self.phase_delay)
+				time.sleep(self.phase_delay)
 		
 			# if pause_epoch arrives threshold. stop consensus for synchronization
 			if(pause_epoch==self.pause_epoch):
@@ -286,8 +283,10 @@ class Validator(object):
 		logger.info("    consensus:                    {}".format( self.consensus.name) )
 		logger.info("    block proposal epoch:         {}".format( self.block_epoch) )
 		logger.info("    pause epoch size:             {}".format( self.pause_epoch) )
-		logger.info("    highest justified checkpoint: {}".format(self.highest_justified_checkpoint['hash']) )
-		logger.info("    highest finalized checkpoint: {}".format(self.highest_finalized_checkpoint['hash']) )
+		logger.info("    highest justified checkpoint: {}    height: {}".format(self.highest_justified_checkpoint['hash'],
+																				self.highest_justified_checkpoint['height']) )
+		logger.info("    highest finalized checkpoint: {}    height: {}".format(self.highest_finalized_checkpoint['hash'],
+																				self.highest_finalized_checkpoint['height']) )
 
 
 	def add_block(self, json_block, status=0):
