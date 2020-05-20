@@ -227,7 +227,7 @@ class Validator(object):
 		ls_nodes=list(self.peer_nodes.get_nodelist())
 		# set sum_stake is peer nodes count
 		self.sum_stake = len(ls_nodes)
-		
+
 		# set number of validators is peer nodes count 
 		self.num_validators = len(ls_nodes)
 
@@ -762,6 +762,7 @@ class Validator(object):
 				head_proof=POS.get_proof(Transaction.json_to_dict(head_block['transactions']), 
 								head_block['previous_hash'], head_block['nonce'],self.sum_stake)
 				# head is genesis block or new_block have smaller proof value than current head
+				logger.info( "new block sender:  {}".format(new_block['sender_address']))
 				logger.info( "head proof:        {} -- new proof:        {}".format(head_proof, new_proof) )
 				logger.info( "head block height: {} -- new block height: {}".format(head_block['height'], new_block['height']) )
 				
