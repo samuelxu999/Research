@@ -278,11 +278,14 @@ class Validator(object):
 		# Instantiate the Blockchain
 		logger.info("Chain information:")
 		logger.info("    uuid:                         {}".format(self.node_id))
-		logger.info("    main chain size:              {}".format(self.processed_head['height']+1))
-		logger.info("    processed head:               {}".format(self.processed_head['hash']))
+		logger.info("    main chain blocks:            {}".format(self.processed_head['height']+1))
 		logger.info("    consensus:                    {}".format( self.consensus.name) )
 		logger.info("    block proposal epoch:         {}".format( self.block_epoch) )
 		logger.info("    pause epoch size:             {}".format( self.pause_epoch) )
+		logger.info("    current head:                 {}    height: {}".format(self.current_head['hash'],
+																				self.current_head['height']))
+		logger.info("    processed head:               {}    height: {}".format(self.processed_head['hash'],
+																				self.processed_head['height']))
 		logger.info("    highest justified checkpoint: {}    height: {}".format(self.highest_justified_checkpoint['hash'],
 																				self.highest_justified_checkpoint['height']) )
 		logger.info("    highest finalized checkpoint: {}    height: {}".format(self.highest_finalized_checkpoint['hash'],
@@ -599,14 +602,13 @@ class Validator(object):
 			@ json_msg: json message
 			@ op_type: operation type given different message
 		'''
-
-		# transaction message processing
+		# ----------- 0: transaction message processing -----------
 		if(op_type ==0):
 			ret = self.accept_transaction(json_msg)
-		# block message processing
+		# ----------- 1: block message processing -----------------
 		elif(op_type ==1):
 			ret = self.accept_block(json_msg)
-		#vote message processing
+		# ----------- 2: vote message processing ------------------
 		else:
 			ret = self.accept_vote(json_msg)
 
@@ -626,6 +628,7 @@ class Validator(object):
 					for dependency in self.vote_dependencies[json_msg['hash']]:
 						self.on_receive(dependency, 2)	
 					self.remove_dependency(json_msg['hash'], 1)
+		
 		# save chain info to local
 		self.save_chainInfo()
 		return ret
@@ -688,7 +691,6 @@ class Validator(object):
 		# self.add_block(json_block, 0)
 		self.msg_buf.append([1, json_block, 0])
 		self.check_processed_head(json_block)
-		#self.save_chainInfo()
 
 		return True
 
@@ -896,6 +898,7 @@ class Validator(object):
 		1) For no proposed block, generate empty block as current header
 		2) otherwise, directly fixed processed_head
 		3) remove committed transactions from local txs pool 
+		4) update chaininfo and save into local file
 		'''
 		if(self.consensus==ConsensusType.PoS):
 			# 1) if none of validator propose block, use empty block as header
@@ -922,6 +925,8 @@ class Validator(object):
 					self.transactions.remove(transaction)
 			logger.info("Fix processed_head: {}    height: {}".format(self.processed_head['hash'],
 																		self.processed_head['height']) )
+			# 4) update chaininfo and save into local file
+			self.save_chainInfo()	
 
 	def add_dependency(self, hash_value, json_data, op_type=0):
 		'''
