@@ -4,10 +4,11 @@
 ========================
 WS_Server module
 ========================
-Created on Nov.2, 2017
+Created on May.21, 2019
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide encapsulation of server API that handle and response client's request.
+                  This can be used as microchain validator server.
 '''
 
 import time
@@ -46,6 +47,12 @@ def consensus_run():
 	myblockchain.runConsensus = json_data['consensus_run']
 
 	return jsonify({'consensus_run': myblockchain.runConsensus}), 201
+
+
+@app.route('/test/validator/getinfo', methods=['GET'])
+def validator_info():
+	response = myblockchain.get_info()
+	return jsonify(response), 200
 
 #GET req
 @app.route('/test/transaction/verify', methods=['POST'])
@@ -452,7 +459,7 @@ if __name__ == '__main__':
 						help="if set, support threading requests.")
 	args = parser.parse_args()
 
-	# Instantiate the Blockchain
+	# ------------------------ Instantiate the Validator ----------------------------------
 	myblockchain = Validator(consensus=ConsensusType.PoS, 
 							block_epoch=args.blockepoch,
 							pause_epoch=args.pauseepoch,
@@ -461,7 +468,7 @@ if __name__ == '__main__':
 
 	myblockchain.print_config()
 
-	# # Instantiate RandShare 
+	# # -------------------------- Instantiate RandShare -------------------------------------
 	# myrandshare = RandShare()
 	# json_sharesInfo=RandShare.load_sharesInfo()
 	# # display random shares

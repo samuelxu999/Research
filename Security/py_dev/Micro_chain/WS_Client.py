@@ -4,16 +4,17 @@
 ========================
 WS_Client module
 ========================
-Created on Nov.2, 2017
+Created on May.21, 2019
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide encapsulation of client API that access to Web service.
+                  Mainly used to test and demo
 '''
 
 import requests
 import json
 import time
-
+import logging
 from wallet import Wallet
 from nodes import *
 from transaction import Transaction
@@ -25,6 +26,7 @@ from utilities import TypesUtil, FileUtil
 from service_api import SrvAPI
 from randshare import RandShare, RandOP
 
+logger = logging.getLogger(__name__)
 
 # Instantiate the PeerNodes
 peer_nodes = PeerNodes()
@@ -41,7 +43,19 @@ def run_consensus(target_address, exec_consensus, isBroadcast=False):
 	else:
 		SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_msg, '/test/consensus/run', True)
 		json_response = {'run_consensus': 'broadcast', 'status': json_msg['consensus_run']}
-	print(json_response)
+	logger.info(json_response)
+
+def validator_getinfo(target_address, isBroadcast=False):
+	info_list = []
+	if(not isBroadcast):
+		json_response = SrvAPI.GET('http://'+target_address+'/test/validator/getinfo')
+		info_list.append(json_response)
+	else:
+		for node in peer_nodes.get_nodelist():
+			json_node = TypesUtil.string_to_json(node)
+			json_response = SrvAPI.GET('http://'+json_node['node_url']+'/test/validator/getinfo')
+			info_list.append(json_response)
+	return info_list
 
 
 def send_transaction(target_address, tx_size=1, isBroadcast=False):
@@ -88,7 +102,7 @@ def send_transaction(target_address, tx_size=1, isBroadcast=False):
     else:
         json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/broadcast', 
                                 transaction_json)
-    print(json_response)
+    logger.info(json_response)
 
 def send_vote(target_address, isBroadcast=False):
     # Instantiate the Wallet
@@ -98,7 +112,7 @@ def send_vote(target_address, isBroadcast=False):
     mywallet.load_accounts()
 
     #list account address
-    print(mywallet.list_address())
+    logger.info(mywallet.list_address())
 
     #----------------- test transaction --------------------
     sender = mywallet.accounts[0]
@@ -120,13 +134,13 @@ def send_vote(target_address, isBroadcast=False):
     else:
         json_response=SrvAPI.POST('http://'+target_address+'/test/vote/broadcast', 
                                 json_vote)
-    print(json_response)
+    logger.info(json_response)
 
 
 def get_transactions(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/transactions/get')
     transactions = json_response['transactions']
-    print(transactions)
+    logger.info(transactions)
 
 def start_mining(target_address, isBroadcast=False):
 	if(not isBroadcast):
@@ -136,7 +150,7 @@ def start_mining(target_address, isBroadcast=False):
 		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/mining', True)
 		json_response = {'start mining': 'broadcast'}
 
-	print(json_response)
+	logger.info(json_response)
 
 def start_voting(target_address, isBroadcast=False):
 	if(not isBroadcast):
@@ -146,19 +160,19 @@ def start_voting(target_address, isBroadcast=False):
 	#SrvAPI.broadcast(peer_nodes.get_nodelist(), {}, '/test/block/vote')
 		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/block/vote', True)
 		json_response = {'verify_vote': 'broadcast'}
-	print(json_response)
+	logger.info(json_response)
 
 def get_nodes(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
     nodes = json_response['nodes']
-    print('Peer nodes:')
+    logger.info('Peer nodes:')
     for node in nodes:
-        print(node)
+        logger.info(node)
 
 def add_node(target_address, json_node, isBroadcast=False):
     if(not isBroadcast):
         json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/add', json_node)
-        print(json_response)
+        logger.info(json_response)
     else:
         #json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/add')
         for target_node in target_address:
@@ -170,7 +184,7 @@ def add_node(target_address, json_node, isBroadcast=False):
 def remove_node(target_address, json_node, isBroadcast=False):
 	if(not isBroadcast):
 		json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
-		print(json_response)
+		logger.info(json_response)
 	else:
 		#json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
 		for target_node in target_address:
@@ -183,16 +197,16 @@ def get_chain(target_address, isDisplay=False):
 	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
 	chain_data = json_response['chain']
 	chain_length = json_response['length']
-	print('Chain length:', chain_length)
+	logger.info('Chain length:', chain_length)
 
 	if( isDisplay ):
 	    # only list latest 10 blocks
 	    if(chain_length>10):
 	        for block in chain_data[-10:]:
-	            print("{}\n".format(block))
+	            logger.info("{}\n".format(block))
 	    else:
 	        for block in chain_data:
-	            print("{}\n".format(block))
+	            logger.info("{}\n".format(block))
 
 def check_head():
 	SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/chain/checkhead')
@@ -387,9 +401,10 @@ def Epoch_validator(target_address, tx_size, phase_delay=BOUNDED_TIME):
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
+	logger.info("txs: {}    mining: {}    fix_head: {}    vote: {}\n".format(ls_time_exec[0],
+										ls_time_exec[1], ls_time_exec[2], ls_time_exec[3]))
 	# Prepare log messgae
 	str_time_exec=" ".join(ls_time_exec)
-	print(str_time_exec)
 	# Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time.log', str_time_exec)
 
@@ -472,7 +487,7 @@ def new_random(ls_secret):
 	# calculate new random number
 	random_secret = myrandshare.calculate_random(ls_secret)
 
-	print(random_secret)
+	logger.info("New random secret: {}".format(random_secret))
 
 
 def Epoch_randomshare(phase_delay=BOUNDED_TIME):
@@ -487,6 +502,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	peer_nodes.load_ByAddress()
 
 	# # 1) create shares
+	# logger.info("1) Create shares")
 	# start_time=time.time()
 	# # for peer_node in list(peer_nodes.get_nodelist()):
 	# # 	json_node = TypesUtil.string_to_json(peer_node)
@@ -498,6 +514,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# time.sleep(phase_delay)
 
 	# 2) fetch shares
+	logger.info("2) Fetch shares")
 	start_time=time.time()
 	# for peer_node in list(peer_nodes.get_nodelist()):
 	# 	json_node = TypesUtil.string_to_json(peer_node)
@@ -509,6 +526,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	time.sleep(phase_delay)
 
 	# 3) verify received shares
+	logger.info("3) Verify received shares")
 	start_time=time.time()
 	verify_randshare(peer_nodes.get_nodelist())
 	exec_time=time.time()-start_time
@@ -517,6 +535,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	time.sleep(phase_delay)
 
 	# 4) retrive vote shares from peers and verify them
+	logger.info("4) Retrive vote shares from peers and verify them")
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
@@ -524,13 +543,14 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 		vote_randshare(json_node['node_url'])
 	# calculate voted shares 
 	verify_vote = RandShare.verify_vote_shares()
-	print(verify_vote)
+	logging.info("verify_vote: {}".format(verify_vote))
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
 	time.sleep(phase_delay)
 
 	# 5) retrive shares from peers for secret recover process
+	logger.info("5) Retrive shares from peers for secret recover process")
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
@@ -541,6 +561,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	time.sleep(phase_delay)
 
 	# 6) recover secret of each peer
+	logger.info("6) Recover shared secret of each peer at local")
 	ls_secret=[]
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
@@ -552,6 +573,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	time.sleep(phase_delay)
 
 	# 7) calculate new random
+	logger.info("7) Calculate new random")
 	start_time=time.time()
 	new_random(ls_secret)
 	exec_time=time.time()-start_time
@@ -560,18 +582,111 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	# Prepare log messgae
 	str_time_exec=" ".join(ls_time_exec)
-	print(str_time_exec)
+	logging.info("{}\n".format(str_time_exec))
 	# Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time_randshare.log', str_time_exec)
 
+def show_netInfo():
+	validator_info = validator_getinfo("0.0.0.0:8080", True)
+	for validator in validator_info:
+		logger.info("node_id:    {}    committee_size: {}".format(validator['node_id'],
+														validator['committee_size']))
+		
+		logger.info("processed head:               {}     height: {}".format(validator['processed_head']['hash'],
+			                                                           validator['processed_head']['height']))
+		logger.info("highest justified checkpoint: {}     height: {}".format(validator['highest_justified_checkpoint']['hash'],
+			                                                           validator['highest_justified_checkpoint']['height']))
+		logger.info("highest finalized checkpoint: {}     height: {}".format(validator['highest_finalized_checkpoint']['hash'],
+                                                           validator['highest_finalized_checkpoint']['height']))
+		logger.info("vote_count: {}\n".format(validator['vote_count']))
+
+def checkpoint_netInfo(isDisplay=False):
+	# get validators information in net.
+	validator_info = validator_getinfo("0.0.0.0:8080", True)
+
+	fininalized_count = {}
+	justifized_count = {}
+	processed_count = {}
+
+	# Calculate all checkpoints count
+	for validator in validator_info:
+		# Calculate finalized checkpoint count
+		if validator['highest_finalized_checkpoint']['hash'] not in fininalized_count:
+			fininalized_count[validator['highest_finalized_checkpoint']['hash']] = 0
+		fininalized_count[validator['highest_finalized_checkpoint']['hash']] += 1
+		
+		# Calculate justified checkpoint count
+		if validator['highest_justified_checkpoint']['hash'] not in justifized_count:
+			justifized_count[validator['highest_justified_checkpoint']['hash']] = 0
+		justifized_count[validator['highest_justified_checkpoint']['hash']] += 1
+
+		# Calculate processed checkpoint count
+		if validator['processed_head']['hash'] not in processed_count:
+			processed_count[validator['processed_head']['hash']] = 0
+		processed_count[validator['processed_head']['hash']] += 1
+
+	if(isDisplay):
+		logger.info("")
+		logger.info("Finalized checkpoints: {}\n".format(fininalized_count))
+		logger.info("Justified checkpoints: {}\n".format(justifized_count))
+		logger.info("Processed checkpoints: {}\n".format(processed_count))
+
+	# search finalized checkpoint with maximum count
+	checkpoint = ''
+	max_acount = 0
+	for _item, _value in fininalized_count.items():
+		if(_value > max_acount):
+			max_acount = _value
+			checkpoint = _item	
+	finalized_checkpoint = [checkpoint, max_acount]
+	if(isDisplay):
+		logger.info("Finalized checkpoint: {}    count: {}\n".format(finalized_checkpoint[0],
+															   finalized_checkpoint[1]))
+
+	# search finalized checkpoint with maximum count
+	checkpoint = ''
+	max_acount = 0
+	for _item, _value in justifized_count.items():
+		if(_value > max_acount):
+			max_acount = _value
+			checkpoint = _item	
+	justified_checkpoint = [checkpoint, max_acount]
+	if(isDisplay):
+		logger.info("Justified checkpoint: {}    count: {}\n".format(justified_checkpoint[0],
+															   justified_checkpoint[1]))
+
+	# search finalized checkpoint with maximum count
+	checkpoint = ''
+	max_acount = 0
+	for _item, _value in processed_count.items():
+		if(_value > max_acount):
+			max_acount = _value
+			checkpoint = _item	
+	processed_checkpoint = [checkpoint, max_acount]
+	if(isDisplay):
+		logger.info("Processed checkpoint: {}    count: {}\n".format(processed_checkpoint[0],
+															   processed_checkpoint[1]))
+
+	json_checkpoints={}
+	json_checkpoints['finalized_checkpoint'] = finalized_checkpoint
+	json_checkpoints['justified_checkpoint'] = justified_checkpoint
+	json_checkpoints['processed_checkpoint'] = processed_checkpoint
+
+	return json_checkpoints
+
+
+
 if __name__ == "__main__":
+	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+	LOG_LEVEL = logging.INFO
+	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
 	target_address = "128.226.88.210:8080"
 
 	# |------------------------ test case type ---------------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
-	op_status = 2
+	op_status = 1
 
 	if(op_status == 0):
 		set_peerNodes('R2_pi4_4', 1, True)
@@ -579,15 +694,15 @@ if __name__ == "__main__":
 		# data_size = 1024*1024
 		data_size = 1024
 		wait_interval = 1
-		test_run = 10
+		test_run = 4
 
 		for x in range(test_run):
-			print("Test run:", x+1)
+			logger.info("Test run:{}".format(x+1))
 			Epoch_validator(target_address, data_size, 5)
 			time.sleep(wait_interval)
 	elif(op_status == 2):
 		# data_size = 1024*1024
-		# data_size = 1024
+		data_size = 1024
 		# send_transaction(target_address, data_size, True)
 		# time.sleep(1)
 		# get_transactions(target_address)
@@ -607,6 +722,10 @@ if __name__ == "__main__":
 
 		# send_vote(target_address) 
 
+		# show_netInfo()
+		json_checkpoints = checkpoint_netInfo(False)
+		print(json_checkpoints)
+
 		pass  
 	else:
 		# host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
@@ -623,7 +742,7 @@ if __name__ == "__main__":
 		test_run = 1
 
 		for x in range(test_run):
-			print("Test run:", x+1)
+			logger.info("Test run:{}".format(x+1))
 			Epoch_randomshare()
 			time.sleep(wait_interval)
 		

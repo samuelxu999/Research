@@ -136,8 +136,12 @@ class Validator(object):
 		self.current_head = self.processed_head
 
 		# set total stake and number of validators
-		self.sum_stake = TEST_STAKE_SUM;
-		self.committee_size = NUM_VALIDATORS;
+		ls_nodes=list(self.peer_nodes.get_nodelist())
+		# set sum_stake is peer nodes count
+		self.sum_stake = len(ls_nodes)
+		# set committee_size as peer nodes count 
+		self.committee_size = len(ls_nodes)
+		# set block_epoch given args
 		self.block_epoch = block_epoch;
 
 		''' 
@@ -319,9 +323,10 @@ class Validator(object):
 		Buffer operation: select a node from peer_nodes buffer given node address
 		'''
 		ls_nodes=list(self.peer_nodes.get_nodelist())
+
+		# refresh sum_stake and committee_size as peer nodes change
 		# set sum_stake is peer nodes count
 		self.sum_stake = len(ls_nodes)
-
 		# set committee size as peer nodes count 
 		self.committee_size = len(ls_nodes)
 
@@ -371,6 +376,21 @@ class Validator(object):
 		    return FileUtil.JSON_load(CHAIN_DATA_DIR+'/'+CHAIN_INFO)
 		else:
 			return None
+
+	def get_info(self):
+		'''
+		Get validator information for reference and synchronization
+		'''
+		validator_info = {}
+		validator_info['node_id'] = self.node_id
+		validator_info['committee_size'] = self.committee_size
+		validator_info['processed_head'] = self.processed_head
+		validator_info['highest_justified_checkpoint'] = self.highest_justified_checkpoint
+		validator_info['highest_finalized_checkpoint'] = self.highest_finalized_checkpoint		
+		validator_info['vote_count'] = self.vote_count
+
+		return validator_info
+
 
 	def valid_transaction(self, transaction, sender_pk, signature):
 		"""
