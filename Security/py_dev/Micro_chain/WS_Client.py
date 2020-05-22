@@ -694,12 +694,18 @@ if __name__ == "__main__":
 		# data_size = 1024*1024
 		data_size = 1024
 		wait_interval = 1
-		test_run = 4
+		test_run = 10
 
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
 			Epoch_validator(target_address, data_size, 5)
 			time.sleep(wait_interval)
+
+		# get checkpoint after execution
+		json_checkpoints = checkpoint_netInfo(False)
+		for _item, _value in json_checkpoints.items():
+			logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
+
 	elif(op_status == 2):
 		# data_size = 1024*1024
 		data_size = 1024
@@ -723,8 +729,8 @@ if __name__ == "__main__":
 		# send_vote(target_address) 
 
 		# show_netInfo()
-		json_checkpoints = checkpoint_netInfo(False)
-		print(json_checkpoints)
+		# json_checkpoints = checkpoint_netInfo(False)
+		# print(json_checkpoints)
 
 		pass  
 	else:
@@ -745,5 +751,5 @@ if __name__ == "__main__":
 			logger.info("Test run:{}".format(x+1))
 			Epoch_randomshare()
 			time.sleep(wait_interval)
-		
+	
 		pass
