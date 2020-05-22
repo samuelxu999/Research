@@ -240,7 +240,6 @@ def broadcast_vote():
 # ====================================== Random share RPC handler==================================
 @app.route('/test/randshare/create', methods=['GET'])
 def create_randshare():
-	myrandshare = RandShare()
 
 	start_time=time.time()
 	# create new shares
@@ -262,7 +261,6 @@ def fetch_randshare():
 	if(json_node=='{}'):
 		abort(401, {'error': 'No node data'})
 
-	myrandshare = RandShare()
 	response = myrandshare.fetch_randomshares(json_node)
 	return jsonify(response), 200
 
@@ -276,7 +274,6 @@ def cachefetched_randshare():
 @app.route('/test/randshare/verify', methods=['GET'])
 def verify_randshare():
 	start_time=time.time()
-	myrandshare = RandShare()
 	myrandshare.verify_randomshare()
 	exec_time=time.time()-start_time
 	FileUtil.save_testlog('test_results', 'exec_verify_shares.log', format(exec_time*1000, '.3f'))
@@ -284,14 +281,12 @@ def verify_randshare():
 
 @app.route('/test/randshare/recovered', methods=['GET'])
 def recovered_randshare():
-	myrandshare = RandShare()
 	response = myrandshare.recovered_randomshare()
 	return jsonify(response), 200
 
 # request for vote shares from peers
 @app.route('/test/randshare/fetchvote', methods=['GET'])
 def fetch_vote_randshare():
-	myrandshare = RandShare()
 	response = myrandshare.fetch_vote_randonshare()
 	return jsonify(response), 200
 
@@ -365,7 +360,7 @@ if __name__ == '__main__':
 	myblockchain.print_config()
 
 	# # -------------------------- Instantiate RandShare -------------------------------------
-	# myrandshare = RandShare()
+	myrandshare = RandShare()
 	# json_sharesInfo=RandShare.load_sharesInfo()
 	# # display random shares
 	# disp_randomshare(json_sharesInfo)
