@@ -29,6 +29,13 @@ class RandOP(Enum):
 
 class RundShare_Daemon(object):
 	def __init__(self):
+		# Instantiate the Wallet
+		self.wallet = Wallet()
+		self.wallet.load_accounts()
+		# Instantiate the PeerNodes
+		self.peer_nodes = PeerNodes()
+		self.peer_nodes.load_ByAddress()
+		
 		self.randomshare_cmd = 0
 		# define a thread to handle received messages by executing process_msg()
 		self.randomshare_thread = threading.Thread(target=self.process_randomshare, args=())
@@ -60,15 +67,15 @@ class RundShare_Daemon(object):
 				logger.info("Cache fetched randshare...")
 
 				start_time=time.time()
-				randshare_instance = RandShare()
+				# randshare_instance = RandShare()
 				# 1) read cached host_shares
 				host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
 				if( host_shares == None):
 					host_shares = {}
 				# get host address
-				host_node=randshare_instance.wallet.list_address()[0]
+				host_node=self.wallet.list_address()[0]
 				# 2) for each peer node to fetch host share information
-				for peer_node in list(randshare_instance.peer_nodes.get_nodelist()):
+				for peer_node in list(self.peer_nodes.get_nodelist()):
 					json_peer = TypesUtil.string_to_json(peer_node)
 					# fetch_share=fetch_randshare(target_address)
 					json_node={}
@@ -87,13 +94,13 @@ class RundShare_Daemon(object):
 				logger.info("Cache vote randshare...")
 
 				start_time=time.time()
-				randshare_instance = RandShare()
+				# randshare_instance = RandShare()
 				# 1) read cached vote shares
 				vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
 				if( vote_shares == None):
 					vote_shares = {}
 				# 2) for each peer node to fetch vote information
-				for peer_node in list(randshare_instance.peer_nodes.get_nodelist()):
+				for peer_node in list(self.peer_nodes.get_nodelist()):
 					json_node = TypesUtil.string_to_json(peer_node)
 					# cache_vote_shares(json_node['node_url'])
 					# host_vote_shares=fetchvote_randshare(json_node['node_url'])
