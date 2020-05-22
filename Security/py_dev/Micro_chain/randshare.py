@@ -6,13 +6,19 @@ Created on Aug 5, 2019
 @TaskDescription: Random share based on PVSS and BFT agreement
 '''
 import math
+import threading
+import time
+import logging
 from enum import Enum
 from wallet import Wallet
 from nodes import *
 from CryptoLib.PVSS import *
 from CryptoLib.crypto_rsa import Crypto_RSA
-from utilities import TypesUtil
+from utilities import FileUtil, TypesUtil, DatetimeUtil
 from configuration import *
+from service_api import SrvAPI
+
+logger = logging.getLogger(__name__)
 
 # Define random share operation type
 class RandOP(Enum):
@@ -20,6 +26,88 @@ class RandOP(Enum):
     RandDistribute = 1
     RandVote = 2
     RandRecovered = 3
+
+class RundShare_Daemon(object):
+	def __init__(self):
+		self.randomshare_cmd = 0
+		# define a thread to handle received messages by executing process_msg()
+		self.randomshare_thread = threading.Thread(target=self.process_randomshare, args=())
+		# Set as daemon thread
+		self.randomshare_thread.daemon = True
+		# Start the daemonized method execution
+		self.randomshare_thread.start() 
+
+	def set_cmd(self, randshare_cmd):
+		self.randomshare_cmd = randshare_cmd
+
+	def process_randomshare(self):
+		'''
+		daemon thread function: execute random share protocol
+		'''
+		# this variable is used as waiting time when there is no message for process.
+		idle_time=0.0
+		while(True):
+			# ========= idle time incremental strategy, the maximum is 1 seconds ========
+			if( self.randomshare_cmd==0 ):
+				idle_time+=0.1
+				if(idle_time>1.0):
+					idle_time=1.0
+				time.sleep(idle_time)
+				continue
+			
+			# ========================== Run ramdon share protocol ==========================
+			if( self.randomshare_cmd==1 ):
+				logger.info("Cache fetched randshare...")
+
+				start_time=time.time()
+				randshare_instance = RandShare()
+				# 1) read cached host_shares
+				host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
+				if( host_shares == None):
+					host_shares = {}
+				# get host address
+				host_node=randshare_instance.wallet.list_address()[0]
+				# 2) for each peer node to fetch host share information
+				for peer_node in list(randshare_instance.peer_nodes.get_nodelist()):
+					json_peer = TypesUtil.string_to_json(peer_node)
+					# fetch_share=fetch_randshare(target_address)
+					json_node={}
+					json_node['address'] = host_node
+					# print(json_node)
+					fetch_share=SrvAPI.POST('http://'+json_peer['node_url']+'/test/randshare/fetch', json_node)
+
+					for (node_name, share_data) in fetch_share.items():
+						host_shares[node_name]=share_data
+				# 3) update host shares 
+				RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
+				exec_time=time.time()-start_time
+				FileUtil.save_testlog('test_results', 'exec_cachefetched_shares.log', format(exec_time*1000, '.3f'))
+
+			if( self.randomshare_cmd==2 ):
+				logger.info("Cache vote randshare...")
+
+				start_time=time.time()
+				randshare_instance = RandShare()
+				# 1) read cached vote shares
+				vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
+				if( vote_shares == None):
+					vote_shares = {}
+				# 2) for each peer node to fetch vote information
+				for peer_node in list(randshare_instance.peer_nodes.get_nodelist()):
+					json_node = TypesUtil.string_to_json(peer_node)
+					# cache_vote_shares(json_node['node_url'])
+					# host_vote_shares=fetchvote_randshare(json_node['node_url'])
+					host_vote_shares = SrvAPI.GET('http://'+json_node['node_url']+'/test/randshare/fetchvote')
+					for (node_name, share_data) in host_vote_shares.items():
+						vote_shares[node_name]=share_data
+				# 3) update vote shares 
+				RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
+				exec_time=time.time()-start_time
+				FileUtil.save_testlog('test_results', 'exec_cachevote_shares.log', format(exec_time*1000, '.3f'))
+
+			self.randomshare_cmd=0 
+
+
 
 class RandShare(object):
 	def __init__(self):
@@ -107,10 +195,111 @@ class RandShare(object):
 				# assign node with share and proof data
 				node_shares[json_node['address']]=share
 				node_proofs[json_node['address']]=proof[0]
+		
 		json_shares['node_shares']=node_shares
 		json_shares['node_proofs']=node_proofs
-
 		return json_shares
+
+	def fetch_randomshares(self, json_node):
+		''' 
+		Prepare shares data assigned to node who request them.
+		return:node_shares, poly_commitments and share_proofs
+		'''
+		# 1) get node_shares
+		load_json_shares=RandShare.load_sharesInfo()
+		node_shares = load_json_shares['node_shares']
+
+		# 2) get poly_commitments
+		poly_commitments = load_json_shares['poly_commitments']
+
+		# 3) get share_proofs
+		node_proofs = load_json_shares['node_proofs']
+
+
+		# 4) prepare return json_share
+		json_share = {}
+		if json_node['address'] in node_shares:
+			json_share['poly_commitments'] = poly_commitments
+			json_share['node_shares'] = node_shares[json_node['address']]
+			json_share['node_proofs'] = node_proofs[json_node['address']]
+			json_share['status'] = 0
+
+		host_node=self.wallet.list_address()[0]
+		shares_response = {host_node: json_share}
+		return shares_response
+
+	def verify_randomshare(self):
+		''' 
+		Verify received random shares from other nodes.
+		Mark correct ones as 1 and save result into local.
+		'''
+		# 1) read cached randshare 
+		host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
+		if( host_shares == None):
+			host_shares = {}
+		# 2) for each peer node to verify shares
+		for peer_node in list(self.peer_nodes.get_nodelist()):
+			json_node = TypesUtil.string_to_json(peer_node)
+			# get public numbers given peer's pk
+			public_numbers = RandShare.get_public_numbers(json_node['public_key'])
+			host_address = json_node['address']
+			# get share information
+			shares = host_shares[host_address]
+			poly_commits = shares['poly_commitments']
+			share_proofs = shares['node_proofs']
+			# print(poly_commits)
+			# print(share_proofs)
+
+			# instantiate RandShare to verify share proof.
+			# myrandshare = RandShare()
+			self.p = public_numbers.n
+			share_index = share_proofs[0]
+			verify_S = self.verify_S(poly_commits, share_index)
+			# print('verify S', share_index, ':', verify_S==share_proofs[1])
+			if(verify_S==share_proofs[1]):
+				host_shares[host_address]['status']=1
+				# update host shares 
+		RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
+
+	def recovered_randomshare(self):
+		''' 
+		Prepare shares data assigned to node who request them for recovery process.
+		return:node_shares, poly_commitments and share_proofs
+		'''
+		# 1) get node_shares
+		load_json_shares=RandShare.load_sharesInfo()
+		node_shares = load_json_shares['node_shares']
+
+		# 2) get host node address
+		host_node=self.wallet.list_address()[0]
+
+		# 3) prepare return json_share
+		ls_shares = []
+		for (node_name, node_data) in node_shares.items():
+			ls_shares.append(node_data)
+
+		shares_response = {host_node: ls_shares}
+		return shares_response
+
+	def fetch_vote_randonshare(self):
+		''' 
+		prepare shares of peer for vote process
+		return: verified shares status of all nodes
+		'''
+		# 1) get shares host
+		load_json_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
+
+		# get host node address
+		host_node=self.wallet.list_address()[0]
+
+		# prepare return json_share
+		host_shares = {}
+		for (node_name, node_data) in load_json_shares.items():
+			host_shares[node_name]=node_data['status']
+		
+		shares_response = {host_node: host_shares}
+		return shares_response
+
 
 	@staticmethod
 	def save_sharesInfo(json_shares, op_type=RandOP.RandSplit):

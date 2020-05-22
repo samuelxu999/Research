@@ -416,6 +416,7 @@ def cache_fetch_share(target_address):
 	if( host_shares == None):
 		host_shares = {}
 	fetch_share=fetch_randshare(target_address)
+	# logging.info(fetch_share)
 	for (node_name, share_data) in fetch_share.items():
 		host_shares[node_name]=share_data
 	# update host shares 
@@ -440,6 +441,7 @@ def cache_vote_shares(target_address):
 	if( vote_shares == None):
 		vote_shares = {}
 	host_vote_shares=fetchvote_randshare(target_address)
+	# logging.info(host_vote_shares)
 	for (node_name, share_data) in host_vote_shares.items():
 		vote_shares[node_name]=share_data
 	# update host shares 
@@ -501,17 +503,17 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	peer_nodes = PeerNodes()
 	peer_nodes.load_ByAddress()
 
-	# # 1) create shares
-	# logger.info("1) Create shares")
-	# start_time=time.time()
-	# # for peer_node in list(peer_nodes.get_nodelist()):
-	# # 	json_node = TypesUtil.string_to_json(peer_node)
-	# # 	create_randshare(json_node['node_url'])
-	# create_randshare(peer_nodes.get_nodelist(), True)
-	# exec_time=time.time()-start_time
-	# ls_time_exec.append(format(exec_time*1000, '.3f'))
+	# 1) create shares
+	logger.info("1) Create shares")
+	start_time=time.time()
+	# for peer_node in list(peer_nodes.get_nodelist()):
+	# 	json_node = TypesUtil.string_to_json(peer_node)
+	# 	create_randshare(json_node['node_url'])
+	create_randshare(peer_nodes.get_nodelist(), True)
+	exec_time=time.time()-start_time
+	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
-	# time.sleep(phase_delay)
+	time.sleep(phase_delay)
 
 	# 2) fetch shares
 	logger.info("2) Fetch shares")
@@ -534,7 +536,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 4) retrive vote shares from peers and verify them
+	# 4) retrive vote shares from peers and verify them. need --threaded
 	logger.info("4) Retrive vote shares from peers and verify them")
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
@@ -550,7 +552,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	time.sleep(phase_delay)
 
 	# 5) retrive shares from peers for secret recover process
-	logger.info("5) Retrive shares from peers for secret recover process")
+	logger.info("5) Retrive shares from peers for secret recovery process")
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
@@ -686,7 +688,7 @@ if __name__ == "__main__":
 	# |------------------------ test case type ---------------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
-	op_status = 1
+	op_status = 3
 
 	if(op_status == 0):
 		set_peerNodes('R2_pi4_4', 1, True)
@@ -694,7 +696,7 @@ if __name__ == "__main__":
 		# data_size = 1024*1024
 		data_size = 1024
 		wait_interval = 1
-		test_run = 10
+		test_run = 1
 
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
@@ -744,6 +746,7 @@ if __name__ == "__main__":
 		# print(verify_vote_shares())
 		# vote_randshare(target_address)
 
+
 		wait_interval = 1
 		test_run = 1
 
@@ -752,4 +755,4 @@ if __name__ == "__main__":
 			Epoch_randomshare()
 			time.sleep(wait_interval)
 	
-		pass
+		# pass
