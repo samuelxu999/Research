@@ -10,7 +10,8 @@ Created on May.21, 2019
 @TaskDescription: This module provide encapsulation of client API that access to Web service.
                   Mainly used to test and demo
 '''
-
+import argparse
+import sys
 import requests
 import json
 import time
@@ -197,7 +198,7 @@ def get_chain(target_address, isDisplay=False):
 	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
 	chain_data = json_response['chain']
 	chain_length = json_response['length']
-	logger.info('Chain length:', chain_length)
+	logger.info('Chain length: {}'.format(chain_length))
 
 	if( isDisplay ):
 	    # only list latest 10 blocks
@@ -676,27 +677,48 @@ def checkpoint_netInfo(isDisplay=False):
 
 	return json_checkpoints
 
-
+def define_and_get_arguments(args=sys.argv[1:]):
+    parser = argparse.ArgumentParser(
+        description="Run websocket client."
+    )
+    parser.add_argument("--op_status", type=int, default=2, help="batch size of the training")
+    parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
+    parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
+    parser.add_argument("--target_address", type=str, default="0.0.0.0:8080", 
+    					help="Test target address - ip:port.")
+    parser.add_argument("--set_peer", type=str, default="", 
+    					help="set peer node. name@op")
+    args = parser.parse_args(args=args)
+    return args
 
 if __name__ == "__main__":
 	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
 	LOG_LEVEL = logging.INFO
 	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
-	target_address = "128.226.88.210:8080"
+	# get arguments
+	args = define_and_get_arguments()
+
+	# set parameters
+	target_address = args.target_address
+	op_status = args.op_status
+	wait_interval = args.wait_interval
+	test_run = args.test_round
 
 	# |------------------------ test case type ---------------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
-	op_status = 3
 
 	if(op_status == 0):
-		set_peerNodes('R2_pi4_4', 1, True)
+		set_peer = args.set_peer
+		if(set_peer!=''):
+			name_op=set_peer.split('@')
+			# print(name_op[0], name_op[1])
+			# set_peerNodes('R2_pi4_4', 1, True)
+			set_peerNodes(name_op[0], name_op[1], True)
 	elif(op_status == 1):
 		# data_size = 1024*1024
 		data_size = 1024
-		wait_interval = 1
-		test_run = 1
 
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
@@ -714,7 +736,7 @@ if __name__ == "__main__":
 		# send_transaction(target_address, data_size, True)
 		# time.sleep(1)
 		# get_transactions(target_address)
-		# run_consensus(target_address, True, True)
+		run_consensus(target_address, True, True)
 
 		# start_mining(target_address, True)
 
@@ -745,10 +767,6 @@ if __name__ == "__main__":
 		# cache_vote_shares(target_address)
 		# print(verify_vote_shares())
 		# vote_randshare(target_address)
-
-
-		wait_interval = 1
-		test_run = 1
 
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))

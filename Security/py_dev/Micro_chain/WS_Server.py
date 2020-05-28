@@ -10,7 +10,7 @@ Created on May.21, 2019
 @TaskDescription: This module provide encapsulation of server API that handle and response client's request.
                   This can be used as microchain validator server.
 '''
-
+import sys
 import time
 import datetime
 import json
@@ -30,6 +30,37 @@ from randshare import RandShare, RandOP, RundShare_Daemon
 
 logger = logging.getLogger(__name__)
 
+def build_tx(tx_json):
+
+	#----------------- test transaction --------------------
+	sender = myblockchain.wallet.accounts[0]
+
+	# generate transaction
+	sender_address = sender['address']
+	sender_private_key = sender['private_key']
+	recipient_address = sender['address']
+
+	time_stamp = time.time()
+	tx_str = TypesUtil.json_to_string(tx_json)
+	# value = TypesUtil.string_to_bytes(tx_str)
+	# value = TypesUtil.string_to_hex(tx_str)
+	value = tx_str
+
+	mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
+
+	# sign transaction
+	sign_data = mytransaction.sign('samuelxu999')
+
+	# verify transaction
+	dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
+	                                        mytransaction.recipient_address,
+	                                        mytransaction.time_stamp,
+	                                        mytransaction.value)
+	#send transaction
+	transaction_json = mytransaction.to_json()
+	transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
+
+	return transaction_json
 
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
@@ -54,6 +85,71 @@ def consensus_run():
 def validator_info():
 	response = myblockchain.get_info()
 	return jsonify(response), 200
+
+@app.route('/test/transaction/query', methods=['GET'])
+def query_transaction():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+
+	tx_json=json.loads(req_data)
+
+	if(tx_json=='{}'):
+		abort(401, {'error': 'No transaction data'})
+
+	tx_valid = True
+	# logger.info( "tx_data: {}".format(tx_json))
+	tx_value = TypesUtil.json_to_string(tx_json)
+
+	# -------------- duplicate tx_data in block, discard it ------------------
+	response = {}
+	myblockchain.load_chain()
+	for block in myblockchain.chain:
+		for tx in block['transactions']:
+			if(tx_value==tx['value']):
+				response = tx['value']
+				break
+
+	return jsonify(response), 200
+
+@app.route('/test/transaction/commit', methods=['POST'])
+def commit_transaction():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+
+	tx_json=json.loads(req_data)
+	
+	if(tx_json=='{}'):
+		abort(401, {'error': 'No transaction data'})
+
+	tx_valid = True
+	# logger.info( "tx_data: {}".format(tx_json))
+	tx_value = TypesUtil.json_to_string(tx_json)
+	# ------------- duplicate tx_value in tx pool, discard it -----------------
+	for tx in myblockchain.transactions:
+		if(tx_value == tx['value']):
+			tx_valid = False
+			break
+
+	# -------------- duplicate tx_data in block, discard it ------------------
+	myblockchain.load_chain()
+	for block in myblockchain.chain:
+		for tx in block['transactions']:
+			if(tx_value==tx['value']):
+				tx_valid = False
+				break
+
+	respose_json = {}
+	if(tx_valid):
+		# build transaction data
+		transaction_json=build_tx(tx_json)
+		# broadcast transaction to peer nodes
+		SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), 
+							transaction_json, '/test/transaction/verify')
+		respose_json['Status'] = tx_valid
+	else:
+		respose_json['Status'] = "{}: Duplicated tx.".format(tx_valid)
+		
+	return jsonify({'request_transaction': respose_json}), 201
 
 #GET req
 @app.route('/test/transaction/verify', methods=['POST'])
@@ -329,12 +425,7 @@ def disp_randomshare(json_shares):
 		for share_proof in share_proofs:
 			logger.info('    {}'.format(share_proof))
 
-if __name__ == '__main__':
-	# FORMAT = "%(asctime)s %(levelname)s %(filename)s(l:%(lineno)d) - %(message)s"
-	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
-	LOG_LEVEL = logging.INFO
-	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
-
+def define_and_get_arguments(args=sys.argv[1:]):
 	parser = ArgumentParser(description="Run microchain websocket server.")
 	parser.add_argument('-p', '--port', default=8080, type=int, 
 						help="port to listen on.")
@@ -347,8 +438,19 @@ if __name__ == '__main__':
 	parser.add_argument("--debug", action="store_true", 
 						help="if set, debug model will be used.")
 	parser.add_argument("--threaded", action="store_true", 
-						help="if set, support threading requests.")
+						help="if set, support threading request.")
 	args = parser.parse_args()
+
+	return args
+
+if __name__ == '__main__':
+	# FORMAT = "%(asctime)s %(levelname)s %(filename)s(l:%(lineno)d) - %(message)s"
+	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+	LOG_LEVEL = logging.INFO
+	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
+
+	# get arguments
+	args = define_and_get_arguments()
 
 	# ------------------------ Instantiate the Validator ----------------------------------
 	myblockchain = Validator(consensus=ConsensusType.PoS, 
