@@ -239,7 +239,7 @@ class Validator(object):
 			if( (self.consensus==ConsensusType.PoW) or 
 				(not Block.isEmptyBlock(new_block)) ):
 				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
-			time.sleep(self.phase_delay)
+			time.sleep(self.phase_delay*2)
 
 			# ------------S2: fix head of current block generation epoch ----------------
 			self.fix_processed_head()
@@ -253,7 +253,7 @@ class Validator(object):
 				vote_data = self.vote_checkpoint(json_head)	
 				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
 				pause_epoch+=1
-				time.sleep(self.phase_delay)
+				time.sleep(self.phase_delay*4)
 		
 			# if pause_epoch arrives threshold. stop consensus for synchronization
 			if(pause_epoch==self.pause_epoch):
