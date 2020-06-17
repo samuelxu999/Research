@@ -255,6 +255,7 @@ def add_node():
 
 	myblockchain.peer_nodes.register_node(json_node['address'], json_node['public_key'], json_node['node_url'])
 	myblockchain.peer_nodes.load_ByAddress()
+	myrandshare.peer_nodes.load_ByAddress()
 	return jsonify({'add peer node': json_node['address']}), 201
 
 @app.route('/test/nodes/remove', methods=['POST'])
@@ -268,6 +269,7 @@ def remove_node():
 		
 	myblockchain.peer_nodes.remove_node(json_node['address'])
 	myblockchain.peer_nodes.load_ByAddress()
+	myrandshare.peer_nodes.load_ByAddress()
 	return jsonify({'remove peer node': json_node['address']}), 201
 
 @app.route('/test/block/verify', methods=['POST'])

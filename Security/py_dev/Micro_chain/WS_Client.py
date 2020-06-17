@@ -715,7 +715,7 @@ if __name__ == "__main__":
 			name_op=set_peer.split('@')
 			# print(name_op[0], name_op[1])
 			# set_peerNodes('R2_pi4_4', 1, True)
-			set_peerNodes(name_op[0], name_op[1], True)
+			set_peerNodes(name_op[0], int(name_op[1]), True)
 	elif(op_status == 1):
 		# data_size = 1024*1024
 		data_size = 1024
