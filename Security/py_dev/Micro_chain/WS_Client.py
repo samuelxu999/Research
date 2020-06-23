@@ -691,6 +691,18 @@ def define_and_get_arguments(args=sys.argv[1:]):
     args = parser.parse_args(args=args)
     return args
 
+def count_tx_size():
+	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
+	chain_data = json_response['chain']
+	chain_length = json_response['length']
+	logger.info('Chain length: {}'.format(chain_length))
+	for block in chain_data:
+		if(block['transactions']!=[]):			
+			tx=block['transactions'][0]
+			tx_str=TypesUtil.json_to_string(tx)
+			logger.info('Tx size: {}'.format(len( tx_str.encode('utf-8') )))
+			break
+
 if __name__ == "__main__":
 	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
 	LOG_LEVEL = logging.INFO
@@ -745,6 +757,7 @@ if __name__ == "__main__":
 		# start_voting(target_address, True)
 
 		# get_chain(target_address, True)
+		# count_tx_size()
 
 		# print('Valid last_block:', test_valid_block(target_address))
 
