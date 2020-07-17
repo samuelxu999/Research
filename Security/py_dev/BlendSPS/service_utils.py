@@ -1,3 +1,13 @@
+'''
+========================
+service utilities module
+========================
+Created on July.14, 2020
+@author: Xu Ronghua
+@Email:  rxu22@binghamton.edu
+@TaskDescription: This module provide encapsulation of test API to interact with RPC exposed by service node.
+'''
+
 import time
 import logging
 import requests
@@ -274,5 +284,27 @@ class ContractUtils(object):
 
         #get response json
         json_response = response.json()
+
+        return json_response
+
+class MonoClient(object):
+    '''
+    Get record by id
+    '''
+    @staticmethod
+    def Get_DataByID(data_args={}):
+        # construct params
+        params={}
+        params['project_id']=data_args['project_id']
+
+        #construct api_url
+        service_addr = data_args['service_addr']
+        api_url = "http://" + service_addr + "/test/api/v1.0/dt/project" 
+
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url,params=params, data=json.dumps(data_args['data']), headers=headers)
+        
+        #get response json
+        json_response = response.json()      
 
         return json_response

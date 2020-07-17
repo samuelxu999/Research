@@ -7,7 +7,7 @@ import threading
 
 from wrapper_pyca import Crypto_DSA, Crypto_Hash
 from utilities import FileUtil, TypesUtil
-from service_utils import TenderUtils, ContractUtils
+from service_utils import TenderUtils, ContractUtils, MonoClient
 
 LOG_INTERVAL = 25
 
@@ -32,14 +32,15 @@ class ServiceThread (threading.Thread):
 		if(self.opType==1):
 			srv_ret = ContractUtils.isValidID(self.argv[0])
 			logger.info("thread-{}: {}".format(self.threadID, srv_ret))
-		if(self.opType==2):
+		elif(self.opType==2):
 			srv_ret = ContractUtils.isValidAccess(self.argv[0])
 			logger.info("thread-{}: {}".format(self.threadID, srv_ret))
-		if(self.opType==3):
+		elif(self.opType==3):
 			srv_ret = ContractUtils.verify_indexToken(self.argv[0], self.argv[1], self.argv[2])
 			logger.info("thread-{}: {}".format(self.threadID, srv_ret))
 		else:
-			pass
+			srv_ret = MonoClient.Get_DataByID(self.argv[0])
+			logger.info("thread-{}: {}".format(self.threadID, srv_ret))
 
 
 def define_and_get_arguments(args=sys.argv[1:]):
@@ -62,7 +63,7 @@ def define_and_get_arguments(args=sys.argv[1:]):
     parser.add_argument("--query_tx", type=int, default=0, 
                         help="Query tx or commit tx: 0-Query, 1-Commit")
     parser.add_argument("--service_op", type=int, default=0, 
-                        help="Service operation: 0-test, 1-AuthID, 2-CapAC, 3-IndexAuth")
+                        help="Service operation: 0-MonoService, 1-AuthID, 2-CapAC, 3-IndexAuth")
     args = parser.parse_args(args=args)
     return args
 
@@ -170,20 +171,27 @@ def Service_test(args):
 	for i in range(args.tx_round):
 		logger.info("Test run:{}".format(i+1))	
 		if(args.service_op==1):
-			data_args ['service_addr'] = services_host['authid']
-			data_args ['host_address'] = node_address
+			data_args['service_addr'] = services_host['authid']
+			data_args['host_address'] = node_address
 
 		elif(args.service_op==2):
-			data_args ['service_addr'] = services_host['blendcac']
-			data_args ['host_address'] = node_address
-			data_args ['url_rule'] = '/BlendCAC/api/v1.0/getCapToken'
+			data_args['service_addr'] = services_host['blendcac']
+			data_args['host_address'] = node_address
+			data_args['url_rule'] = '/BlendCAC/api/v1.0/getCapToken'
 
 		elif(args.service_op==3):
-			data_args ['service_addr'] = services_host['indexauth']
-			data_args ['index_id'] = "1"
-			data_args ['filepath'] = "./features/0_2_person1/13.2.52.txt"
+			data_args['service_addr'] = services_host['indexauth']
+			data_args['index_id'] = "1"
+			data_args['filepath'] = "./features/0_2_person1/13.2.52.txt"
 		else:
-			pass
+			data_args['service_addr'] = services_host['mono_app']
+			data_args['project_id'] = 1
+			data = {}
+			data['host_address'] = node_address
+			data['url_rule'] = '/BlendCAC/api/v1.0/getCapToken'
+			data['index_id'] = "1"
+			data['filepath'] = "./features/0_2_person1/13.2.52.txt"
+			data_args['data'] = data
 
 		start_time=time.time()
 		# call threads pooling
@@ -196,6 +204,8 @@ def Service_test(args):
 		logger.info("Execution time is:{}".format(time_exec))
 
 		FileUtil.save_testlog('test_results', 'exec_services_client.log', time_exec)
+
+		time.sleep(args.wait_interval)
 
 
 
