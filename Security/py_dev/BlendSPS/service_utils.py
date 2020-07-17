@@ -1,7 +1,7 @@
 import time
 import logging
-import os
-import copy
+import requests
+import json
 
 from utilities import TypesUtil, FileUtil
 from wrapper_pyca import Crypto_Hash, Crypto_DSA
@@ -140,3 +140,139 @@ class TenderUtils(object):
         FileUtil.save_testlog('test_results', 'exec_tx_commit_ENF.log', format(exec_time, '.3f'))
         # print(tx_ret)
         return tx_ret
+
+class ContractUtils(object):
+    '''
+    Get BC_account given node_name
+    @node_name: ip_address:port_num
+    @datafile: node account datafile path
+    '''
+    @staticmethod
+    def getAddress(node_name, datafile):
+        address_json = json.load(open(datafile))
+        return address_json[node_name]
+
+    '''
+    Get IndexAuth_Token
+    @host_addr: ip_address:port_num
+    '''
+    @staticmethod
+    def getIndexToken(service_addr, index_id, data_args={}):
+        #construct api_url
+        api_url = "http://" + service_addr + "/indexauth/api/v1.0/getIndexToken"
+        params={}
+        params['index_id']=index_id
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url,params=params, data=json.dumps(data_args), headers=headers)
+
+        #get response json
+        json_response = response.json()
+
+        return json_response
+
+    '''
+    Get authorized nodes
+    @host_addr: ip_address:port_num
+    '''
+    @staticmethod
+    def getAuthorizedNodes(service_addr, data_args={}):
+        #construct api_url
+        api_url = "http://" + service_addr + "/indexauth/api/v1.0/getAuthorizedNodes"
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url,data=json.dumps(data_args), headers=headers)
+
+        #get response json
+        json_response = response.json()
+
+        return json_response
+
+    '''
+    Verify hashed index value
+    @host_addr: ip_address:port_num
+    '''
+    @staticmethod
+    def verify_indexToken(service_addr, index_id, index_data, data_args={}):
+        #construct api_url
+        api_url = "http://" + service_addr + "/indexauth/api/v1.0/verify_indexToken"
+        params={}
+        params['index_id']=index_id
+        params['index_data']=index_data
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url,params=params, data=json.dumps(data_args), headers=headers)
+
+        #get response json
+        json_response = response.json()
+
+        return json_response
+
+    '''
+    Get CapAC_Token
+    @host_addr: ip_address:port_num
+    '''
+    @staticmethod
+    def getCapToken(data_args={}):
+        #construct api_url
+        service_addr = data_args['service_addr']
+        api_url = "http://" + service_addr + "/BlendCAC/api/v1.0/getCapToken"
+        params={}
+        params['client_addr']=data_args['host_address']
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url,params=params, data=json.dumps(data_args), headers=headers)
+
+        #get response json
+        json_response = response.json()
+
+        return json_response
+
+    '''
+    Verify Access
+    @host_addr: ip_address:port_num
+    '''
+    @staticmethod
+    def isValidAccess(data_args={}):
+        #construct api_url
+        service_addr = data_args['service_addr']
+        api_url = "http://" + service_addr + "/BlendCAC/api/v1.0/isValidAccess"
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url, data=json.dumps(data_args), headers=headers)
+
+        #get response json
+        json_response = response.json()
+
+        return json_response
+
+    '''
+    Get Vnode information
+    @host_addr: ip_address:port_num
+    '''
+    @staticmethod
+    def getVNodeInfo(data_args={}):
+        #construct api_url
+        service_addr = data_args['service_addr']
+        api_url = "http://" + service_addr + "/AuthID/api/v1.0/getVNodeInfo"
+        params={}
+        params['client_addr']=data_args['host_address']
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url,params=params, data=json.dumps(data_args), headers=headers)
+
+        #get response json
+        json_response = response.json()
+
+        return json_response
+
+    '''
+    Verify identity
+    @host_addr: ip_address:port_num
+    '''
+    @staticmethod
+    def isValidID(data_args={}):
+        #construct api_url
+        service_addr = data_args['service_addr']
+        api_url = "http://" + service_addr + "/AuthID/api/v1.0/isValidID"
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url, data=json.dumps(data_args), headers=headers)
+
+        #get response json
+        json_response = response.json()
+
+        return json_response
