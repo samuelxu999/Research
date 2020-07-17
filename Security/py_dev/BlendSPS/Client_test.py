@@ -31,13 +31,13 @@ class ServiceThread (threading.Thread):
 		# Launch service request given opType-1-AuthID, 2-CapAC, 3-IndexAuth;
 		if(self.opType==1):
 			srv_ret = ContractUtils.isValidID(self.argv[0])
-			logger.info(srv_ret)
+			logger.info("thread-{}: {}".format(self.threadID, srv_ret))
 		if(self.opType==2):
 			srv_ret = ContractUtils.isValidAccess(self.argv[0])
-			logger.info(srv_ret)
+			logger.info("thread-{}: {}".format(self.threadID, srv_ret))
 		if(self.opType==3):
 			srv_ret = ContractUtils.verify_indexToken(self.argv[0], self.argv[1], self.argv[2])
-			logger.info(srv_ret)
+			logger.info("thread-{}: {}".format(self.threadID, srv_ret))
 		else:
 			pass
 
@@ -156,9 +156,9 @@ def threads_pooling(thread_count, opType, fun_args):
 		# The start() method starts a thread by calling the run method.
 		p_thread.start()
 
-		# The join() waits for all threads to terminate.
-		for p_thread in threads_pool:
-			p_thread.join()
+	# The join() waits for all threads to terminate.
+	for p_thread in threads_pool:
+		p_thread.join()
 
 def Service_test(args):
 	addr_list = "./addr_list.json"
