@@ -1,5 +1,6 @@
 # IDS
-Official design of the Federated Capability-based Access Control Mechanism for IoTs.
+Official design of paper "A Federated Capability-based Access Control Mechanism for Internet of Things (IoTs)".
+ Please refer to online [link](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/10641/106410U/A-federated-capability-based-access-control-mechanism-for-Internet-of/10.1117/12.2305619.short) for detail.
 
 The concept proof system is deployed on a physical network using python.
 

@@ -1,5 +1,6 @@
 # BC_BioMedical
-Official implementation of the "An Decentralized Data Sharing and Access Control Strategy for Healthcare"
+Official implementation of of paper "Decentralized autonomous imaging data processing using blockchain".
+Please refer to online [link](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/10871/108710U/Decentralized-autonomous-imaging-data-processing-using-blockchain/10.1117/12.2513243.short?SSO=1) for detail.
 
 The concept proof system is deployed on a private Ethereum network. For Ethereum project, please refer to: [ethereum](https://github.com/ethereum) on github.
 

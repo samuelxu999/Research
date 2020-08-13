@@ -1,5 +1,6 @@
 # BC_DDDAS
-Official implementation of the "An Exploration of Blockchain Enabled Decentralized Capability based Access Control Strategy for Space Situation Awareness"
+Official implementation of paper "An Exploration of Blockchain Enabled Decentralized Capability based Access Control Strategy for Space Situation Awareness"
+Please refer to online [link](https://www.spiedigitallibrary.org/journals/Optical-Engineering/volume-58/issue-4/041609/Exploration-of-blockchain-enabled-decentralized-capability-based-access-control-strategy/10.1117/1.OE.58.4.041609.full) for detail.
 
 The concept proof system is deployed on a private Ethereum network. For Ethereum project, please refer to: [ethereum](https://github.com/ethereum) on github.
 

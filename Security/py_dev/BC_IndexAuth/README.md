@@ -1,5 +1,6 @@
 # BC_IndexAuth
-Official implementation of the "Real-Time Index Authentication for Event-Oriented Surveillance Video Query using Blockchain"
+Official implementation of paper "Real-Time Index Authentication for Event-Oriented Surveillance Video Query using Blockchain".
+Please refer to online [link](https://ieeexplore.ieee.org/abstract/document/8656668?casa_token=RbUVGnjd_BwAAAAA:Z1455h91-nrfCPEt6VqgFh1kGLRNkjA7PSLsGVfuBnG46OI9gRVETrk9k4SVHrBxzM1_KAMo) for detail.
 
 The concept proof system is deployed on a private Ethereum network. For Ethereum project, please refer to: [ethereum](https://github.com/ethereum) on github.
 
