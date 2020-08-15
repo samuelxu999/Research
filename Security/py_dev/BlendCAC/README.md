@@ -26,14 +26,6 @@ This is truffle folder to develop smart contract for BlendCAC implementation.
 	
 	--- 2_deploy_contracts.js: This file is the migration (deployment) script for deploying our developed smart contract Solidity files.
 	
-* test:
-
-	--- addr_list.json: This file provide nodename->address mapping table to manage our test nodes in private blockchain network.
-	
-	--- utilities.js: This javascripts offers all utility class for test code.
-	
-	--- test_token.js: This is a javascripts test file to interact with deployed smart contracts.
- 
 
 ### py_dev
 The prototype desgin of BlednCAC access control strategy by using python. 

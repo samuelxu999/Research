@@ -259,13 +259,13 @@ class VisualizeData(object):
 			# plt.plot(x, y, "b^")
 			if(x=='100'):
 				# str_a='('+ str(x)+', '+format(a, '.3f') + ')'
-				str_a = format(a, '.3f')
+				str_a = format(a, '.1f')
 				plt.text(int(x)-1, a+0.25, str_a)
 				# str_b='('+ str(x)+', '+format(b, '.3f') + ')'
-				str_b = format(b, '.3f')
+				str_b = format(b, '.1f')
 				plt.text(int(x)-1, b+0.25, str_b)
 				# str_c='('+ str(x)+', '+format(c, '.3f') + ')'
-				str_c = format(c, '.3f')
+				str_c = format(c, '.1f')
 				plt.text(int(x)-1, c+0.25, str_c)
 
 		plt.ylim(0, 12)
@@ -311,16 +311,16 @@ class VisualizeData(object):
 		for x, a, b, c, d, e in zip(x, Dropout_0, Dropout_1, Dropout_2, Dropout_3, Mono_srv): 
 			# plt.plot(x, y, "b^")
 			if(x=='100'):
-				str_a = format(a, '.3f')
-				plt.text(int(x)-1, a-0.5, str_a)
-				str_b = format(b, '.3f')
-				plt.text(int(x)-1, b+0.2, str_b)
-				str_c = format(c, '.3f')
-				plt.text(int(x)-1, c+0.25, str_c)
-				str_d = format(d, '.3f')
-				plt.text(int(x)-1, d+0.25, str_d)
-				str_e = format(e, '.3f')
-				plt.text(int(x)-1, e+0.25, str_e)
+				str_a = format(a, '.1f')
+				plt.text(int(x)-0.5, a-0.5, str_a)
+				str_b = format(b, '.1f')
+				plt.text(int(x)-0.5, b+0.2, str_b)
+				str_c = format(c, '.1f')
+				plt.text(int(x)-0.5, c+0.25, str_c)
+				str_d = format(d, '.1f')
+				plt.text(int(x)-0.5, d+0.25, str_d)
+				str_e = format(e, '.1f')
+				plt.text(int(x)-0.5, e+0.25, str_e)
 
 		plt.ylim(0, 12)
 		plt.legend(legend_label, loc='upper left', fontsize=18)
@@ -365,16 +365,16 @@ class VisualizeData(object):
 		for x, a, b, c, d, e in zip(x, Dropout_0, Dropout_1, Dropout_2, Dropout_3, Mono_srv): 
 			# plt.plot(x, y, "b^")
 			# if(x=='100'):
-			str_a=format(a, '.3f')
-			plt.text(int(x)-4.5, a+1, str_a)
-			str_b=format(b, '.3f')
-			plt.text(int(x)-4.5, b+1, str_b)
-			str_c=format(c, '.3f')
-			plt.text(int(x)-4.5, c+1, str_c)
-			str_d=format(d, '.3f')
-			plt.text(int(x)-4.5, d+1, str_d)
-			str_e=format(e, '.3f')
-			plt.text(int(x)-4.5, e+1, str_e)
+			str_a=format(a, '.1f')
+			plt.text(int(x)-3.5, a+1, str_a)
+			str_b=format(b, '.1f')
+			plt.text(int(x)-3.5, b+1, str_b)
+			str_c=format(c, '.1f')
+			plt.text(int(x)-3.5, c+1, str_c)
+			str_d=format(d, '.1f')
+			plt.text(int(x)-3.5, d+1, str_d)
+			str_e=format(e, '.1f')
+			plt.text(int(x)-3.5, e+1, str_e)
 
 		plt.ylim(0, 70)
 		plt.legend(legend_label, loc='upper left', fontsize=18)
