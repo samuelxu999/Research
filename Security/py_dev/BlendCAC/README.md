@@ -27,7 +27,7 @@ This is truffle folder to develop smart contract for BlendCAC implementation.
 	--- 2_deploy_contracts.js: This file is the migration (deployment) script for deploying our developed smart contract Solidity files.
 	
 
-### py_dev
+### src
 The prototype desgin of BlednCAC access control strategy by using python. 
 * ABAC_Policy.py: This module provide Attribute based AC token struct model and encapsulation of access control policy.
 
