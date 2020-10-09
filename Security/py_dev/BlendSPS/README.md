@@ -1,5 +1,5 @@
 # BlendSPS
-Official implementation of paper "BlendSPS: A BLockchain-ENabled Decentralized Smart Public Safety System". Please refer to archive: [https://www.preprints.org/manuscript/202007.0667/v1](https://www.preprints.org/manuscript/202007.0667/v1) for detail.
+Official implementation of article "BlendSPS: A BLockchain-ENabled Decentralized Smart Public Safety System". Please refer to MDPI-Smart Cities: [https://doi.org/10.3390/smartcities3030047](https://doi.org/10.3390/smartcities3030047) for detail.
 
 The concept proof system is deployed and run on a microservice SOA framework. You can access microservice projects reousrce on github: 
 [AuthID](https://github.com/samuelxu999/Microservices_dev/tree/master/Services_dev/AuthID); 
