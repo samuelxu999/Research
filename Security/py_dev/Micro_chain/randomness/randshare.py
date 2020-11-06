@@ -10,13 +10,14 @@ import threading
 import time
 import logging
 from enum import Enum
-from wallet import Wallet
-from nodes import *
-from CryptoLib.PVSS import *
-from CryptoLib.crypto_rsa import Crypto_RSA
-from utilities import FileUtil, TypesUtil, DatetimeUtil
-from configuration import *
-from service_api import SrvAPI
+
+from network.wallet import Wallet
+from network.nodes import *
+from cryptolib.PVSS import *
+from cryptolib.crypto_rsa import Crypto_RSA
+from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
+from utils.configuration import *
+from utils.service_api import SrvAPI
 
 logger = logging.getLogger(__name__)
 
@@ -462,9 +463,3 @@ def test_randshare():
 	ls_secret = [secret,1]
 	random_secret=myrandshare.calculate_random(ls_secret)
 	print('New random secret:',random_secret)
-
-
-if __name__ == '__main__':
-	# test_randshare()
-
-	pass

@@ -15,9 +15,9 @@ import json
 from uuid import uuid4
 from urllib.parse import urlparse
 
-from utilities import FileUtil, TypesUtil
-from db_adapter import DataManager
-from configuration import *
+from utils.utilities import FileUtil, TypesUtil
+from utils.db_adapter import DataManager
+from utils.configuration import *
 
 class PeerNodes:
 

@@ -17,7 +17,7 @@ import operator
 import math
 import sys
 from sys import argv
-from crypto_rsa import Crypto_RSA
+from cryptolib.crypto_rsa import Crypto_RSA
 
 
 '''Returns the number of bytes necessary to store the integer n.'''

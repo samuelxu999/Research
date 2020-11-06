@@ -16,16 +16,17 @@ import requests
 import json
 import time
 import logging
-from wallet import Wallet
-from nodes import *
-from transaction import Transaction
-from block import Block
-from vote import VoteCheckPoint
-from validator import Validator
-from consensus import POW
-from utilities import TypesUtil, FileUtil
-from service_api import SrvAPI
-from randshare import RandShare, RandOP
+
+from network.wallet import Wallet
+from network.nodes import *
+from consensus.transaction import Transaction
+from consensus.block import Block
+from consensus.vote import VoteCheckPoint
+from consensus.validator import Validator
+from consensus.consensus import POW
+from utils.utilities import TypesUtil, FileUtil
+from utils.service_api import SrvAPI
+from randomness.randshare import RandShare, RandOP
 
 logger = logging.getLogger(__name__)
 

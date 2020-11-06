@@ -10,9 +10,10 @@ Created on June.18, 2019
 '''
 
 from collections import OrderedDict
-from utilities import TypesUtil
-from CryptoLib.crypto_rsa import Crypto_RSA
-from configuration import *
+
+from utils.utilities import TypesUtil
+from cryptolib.crypto_rsa import Crypto_RSA
+from utils.configuration import *
 
 class Block(object):
 	"""One node (roundrobin) adds a new block to the blockchain every

@@ -23,16 +23,16 @@ from urllib.parse import urlparse
 from uuid import uuid4
 import copy
 
-from utilities import FileUtil, TypesUtil
-from wallet import Wallet
-from transaction import Transaction
-from nodes import PeerNodes
-from block import Block
-from vote import VoteCheckPoint
-from db_adapter import DataManager
-from consensus import *
-from configuration import *
-from service_api import SrvAPI
+from utils.utilities import FileUtil, TypesUtil
+from network.wallet import Wallet
+from consensus.transaction import Transaction
+from network.nodes import PeerNodes
+from consensus.block import Block
+from consensus.vote import VoteCheckPoint
+from utils.db_adapter import DataManager
+from consensus.consensus import *
+from utils.configuration import *
+from utils.service_api import SrvAPI
 
 logger = logging.getLogger(__name__)
 

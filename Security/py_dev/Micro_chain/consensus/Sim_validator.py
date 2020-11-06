@@ -20,11 +20,11 @@ from urllib.parse import urlparse
 from uuid import uuid4
 import copy
 
-from utilities import FileUtil, TypesUtil
-from transaction import Transaction
-from block import Block
-from consensus import *
-from configuration import *
+from utils.utilities import FileUtil, TypesUtil
+from consensus.transaction import Transaction
+from consensus.block import Block
+from consensus.consensus import *
+from utils.configuration import *
 
 
 class Validator(object):

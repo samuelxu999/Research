@@ -20,13 +20,13 @@ from flask import Flask, jsonify
 from flask import abort,make_response,request
 from argparse import ArgumentParser
 
-from utilities import FileUtil, TypesUtil, DatetimeUtil
-from transaction import Transaction
-from block import Block
-from validator import Validator
-from consensus import *
-from service_api import SrvAPI
-from randshare import RandShare, RandOP, RundShare_Daemon
+from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
+from consensus.transaction import Transaction
+from consensus.block import Block
+from consensus.validator import Validator
+from consensus.consensus import *
+from utils.service_api import SrvAPI
+from randomness.randshare import RandShare, RandOP, RundShare_Daemon
 
 logger = logging.getLogger(__name__)
 

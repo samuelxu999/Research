@@ -10,11 +10,12 @@ Created on June.27, 2019
 '''
 
 import hashlib
-from utilities import TypesUtil
 from collections import OrderedDict
-from CryptoLib.crypto_rsa import Crypto_RSA
-from db_adapter import DataManager
-from configuration import *
+
+from cryptolib.crypto_rsa import Crypto_RSA
+from utils.utilities import TypesUtil
+from utils.db_adapter import DataManager
+from utils.configuration import *
 
 class VoteCheckPoint(object):
 	"""Vote check point message

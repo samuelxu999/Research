@@ -13,7 +13,8 @@ Created on Nov.2, 2017
 import requests
 import json
 import threading
-from utilities import TypesUtil
+
+from utils.utilities import TypesUtil
 
 class ReqThread (threading.Thread):
     '''

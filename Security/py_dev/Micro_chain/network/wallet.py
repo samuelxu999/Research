@@ -15,8 +15,8 @@ import hashlib
 import json
 from datetime import datetime
 
-from CryptoLib.crypto_rsa import Crypto_RSA
-from utilities import FileUtil, TypesUtil, DatetimeUtil
+from cryptolib.crypto_rsa import Crypto_RSA
+from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
 
 KEY_DATA_DIR = 'keystore'
 

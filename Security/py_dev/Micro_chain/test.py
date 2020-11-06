@@ -1,19 +1,18 @@
 #This is used for test code
 
-from wallet import Wallet
-from nodes import *
-from transaction import Transaction
-from block import Block
-from Sim_validator import Validator as SimValidator
-from validator import Validator
-from consensus import *
-from utilities import FileUtil, TypesUtil
-from configuration import *
-from db_adapter import DataManager
-from vote import VoteCheckPoint
-
-from CryptoLib.PVSS import *
-from CryptoLib.crypto_rsa import Crypto_RSA
+from network.wallet import Wallet
+from network.nodes import *
+from consensus.transaction import Transaction
+from consensus.block import Block
+from consensus.Sim_validator import Validator as SimValidator
+from consensus.validator import Validator
+from consensus.consensus import *
+from consensus.vote import VoteCheckPoint
+from utils.utilities import FileUtil, TypesUtil
+from utils.configuration import *
+from utils.db_adapter import DataManager
+from cryptolib.PVSS import *
+from cryptolib.crypto_rsa import Crypto_RSA
 
 from time import time
 import random
@@ -564,7 +563,7 @@ def test_PVSS():
 	    for share_proof, verify_share in zip(share_proofs, verify_shares):
 	        print('  ',share_proof == verify_share)
 
-	verify_S0 = PVSS.verify_S0(poly_commits, p)
+	verify_S0 = PVSS.verify_S(poly_commits, 0, p)
 	print('verify S0:', verify_S0 == poly_commits[0])
 
 

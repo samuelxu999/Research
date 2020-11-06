@@ -11,8 +11,9 @@ Created on June.18, 2019
 
 import hashlib
 from enum import Enum
-from configuration import *
-from utilities import TypesUtil
+
+from utils.configuration import *
+from utils.utilities import TypesUtil
 
 class ConsensusType(Enum):
 	'''
