@@ -91,6 +91,10 @@ def export_tree():
 
 	mytree = MerkleTree(mydata, hashfunc)
 
+	# if no merkle node, do nothing.
+	if(len(mytree)==0):
+		return
+
 	# export(mytree, filename='transactions')
 	# export(mytree, filename='transactions', ext='jpg')
 
