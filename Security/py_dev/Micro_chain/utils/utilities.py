@@ -309,15 +309,29 @@ class TypesUtil(object):
 	# get hashed json data
 	@staticmethod
 	def hash_json(json_block, hash_type='sha256'):
-	    """
-	    Create a SHA-256 hash of a json block
-	    """
-	    # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
-	    block_string = json.dumps(json_block, sort_keys=True).encode()
-	    
-	    if(hash_type=='sha1'):
-	    	return hashlib.sha1(block_string).hexdigest()
-	    elif(hash_type=='sha256'):
-	    	return hashlib.sha256(block_string).hexdigest()
-	    else:
-	    	return None
+		"""
+		Create a SHA-256 hash of a json block
+		"""
+		# We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
+		block_string = json.dumps(json_block, sort_keys=True).encode()
+
+		if(hash_type=='sha1'):
+			return hashlib.sha1(block_string).hexdigest()
+		elif(hash_type=='sha256'):
+			return hashlib.sha256(block_string).hexdigest()
+		else:
+			return None
+
+'''
+FuncUtil class to support utils functions
+'''
+class FuncUtil(object):
+	# sha 256 hash func
+	@staticmethod
+	def hashfunc_sha256(data_value):
+		return hashlib.sha256(data_value).hexdigest()
+
+	# sha1 hash func
+	@staticmethod
+	def hashfunc_sha1(data_value):
+		return hashlib.sha1(data_value).hexdigest()

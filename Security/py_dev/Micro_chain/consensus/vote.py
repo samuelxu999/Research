@@ -9,11 +9,10 @@ Created on June.27, 2019
 @Reference: 
 '''
 
-import hashlib
 from collections import OrderedDict
 
 from cryptolib.crypto_rsa import Crypto_RSA
-from utils.utilities import TypesUtil
+from utils.utilities import TypesUtil, FuncUtil
 from utils.db_adapter import DataManager
 from utils.configuration import *
 
@@ -76,7 +75,7 @@ class VoteCheckPoint(object):
 			private_key = Crypto_RSA.load_private_key(private_key_byte, sk_pw)
 
 			# generate hashed dict_vote
-			hash_data = hashlib.sha1(str(self.to_dict()).encode('utf8')).hexdigest()
+			hash_data = FuncUtil.hashfunc_sha1(str(self.to_dict()).encode('utf8'))
 			sign_value = Crypto_RSA.sign(private_key, hash_data)
 		except:
 			sign_value=''
@@ -92,7 +91,7 @@ class VoteCheckPoint(object):
 			publick_key = Crypto_RSA.load_public_key(public_key_byte)
 
 			# generate hashed dict_vote
-			hash_data = hashlib.sha1(str(dict_vote).encode('utf8')).hexdigest()
+			hash_data = FuncUtil.hashfunc_sha1(str(dict_vote).encode('utf8'))
 			verify_sign=Crypto_RSA.verify(publick_key,signature,hash_data)
 		except:
 			verify_sign=False

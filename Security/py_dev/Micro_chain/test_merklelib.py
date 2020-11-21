@@ -1,12 +1,13 @@
 import string
-import hashlib
+# import hashlib
 
 from merklelib import MerkleTree, verify_tree_consistency, beautify, export, jsonify
 
+from utils.utilities import TypesUtil, FuncUtil
 # a sample hash function
 # you can also omit it and the default hash function will be used
-def hashfunc(value):
-	return hashlib.sha256(value).hexdigest()
+# def hashfunc(value):
+# 	return hashlib.sha256(value).hexdigest()
 
 
 def build_tree():
@@ -16,7 +17,7 @@ def build_tree():
 	data = list(string.ascii_letters)
 
 	# build a Merkle tree for that list
-	tree = MerkleTree(data, hashfunc)
+	tree = MerkleTree(data, FuncUtil.hashfunc_sha256)
 
 	# generate an audit proof the letter A
 	test_data = 'A'
@@ -36,7 +37,7 @@ def updated_tree():
 	# a list of all ASCII letters
 	data = ['A', 'B', 'C', 'D']
 
-	mytree = MerkleTree(data, hashfunc)
+	mytree = MerkleTree(data, FuncUtil.hashfunc_sha256)
 
 	# print the tree in the terminal
 	print('---------------------- Before ----------------')
@@ -55,7 +56,7 @@ def compare_tree():
 	# a list of all ASCII letters
 	data = ['A', 'B', 'C', 'D']
 
-	old_tree = MerkleTree(data, hashfunc)
+	old_tree = MerkleTree(data, FuncUtil.hashfunc_sha256)
 
 	# print the tree in the terminal
 	print('---------------------- old_tree ----------------')
@@ -65,7 +66,7 @@ def compare_tree():
 	# a list of all ASCII letters
 	new_data = ['A', 'B', 'C', 'd']
 
-	new_tree = MerkleTree(new_data, hashfunc)
+	new_tree = MerkleTree(new_data, FuncUtil.hashfunc_sha256)
 
 	# print the tree in the terminal
 	print('---------------------- new_tree ----------------')
@@ -89,7 +90,7 @@ def export_tree():
 	# a list of all ASCII letters
 	mydata = ['A', 'B', 'C', 'D', 1, 2, 3, 4]
 
-	mytree = MerkleTree(mydata, hashfunc)
+	mytree = MerkleTree(mydata, FuncUtil.hashfunc_sha256)
 
 	# if no merkle node, do nothing.
 	if(len(mytree)==0):
@@ -98,7 +99,8 @@ def export_tree():
 	# export(mytree, filename='transactions')
 	# export(mytree, filename='transactions', ext='jpg')
 
-	json_tree=jsonify(mytree)
+	tree_struct=jsonify(mytree)
+	json_tree = TypesUtil.string_to_json(tree_struct)
 	print(json_tree)
 
 

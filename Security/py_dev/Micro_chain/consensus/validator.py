@@ -16,14 +16,15 @@ import threading
 import logging
 import time
 
-import hashlib
 import json
 import time
 from urllib.parse import urlparse
 from uuid import uuid4
 import copy
 
-from utils.utilities import FileUtil, TypesUtil
+from merklelib import MerkleTree, jsonify as merkle_jsonify
+
+from utils.utilities import FileUtil, TypesUtil, FuncUtil
 from network.wallet import Wallet
 from consensus.transaction import Transaction
 from network.nodes import PeerNodes
@@ -438,6 +439,7 @@ class Validator(object):
 		block_data = {'height': last_block['height'],
 					'previous_hash': last_block['previous_hash'],
 					'transactions': last_block['transactions'],
+					'merkle_root': last_block['merkle_root'],
 					'nonce': last_block['nonce']}
 
 		parent_block = Block.json_to_block(last_block)
@@ -500,22 +502,38 @@ class Validator(object):
 			return
 
 		#=========2: Check that the Proof of Work is correct given current block data =========
-		# reject block with empty transactions
+		# a) reject block with empty transactions
 		if(current_block['transactions']==[]):
 			logger.info("Invalid block with empty txs from sender: {}".format(current_block['sender_address']))
 			return False
 
+		# b) verify if transactions list has the same merkel root hash as in block['merkle_root']
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
 
-		# execute valid proof task given consensus algorithm
+		# # build a Merkle tree for that list
+		tx_HMT = MerkleTree(dict_transactions, FuncUtil.hashfunc_sha256)
+
+		# calculate merkle tree root hash
+		if(len(tx_HMT)==0):
+			merkle_root = 0
+		else:
+			tree_struct=merkle_jsonify(tx_HMT)
+			json_tree = TypesUtil.string_to_json(tree_struct)
+			merkle_root = json_tree['name']
+
+		if(merkle_root!=current_block['merkle_root']):
+			logger.info("Transactions merkel tree root verify fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
+			return False
+
+		# c) execute valid proof task given consensus algorithm
 		if(self.consensus==ConsensusType.PoW):
-			if( not POW.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce']) ):
-				logger.info("PoW valid proof fail. Block: {}".format(current_block['hash']))
+			if( not POW.valid_proof(current_block['merkle_root'], current_block['previous_hash'], current_block['nonce']) ):
+				logger.info("PoW verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
 				return False
 		elif(self.consensus==ConsensusType.PoS):
-			if( not POS.valid_proof(dict_transactions, current_block['previous_hash'], current_block['nonce'], 
+			if( not POS.valid_proof(current_block['merkle_root'], current_block['previous_hash'], current_block['nonce'], 
 									TEST_STAKE_WEIGHT, self.sum_stake) ):
-				logger.info("PoS valid proof fail. Block: {}".format(current_block['hash']))
+				logger.info("PoS verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
 				return False
 		else:
 			return False
@@ -876,9 +894,9 @@ class Validator(object):
 		if self.is_ancestor(self.highest_justified_checkpoint, head_block):
 			if(self.consensus==ConsensusType.PoS):
 				# get proof value used for choose current_head
-				new_proof=POS.get_proof(Transaction.json_to_dict(new_block['transactions']), 
+				new_proof=POS.get_proof(new_block['merkle_root'], 
 								new_block['previous_hash'], new_block['nonce'],self.sum_stake)
-				head_proof=POS.get_proof(Transaction.json_to_dict(head_block['transactions']), 
+				head_proof=POS.get_proof(head_block['merkle_root'], 
 								head_block['previous_hash'], head_block['nonce'],self.sum_stake)
 				# head is genesis block or new_block have smaller proof value than current head
 				logger.info( "new block sender:  {}".format(new_block['sender_address']))

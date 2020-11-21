@@ -10,10 +10,9 @@ Created on June.1, 2019
 '''
 
 from collections import OrderedDict
-import hashlib
 from time import time
 
-from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
+from utils.utilities import FileUtil, TypesUtil, DatetimeUtil, FuncUtil
 from cryptolib.crypto_rsa import Crypto_RSA
 
 class Transaction(object):
@@ -55,7 +54,7 @@ class Transaction(object):
             private_key = Crypto_RSA.load_private_key(private_key_byte, sk_pw)
 
             # generate hashed transaction
-            hash_data = hashlib.sha1(str(self.to_dict()).encode('utf8')).hexdigest()
+            hash_data = FuncUtil.hashfunc_sha1(str(self.to_dict()).encode('utf8'))
             sign_value = Crypto_RSA.sign(private_key, hash_data)
         except:
             sign_value=''
@@ -93,7 +92,7 @@ class Transaction(object):
             publick_key = Crypto_RSA.load_public_key(public_key_byte)
 
             # generate hashed transaction
-            hash_data = hashlib.sha1(str(transaction).encode('utf8')).hexdigest()
+            hash_data = FuncUtil.hashfunc_sha1(str(transaction).encode('utf8'))
             verify_sign=Crypto_RSA.verify(publick_key,signature,hash_data)
         except:
             verify_sign=False
