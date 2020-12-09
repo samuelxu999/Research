@@ -31,7 +31,7 @@ def load_ENF(args):
 	sample_length = args.sample_length
 	ENF_dataset = []
 	## get sample data for node 0
-	ls_ENF1 = TypesUtil.np2list(ENF_data[head_pos:sample_length])
+	ls_ENF1 = TypesUtil.np2list(ENF_data[head_pos:(head_pos+sample_length)])
 	ENF_dataset.append(ls_ENF1)
 
 	head_pos = args.sample_head + sample_length
