@@ -50,7 +50,7 @@ def ENF_Process(args):
 
 	## ******************** function module test ***********************
 	head_pos = args.sample_head
-	ls_ENF1 = TypesUtil.np2list(ENF_data[head_pos:sample_length, 1])
+	ls_ENF1 = TypesUtil.np2list(ENF_data[head_pos:(head_pos+sample_length), 1])
 	ENF_dataset.append(ls_ENF1)
 
 	head_pos = args.sample_head + sample_length
@@ -63,14 +63,16 @@ def ENF_Process(args):
 	## ************** choose ENF samples from dataset ****************
 	sample_node = args.sample_node
 	ENF_samples = []
-	head_pos = 0
+	head_pos = args.sample_head
 	for ENF_id in range(sample_node):
-		##-----------  random choose sample for node ------------------
-		# head_pos = random.randint(0,7200) 
+		if(args.random_sample):
+			##-----------  random choose sample for node ------------------
+			head_pos = random.randint(0,7200) 
+		else:
+			##----------- choose continuous sample for node ------------------
+			head_pos = head_pos + sample_length
 		ls_ENF = TypesUtil.np2list(ENF_data[head_pos:(head_pos+sample_length), 1])
 		ENF_samples.append( [ENF_id, ls_ENF] )
-		##----------- choose continuous sample for node ------------------
-		head_pos = head_pos + sample_length
 
 	# ## calculate sqr_dist that is between node0 and other ones
 	# ## define benchmark node
