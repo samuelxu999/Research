@@ -9,6 +9,7 @@ Created on Dec.8, 2020
 @Reference: 
 '''
 
+import json
 import glob, os
 import numpy as np
 import csv
@@ -67,6 +68,18 @@ class TypesUtil(object):
 		# transfer to list dataset and return
 		ls_data = np_data.tolist()
 		return ls_data
+
+	#string to json
+	@staticmethod
+	def string_to_json(json_str):
+		json_data = json.loads(json_str)
+		return json_data
+		
+	#json to string
+	@staticmethod
+	def json_to_string(json_data):
+		json_str = json.dumps(json_data)
+		return json_str
 
 '''
 PlotUtil class for data visualization

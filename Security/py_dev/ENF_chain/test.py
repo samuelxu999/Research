@@ -6,6 +6,7 @@ import logging
 import argparse
 from utilities import FileUtil, TypesUtil, PlotUtil
 from ENF_consensus import ENFUtil
+from Swarm_RPC import Swarm_RPC
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,34 @@ def ENF_Process(args):
 
 	# print("ENF score is: {}".format(ls_ENF_score))
 	print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
+
+def swarm_test(args):
+	ENF_file = "./data/one_day_enf.csv"
+	head_pos = args.sample_head
+	sample_length = args.sample_length
+	ENF_data = FileUtil.csv_read(ENF_file)
+	ls_ENF = TypesUtil.np2list(ENF_data[head_pos:(head_pos+sample_length), 1])
+
+	## ******************** upload ENF samples **********************
+	## build json ENF data for transaction
+	tx_json = {}
+
+	json_ENF={}
+	json_ENF['id']=0
+	json_ENF['enf']=ls_ENF
+	tx_data = TypesUtil.json_to_string(json_ENF)  
+
+	## save ENF data in transaction
+	tx_json['data']=tx_data
+	# print(tx_json)
+	target_address = args.target_address
+	post_ret = Swarm_RPC.upload_data(target_address, tx_json)
+	print("Record ENF samples on swarm network at: {}".format(post_ret['data']))
+
+	## ******************** download ENF samples **********************
+	swarm_hash = post_ret['data']
+	query_ret = Swarm_RPC.download_data(target_address,swarm_hash)
+	print("Fetch ENF samples from swarm network at: {}\n{}".format(swarm_hash, query_ret['data']))
 	
 
 def define_and_get_arguments(args=sys.argv[1:]):
@@ -99,19 +128,23 @@ def define_and_get_arguments(args=sys.argv[1:]):
 
 	parser.add_argument("--test_func", type=int, default=0, 
 						help="Execute test function: 0-function test, \
-													1-ENF_Process()")
+													1-ENF_Process(), \
+													2-swarm_test()")
 
 	parser.add_argument("--sample_node", type=int, default=10, help="Sample node size n for test.")
 
 	parser.add_argument("--sample_head", type=int, default=0, help="Start point of ENF sample data for node.")
 
-	parser.add_argument("--sample_length", type=int, default=600, help="Length of ENF sample data for node.")
+	parser.add_argument("--sample_length", type=int, default=60, help="Length of ENF sample data for node.")
 
 	parser.add_argument("--random_sample", action="store_true", help="Random choose samples for ENF dataset.")
 
 	parser.add_argument("--show_fig", action="store_true", help="Show plot figure model.")
 
 	parser.add_argument("--save_fig", action="store_true", help="Save plot figure on local disk.")
+
+	parser.add_argument("--target_address", type=str, default="0.0.0.0:8501", 
+						help="Swarm RPC server address - ip:port.")
 
 	args = parser.parse_args(args=args)
 	return args
@@ -122,5 +155,7 @@ if __name__ == '__main__':
 
 	if(args.test_func==1):
 		ENF_Process(args)
+	elif(args.test_func==2):
+		swarm_test(args)
 	else:
 		load_ENF(args)
