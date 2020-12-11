@@ -11,7 +11,7 @@ Created on Dec.8, 2020
 
 import math
 import numpy as np
-from utilities import TypesUtil
+from utils.utilities import TypesUtil
 
 '''
 EnfProcess class for handling ENF signal squire distance calculation and verification, etc.

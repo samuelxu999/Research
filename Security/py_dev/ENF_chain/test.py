@@ -4,9 +4,9 @@ import sys
 import random
 import logging
 import argparse
-from utilities import FileUtil, TypesUtil, PlotUtil
-from ENF_consensus import ENFUtil
-from Swarm_RPC import Swarm_RPC
+from utils.utilities import FileUtil, TypesUtil, PlotUtil
+from consensus.ENF_consensus import ENFUtil
+from utils.Swarm_RPC import Swarm_RPC
 
 logger = logging.getLogger(__name__)
 
