@@ -22,11 +22,11 @@ class ConsensusType(Enum):
 	Define consensus enum type
 	@ PoW :  Proof-of-Work
 	@ PoS :  Proof-of-Stake
-	@ BFT :  Byzantine Fault Tolerant
+	@ PoE :  Proof-of-ENF 
 	'''
 	PoW = 0
 	PoS = 1
-	BFT = 2
+	PoE = 2
 
 class POW():
 	''' 
@@ -146,6 +146,11 @@ class POS():
 		if( not POS.valid_proof(merkle_root, last_hash, nonce, stake_weight, sum_stake) ):
 			return 0
 		return nonce
+
+# class POE():
+# 	''' 
+# 	Proof-of-ENF consenses mechanism
+# 	'''
 
 		
 

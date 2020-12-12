@@ -2,7 +2,7 @@
 ========================
 utilities.py
 ========================
-Created on Oct.23, 2017
+Created on Dec.8, 2020
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide utility function to support project.

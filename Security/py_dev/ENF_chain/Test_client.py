@@ -4,7 +4,7 @@
 ========================
 WS_Client module
 ========================
-Created on May.21, 2019
+Created on Dec.10, 2020
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide encapsulation of client API that access to Web service.
@@ -12,6 +12,7 @@ Created on May.21, 2019
 '''
 import argparse
 import sys
+import random
 import requests
 import json
 import time
@@ -26,13 +27,18 @@ from consensus.validator import Validator
 from consensus.consensus import POW
 from utils.utilities import TypesUtil, FileUtil
 from utils.service_api import SrvAPI
+from utils.Swarm_RPC import Swarm_RPC
 from randomness.randshare import RandShare, RandOP
 
 logger = logging.getLogger(__name__)
 
-# Instantiate the PeerNodes
+## Instantiate the PeerNodes
 peer_nodes = PeerNodes()
 peer_nodes.load_ByAddress()
+
+## Load ENF samples database for test
+ENF_file = "./data/one_day_enf.csv"
+ENF_data = FileUtil.csv_read(ENF_file)
 
 # ====================================== client side REST API ==================================
 def run_consensus(target_address, exec_consensus, isBroadcast=False):
@@ -59,32 +65,60 @@ def validator_getinfo(target_address, isBroadcast=False):
 			info_list.append(json_response)
 	return info_list
 
+def getSwarmhash(samples_id, samples_size, is_random=False):
+	if(is_random==True):
+		head_pos = random.randint(0,7200) 
+	else:
+		head_pos = 0 
 
-def send_transaction(target_address, tx_size=1, isBroadcast=False):
+	ls_ENF = TypesUtil.np2list(ENF_data[head_pos:(head_pos+samples_size), 1]) 
+
+	## ******************** upload ENF samples **********************
+	## build json ENF data for transaction
+	tx_json = {}
+
+	json_ENF={}
+	json_ENF['id']=samples_id
+	json_ENF['enf']=ls_ENF
+	tx_data = TypesUtil.json_to_string(json_ENF)  
+
+	## save ENF data in transaction
+	tx_json['data']=tx_data
+	# print(tx_json)
+
+	## random choose a swarm server
+	services_host = FileUtil.JSON_load("swarm_server.json")
+	server_id = random.randint(0,len(services_host['all_nodes'])-1)
+
+	## get address of swarm server
+	target_address = services_host['all_nodes'][server_id]
+	post_ret = Swarm_RPC.upload_data(target_address, tx_json)	
+
+	return post_ret['data']
+
+def send_transaction(target_address, samples_size, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
 
     # load accounts
     mywallet.load_accounts()
 
-    #list account address
-    #print(mywallet.list_address())
-
-    #----------------- test transaction --------------------
+    ##----------------- build test transaction --------------------
     sender = mywallet.accounts[0]
-    # recipient = mywallet.accounts[-1]
-    # attacker = mywallet.accounts[1]
-
-    # generate transaction
     sender_address = sender['address']
     sender_private_key = sender['private_key']
-    # recipient_address = recipient['address']
-    recipient_address = '72cf2287a019af0f480311bdfd01d5ed83f96a86'
+    ## set recipient_address as default value: 0
+    recipient_address = '0'
     time_stamp = time.time()
-    #value = 15
-    value = TypesUtil.string_to_hex(os.urandom(tx_size))
+    
+    ## value comes from hash value to indicate address that ENF samples are saved on swarm network.
+    json_value={}
+    json_value['sender_address'] = sender_address
+    json_value['swarm_hash'] = getSwarmhash(sender_address, samples_size)
+    ## convert json_value to string to ensure consistency in tx verification.
+    str_value = TypesUtil.json_to_string(json_value)
 
-    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
+    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
 
     # sign transaction
     sign_data = mytransaction.sign('samuelxu999')
@@ -94,7 +128,8 @@ def send_transaction(target_address, tx_size=1, isBroadcast=False):
                                             mytransaction.recipient_address,
                                             mytransaction.time_stamp,
                                             mytransaction.value)
-    #send transaction
+    
+    ## --------------------- send transaction --------------------------------------
     transaction_json = mytransaction.to_json()
     transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
     # print(transaction_json)
@@ -364,7 +399,7 @@ def create_randshare(target_address, isBroadcast=False):
 	FileUtil.AddLine(test_file, log_data)'''
 
 # ====================================== validator test ==================================
-def Epoch_validator(target_address, tx_size, phase_delay=BOUNDED_TIME):
+def Epoch_validator(target_address, samples_size, phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
 	'''
@@ -375,7 +410,7 @@ def Epoch_validator(target_address, tx_size, phase_delay=BOUNDED_TIME):
 
 	# S1: send test transactions
 	start_time=time.time()
-	send_transaction(target_address, tx_size, True)
+	send_transaction(target_address, samples_size, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -679,18 +714,24 @@ def checkpoint_netInfo(isDisplay=False):
 	return json_checkpoints
 
 def define_and_get_arguments(args=sys.argv[1:]):
-    parser = argparse.ArgumentParser(
-        description="Run websocket client."
-    )
-    parser.add_argument("--op_status", type=int, default=2, help="test case type.")
-    parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
-    parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
-    parser.add_argument("--target_address", type=str, default="0.0.0.0:8180", 
-    					help="Test target address - ip:port.")
-    parser.add_argument("--set_peer", type=str, default="", 
-    					help="set peer node. name@op")
-    args = parser.parse_args(args=args)
-    return args
+	parser = argparse.ArgumentParser(
+	    description="Run websocket client."
+	)
+	parser.add_argument("--test_func", type=int, default=2, help="test function: \
+															0: set peer nodes \
+															1: validator test \
+															2: single step test \
+															3: randshare test")
+	parser.add_argument("--op_status", type=int, default=0, help="test case type.")
+	parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
+	parser.add_argument("--samples_size", type=int, default=60, help="Size of ENF samples list from node.")
+	parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
+	parser.add_argument("--target_address", type=str, default="0.0.0.0:8180", 
+						help="Test target address - ip:port.")
+	parser.add_argument("--set_peer", type=str, default="", 
+						help="set peer node. name@op")
+	args = parser.parse_args(args=args)
+	return args
 
 def count_tx_size():
 	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
@@ -714,28 +755,27 @@ if __name__ == "__main__":
 
 	# set parameters
 	target_address = args.target_address
+	test_func = args.test_func
 	op_status = args.op_status
 	wait_interval = args.wait_interval
 	test_run = args.test_round
+	samples_size = args.samples_size
 
-	# |------------------------ test case type ---------------------------------|
+	# |------------------------ test function type -----------------------------|
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
 
-	if(op_status == 0):
+	if(test_func == 0):
 		set_peer = args.set_peer
 		if(set_peer!=''):
 			name_op=set_peer.split('@')
 			# print(name_op[0], name_op[1])
 			# set_peerNodes('R2_pi4_4', 1, True)
 			set_peerNodes(name_op[0], int(name_op[1]), True)
-	elif(op_status == 1):
-		# data_size = 1024*1024
-		data_size = 1024
-
+	elif(test_func == 1):
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
-			Epoch_validator(target_address, data_size, 5)
+			Epoch_validator(target_address, samples_size, 5)
 			time.sleep(wait_interval)
 
 		# get checkpoint after execution
@@ -743,34 +783,21 @@ if __name__ == "__main__":
 		for _item, _value in json_checkpoints.items():
 			logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 
-	elif(op_status == 2):
-		# data_size = 1024*1024
-		data_size = 1024
-		# send_transaction(target_address, data_size, True)
-		# time.sleep(1)
-		# get_transactions(target_address)
-		run_consensus(target_address, True, True)
-
-		# start_mining(target_address, True)
-
-		# check_head()
-
-		# start_voting(target_address, True)
-
-		# get_chain(target_address, True)
-		# count_tx_size()
-
-		# print('Valid last_block:', test_valid_block(target_address))
-
-		# print('Valid transactions:', test_valid_transactions(target_address)) 
-
-		# send_vote(target_address) 
-
-		# show_netInfo()
-		# json_checkpoints = checkpoint_netInfo(False)
-		# print(json_checkpoints)
-
-		pass  
+	elif(test_func == 2):
+		if(op_status == 1):
+			get_transactions(target_address)
+		elif(op_status == 2):
+			send_transaction(target_address, samples_size, True)
+		elif(op_status == 3):
+			get_chain(target_address, True)
+		elif(op_status == 4):
+			count_tx_size()
+		elif(op_status == 5):
+			run_consensus(target_address, True, True)
+		else:
+			json_checkpoints = checkpoint_netInfo(False)
+			for _item, _value in json_checkpoints.items():
+				logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
 	else:
 		# host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
 		# cache_fetch_share(target_address)
@@ -786,5 +813,3 @@ if __name__ == "__main__":
 			logger.info("Test run:{}".format(x+1))
 			Epoch_randomshare()
 			time.sleep(wait_interval)
-	
-		# pass

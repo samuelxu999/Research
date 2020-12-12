@@ -106,14 +106,20 @@ def swarm_test(args):
 	tx_json = {}
 
 	json_ENF={}
-	json_ENF['id']=0
+	json_ENF['id']='1ad48ca78653f3f4b16b0622432db7d995613c42'
 	json_ENF['enf']=ls_ENF
 	tx_data = TypesUtil.json_to_string(json_ENF)  
 
 	## save ENF data in transaction
 	tx_json['data']=tx_data
 	# print(tx_json)
-	target_address = args.target_address
+
+	## random choose a swarm server
+	services_host = FileUtil.JSON_load("swarm_server.json")
+	server_id = random.randint(0,len(services_host['all_nodes'])-1)
+
+	## get address of swarm server
+	target_address = services_host['all_nodes'][server_id]
 	post_ret = Swarm_RPC.upload_data(target_address, tx_json)
 	print("Record ENF samples on swarm network at: {}".format(post_ret['data']))
 
@@ -142,9 +148,6 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	parser.add_argument("--show_fig", action="store_true", help="Show plot figure model.")
 
 	parser.add_argument("--save_fig", action="store_true", help="Save plot figure on local disk.")
-
-	parser.add_argument("--target_address", type=str, default="0.0.0.0:8501", 
-						help="Swarm RPC server address - ip:port.")
 
 	args = parser.parse_args(args=args)
 	return args
