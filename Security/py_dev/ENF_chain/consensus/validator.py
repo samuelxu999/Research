@@ -443,7 +443,7 @@ class Validator(object):
 					'nonce': last_block['nonce']}
 
 		parent_block = Block.json_to_block(last_block)
-
+		sender = self.wallet.accounts[0]
 		# execute mining task given consensus algorithm
 		if(self.consensus==ConsensusType.PoW):
 			# mining new nonce
@@ -457,6 +457,12 @@ class Validator(object):
 			else:
 				# generate empty block without transactions
 				new_block = Block(parent_block)	
+		elif(self.consensus==ConsensusType.PoE):
+			if( POE.proof_of_enf(commit_transactions, sender['address']) ):
+				new_block = Block(parent_block, commit_transactions, self.node_id)
+			else:
+				# generate empty block without transactions
+				new_block = Block(parent_block)	
 		else:
 			# generate empty block without transactions
 			new_block = Block(parent_block)				
@@ -465,7 +471,7 @@ class Validator(object):
 
 		# add sender address and signature
 		if(self.wallet.accounts!=0):
-			sender = self.wallet.accounts[0]
+			# sender = self.wallet.accounts[0]
 			sign_data = new_block.sign(sender['private_key'], 'samuelxu999')
 			json_block['sender_address'] = sender['address']
 			json_block['signature'] = TypesUtil.string_to_hex(sign_data)
@@ -535,6 +541,10 @@ class Validator(object):
 									TEST_STAKE_WEIGHT, self.sum_stake) ):
 				logger.info("PoS verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
 				return False
+		elif(self.consensus==ConsensusType.PoE):
+			if( not POE.proof_of_enf(current_block['transactions'], current_block['sender_address']) ):
+				logger.info("PoE verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
+				return False			
 		else:
 			return False
 
@@ -924,6 +934,16 @@ class Validator(object):
 						self.current_head = new_block
 						logger.info("Update current_head: {}    height: {}".format(self.current_head['hash'], 
 																					self.current_head['height']) )
+			elif(self.consensus==ConsensusType.PoE):
+				# provide head_block and new_block information
+				logger.info( "new block sender:  {}".format(new_block['sender_address']))
+				logger.info( "head block height: {} -- new block height: {}".format(head_block['height'], new_block['height']) )
+				
+				# 1) new block is 1 larger height, then update current_head to new block 
+				if( head_block['height'] == (new_block['height']-1) ):
+					self.current_head = new_block
+					logger.info("Update current_head: {}    height: {}".format(self.current_head['hash'], 
+																				self.current_head['height']) )
 			else:
 				self.processed_head = new_block
 				logger.info("Fix processed_head: {}    height: {}".format(self.processed_head['hash'],
@@ -938,7 +958,7 @@ class Validator(object):
 		3) remove committed transactions from local txs pool 
 		4) update chaininfo and save into local file
 		'''
-		if(self.consensus==ConsensusType.PoS):
+		if( self.consensus==ConsensusType.PoS or self.consensus==ConsensusType.PoE ):
 			# 1) if none of validator propose block, use empty block as header
 			if(self.processed_head == self.current_head):
 				#generate empty block

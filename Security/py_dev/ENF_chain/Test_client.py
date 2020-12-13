@@ -24,7 +24,7 @@ from consensus.transaction import Transaction
 from consensus.block import Block
 from consensus.vote import VoteCheckPoint
 from consensus.validator import Validator
-from consensus.consensus import POW
+from consensus.consensus import POW, POE
 from utils.utilities import TypesUtil, FileUtil
 from utils.service_api import SrvAPI
 from utils.Swarm_RPC import Swarm_RPC
@@ -65,11 +65,11 @@ def validator_getinfo(target_address, isBroadcast=False):
 			info_list.append(json_response)
 	return info_list
 
-def getSwarmhash(samples_id, samples_size, is_random=False):
+def getSwarmhash(samples_id, samples_head, samples_size, is_random=False):
 	if(is_random==True):
 		head_pos = random.randint(0,7200) 
 	else:
-		head_pos = 0 
+		head_pos = samples_head 
 
 	ls_ENF = TypesUtil.np2list(ENF_data[head_pos:(head_pos+samples_size), 1]) 
 
@@ -87,16 +87,12 @@ def getSwarmhash(samples_id, samples_size, is_random=False):
 	# print(tx_json)
 
 	## random choose a swarm server
-	services_host = FileUtil.JSON_load("swarm_server.json")
-	server_id = random.randint(0,len(services_host['all_nodes'])-1)
-
-	## get address of swarm server
-	target_address = services_host['all_nodes'][server_id]
+	target_address = Swarm_RPC.get_service_address()
 	post_ret = Swarm_RPC.upload_data(target_address, tx_json)	
 
 	return post_ret['data']
 
-def send_transaction(target_address, samples_size, isBroadcast=False):
+def send_transaction(target_address, samples_head, samples_size, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
 
@@ -114,7 +110,7 @@ def send_transaction(target_address, samples_size, isBroadcast=False):
     ## value comes from hash value to indicate address that ENF samples are saved on swarm network.
     json_value={}
     json_value['sender_address'] = sender_address
-    json_value['swarm_hash'] = getSwarmhash(sender_address, samples_size)
+    json_value['swarm_hash'] = getSwarmhash(sender_address, samples_head, samples_size)
     ## convert json_value to string to ensure consistency in tx verification.
     str_value = TypesUtil.json_to_string(json_value)
 
@@ -178,6 +174,8 @@ def get_transactions(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/transactions/get')
     transactions = json_response['transactions']
     logger.info(transactions)
+
+    # print(POE.proof_of_enf(transactions, '1ad48ca78653f3f4b16b0622432db7d995613c42'))
 
 def start_mining(target_address, isBroadcast=False):
 	if(not isBroadcast):
@@ -399,7 +397,7 @@ def create_randshare(target_address, isBroadcast=False):
 	FileUtil.AddLine(test_file, log_data)'''
 
 # ====================================== validator test ==================================
-def Epoch_validator(target_address, samples_size, phase_delay=BOUNDED_TIME):
+def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
 	'''
@@ -410,7 +408,7 @@ def Epoch_validator(target_address, samples_size, phase_delay=BOUNDED_TIME):
 
 	# S1: send test transactions
 	start_time=time.time()
-	send_transaction(target_address, samples_size, True)
+	send_transaction(target_address, samples_head, samples_size, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -724,6 +722,7 @@ def define_and_get_arguments(args=sys.argv[1:]):
 															3: randshare test")
 	parser.add_argument("--op_status", type=int, default=0, help="test case type.")
 	parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
+	parser.add_argument("--samples_head", type=int, default=0, help="Start point of ENF samples data for node.")
 	parser.add_argument("--samples_size", type=int, default=60, help="Size of ENF samples list from node.")
 	parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
 	parser.add_argument("--target_address", type=str, default="0.0.0.0:8180", 
@@ -759,6 +758,7 @@ if __name__ == "__main__":
 	op_status = args.op_status
 	wait_interval = args.wait_interval
 	test_run = args.test_round
+	samples_head = args.samples_head
 	samples_size = args.samples_size
 
 	# |------------------------ test function type -----------------------------|
@@ -775,7 +775,7 @@ if __name__ == "__main__":
 	elif(test_func == 1):
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
-			Epoch_validator(target_address, samples_size, 5)
+			Epoch_validator(target_address, samples_head, samples_size, 5)
 			time.sleep(wait_interval)
 
 		# get checkpoint after execution
@@ -787,13 +787,14 @@ if __name__ == "__main__":
 		if(op_status == 1):
 			get_transactions(target_address)
 		elif(op_status == 2):
-			send_transaction(target_address, samples_size, True)
+			send_transaction(target_address, samples_head, samples_size, True)
 		elif(op_status == 3):
 			get_chain(target_address, True)
 		elif(op_status == 4):
 			count_tx_size()
 		elif(op_status == 5):
 			run_consensus(target_address, True, True)
+			# start_mining(target_address, True)
 		else:
 			json_checkpoints = checkpoint_netInfo(False)
 			for _item, _value in json_checkpoints.items():

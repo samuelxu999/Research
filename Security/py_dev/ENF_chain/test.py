@@ -115,11 +115,7 @@ def swarm_test(args):
 	# print(tx_json)
 
 	## random choose a swarm server
-	services_host = FileUtil.JSON_load("swarm_server.json")
-	server_id = random.randint(0,len(services_host['all_nodes'])-1)
-
-	## get address of swarm server
-	target_address = services_host['all_nodes'][server_id]
+	target_address = Swarm_RPC.get_service_address()
 	post_ret = Swarm_RPC.upload_data(target_address, tx_json)
 	print("Record ENF samples on swarm network at: {}".format(post_ret['data']))
 

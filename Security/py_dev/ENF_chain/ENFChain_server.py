@@ -515,7 +515,7 @@ if __name__ == '__main__':
 		static_node()
 	else:
 		# ------------------------ Instantiate the Validator ----------------------------------
-		myblockchain = Validator(consensus=ConsensusType.PoS, 
+		myblockchain = Validator(consensus=ConsensusType.PoE, 
 								block_epoch=args.blockepoch,
 								pause_epoch=args.pauseepoch,
 								phase_delay=args.phasedelay)

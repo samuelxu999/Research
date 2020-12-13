@@ -10,6 +10,9 @@ Created on Dec.9, 2020
 
 import requests
 import json
+import random
+from utils.utilities import FileUtil
+from utils.configuration import *
 
 class Swarm_RPC(object):
 	'''
@@ -56,3 +59,16 @@ class Swarm_RPC(object):
 			json_results['data']=''
 
 		return json_results
+
+	def get_service_address():
+		'''
+		random choose a swarm server from node list 
+		'''
+		services_host = FileUtil.JSON_load(SWARM_SERVER)
+		server_id = random.randint(0,len(services_host['all_nodes'])-1)
+
+		## get address of swarm server
+		target_address = services_host['all_nodes'][server_id]
+
+		return target_address
+

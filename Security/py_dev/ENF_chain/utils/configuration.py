@@ -29,3 +29,5 @@ RANDSHARE_INFO = "randshare_info.json"					# random PVSS node share information 
 RANDSHARE_HOST = "randshare_host.json"					# random PVSS host share information file name (.json)
 RANDSHARE_RECOVERED = "randshare_recovered.json"		# random PVSS recoverd shares information file name (.json)
 RANDSHARE_VOTE = "randshare_vote.json"					# random PVSS shares vote information file name (.json)
+
+SWARM_SERVER = "swarm_server.json"		# smearm service nodes data file name
