@@ -11,8 +11,35 @@ Created on Dec.9, 2020
 import requests
 import json
 import random
-from utils.utilities import FileUtil
+import threading
+import queue
+from utils.utilities import FileUtil, TypesUtil
 from utils.configuration import *
+
+class SwarmThread(threading.Thread):
+	'''
+	Threading class to query ENF samples from swarm nodes by multiple threads pool
+	argv structure: [ ret_queue, [ENF_id, ENF_transaction] ]
+	'''
+	def __init__(self, argv):
+		threading.Thread.__init__(self)
+		self.argv = argv
+
+	#The run() method is the entry point for a thread.
+	def run(self):
+		## set parameters based on argv
+		ENF_id = self.argv[1][0]
+		ENF_transaction = self.argv[1][1]
+
+		## query ENF sample from a swarm node
+		json_value = TypesUtil.string_to_json(ENF_transaction['value'])
+		swarm_hash = json_value['swarm_hash']
+		target_address = Swarm_RPC.get_service_address()
+		query_data = Swarm_RPC.download_data(target_address,swarm_hash)['data']
+		json_data = TypesUtil.string_to_json(query_data)
+
+		## save results into queue
+		self.argv[0].put(  [ENF_id, json_data['enf'], json_data['id']] )
 
 class Swarm_RPC(object):
 	'''
@@ -71,4 +98,43 @@ class Swarm_RPC(object):
 		target_address = services_host['all_nodes'][server_id]
 
 		return target_address
+
+	def get_ENFsamples(ls_transactions):
+		'''
+		get ENFsamples given transactions list
+		'''
+		## Create queue to save results
+		ret_queue = queue.Queue()
+		# Create thread pool
+		threads_pool = []
+		## Create a list to save ENF samples from swarm node
+		ENF_samples = []
+		
+		ENF_id=0
+		## 1) For each transaction and assign querying task to a SwarmThread
+		for str_transaction in ls_transactions:
+			## Create new threads for tx
+			p_thread = SwarmThread( [ret_queue, [ENF_id, str_transaction]] )
+
+			## append to threads pool
+			threads_pool.append(p_thread)
+
+			## The start() method starts a thread by calling the run method.
+			p_thread.start()
+
+			ENF_id=ENF_id+1
+
+		# 2) The join() waits for all threads to terminate.
+		for p_thread in threads_pool:
+			p_thread.join()
+
+		# 3) get all results from queue
+		while not ret_queue.empty():
+			q_data = ret_queue.get()
+			ENF_samples.append(q_data)
+
+		# sorted ENF_samples before return
+		sorted_ENF_samples = sorted(ENF_samples, key=lambda x:x[0])
+
+		return sorted_ENF_samples
 

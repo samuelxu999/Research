@@ -160,25 +160,14 @@ class POE():
 		@ commit_transactions: 	commited transactions list when new block is generated
 		@ validator_id: 		the address of validator 
 		"""
-		ENF_samples = []
-		## internal id for sort score
-		ENF_id = 0
-		for transaction in commit_transactions:
-			json_value = TypesUtil.string_to_json(transaction['value'])
-			swarm_hash = json_value['swarm_hash']
-			target_address = Swarm_RPC.get_service_address()
-			query_data = Swarm_RPC.download_data(target_address,swarm_hash)['data']
-			json_data = TypesUtil.string_to_json(query_data)
+		## 1) query ENF samples from swarm nodes given commit_transactions.
+		ENF_samples = Swarm_RPC.get_ENFsamples(commit_transactions)
 
-			ENF_samples.append( [ENF_id, json_data['enf'], json_data['id'] ])
-			ENF_id=ENF_id+1
-
-		# For byzantine tolerant: 3f+1, at least 4 samples points are required. 
+		## For byzantine tolerant: 3f+1, at least 4 samples points are required. 
 		if(len(ENF_samples)<4):
 			return False
 		
-		##  calculate ENF score for each node 
-		# print(ENF_samples)
+		## 2) calculate ENF score for each node 
 		ls_ENF_score = []
 		for ENF_id in range(len(ENF_samples)):
 			# print(sample_data['enf'])
@@ -186,13 +175,13 @@ class POE():
 			ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
 			ls_ENF_score.append([ENF_id, ENF_score])
 
-		## get sorted ENF score 
+		## 3) get sorted ENF score 
 		sorted_score = sorted(ls_ENF_score, key=lambda x:x[1])
 		# print(sorted_score)
 
 		winner_id = ENF_samples[sorted_score[0][0]][2]
-		# print("winer: {}    sender: {}   result: {}".format(winner_id, validator_id,
+		# print("winner: {}    sender: {}   result: {}".format(winner_id, validator_id,
 		# 													validator_id==winner_id))
 
-		## return if validator_id has proposed the least score among all nodes
+		## 4) return if validator_id has proposed the least score among all nodes
 		return validator_id==winner_id
