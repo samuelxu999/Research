@@ -247,54 +247,6 @@ def check_head():
 	SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/chain/checkhead')
 	json_response = {'Reorganize processed_head': 'broadcast'}
 
-def test_valid_transactions(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-    chain_data = json_response['chain']
-
-    last_block = chain_data[-1]
-    #print('List transactions:')
-    for transaction_data in last_block['transactions']:
-        #print(transaction_data)
-        # ====================== rebuild transaction ==========================
-        dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
-                                            transaction_data['recipient_address'],
-                                            transaction_data['time_stamp'],
-                                            transaction_data['value'])
-        
-        sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
-        #print(dict_transaction)
-        #print(sign_str)
-
-        peer_nodes.load_ByAddress(transaction_data['sender_address'])
-        sender_node = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
-        #print(sender_node)
-        # ====================== verify transaction ==========================
-        if(sender_node!={}):
-            sender_pk= sender_node['public_key']
-            verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
-        else:
-            verify_result = False
-        return verify_result
-
-def test_valid_block(target_address):
-
-    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-    chain_data = json_response['chain']
-
-    # new a block to test
-    last_block = chain_data[-1]
-    parent_block = Block.json_to_block(last_block)
-
-    nonce = POW.proof_of_work(last_block, [])
-    new_block = Block(parent_block, [], nonce)
-    new_block.print_data()
-
-    #print(chain_data[-1])
-    json_response=SrvAPI.POST('http://'+target_address+'/test/block/verify', 
-                                new_block.to_json())
-
-    return(json_response['verify_block'])
-
 def set_peerNodes(target_name, op_status=0, isBroadcast=False):
     #--------------------------------------- load static nodes -------------------------------------
     static_nodes = StaticNodes()
@@ -403,8 +355,6 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 	'''
 	# Define ls_time_exec to save executing time to log
 	ls_time_exec=[]
-
-	#target_address = "128.226.77.51:8081"
 
 	# S1: send test transactions
 	start_time=time.time()
@@ -623,23 +573,9 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time_randshare.log', str_time_exec)
 
-def show_netInfo():
-	validator_info = validator_getinfo("0.0.0.0:8080", True)
-	for validator in validator_info:
-		logger.info("node_id:    {}    committee_size: {}".format(validator['node_id'],
-														validator['committee_size']))
-		
-		logger.info("processed head:               {}     height: {}".format(validator['processed_head']['hash'],
-			                                                           validator['processed_head']['height']))
-		logger.info("highest justified checkpoint: {}     height: {}".format(validator['highest_justified_checkpoint']['hash'],
-			                                                           validator['highest_justified_checkpoint']['height']))
-		logger.info("highest finalized checkpoint: {}     height: {}".format(validator['highest_finalized_checkpoint']['hash'],
-                                                           validator['highest_finalized_checkpoint']['height']))
-		logger.info("vote_count: {}\n".format(validator['vote_count']))
-
 def checkpoint_netInfo(isDisplay=False):
 	# get validators information in net.
-	validator_info = validator_getinfo("0.0.0.0:8080", True)
+	validator_info = validator_getinfo("0.0.0.0:8180", True)
 
 	fininalized_count = {}
 	justifized_count = {}
@@ -711,6 +647,18 @@ def checkpoint_netInfo(isDisplay=False):
 
 	return json_checkpoints
 
+def count_tx_size():
+    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
+    chain_data = json_response['chain']
+    chain_length = json_response['length']
+    logger.info('Chain length: {}'.format(chain_length))
+    for block in chain_data:
+        if(block['transactions']!=[]):          
+            tx=block['transactions'][0]
+            tx_str=TypesUtil.json_to_string(tx)
+            logger.info('Tx size: {}'.format(len( tx_str.encode('utf-8') )))
+            break
+
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
 	    description="Run websocket client."
@@ -732,85 +680,78 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	args = parser.parse_args(args=args)
 	return args
 
-def count_tx_size():
-	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-	chain_data = json_response['chain']
-	chain_length = json_response['length']
-	logger.info('Chain length: {}'.format(chain_length))
-	for block in chain_data:
-		if(block['transactions']!=[]):			
-			tx=block['transactions'][0]
-			tx_str=TypesUtil.json_to_string(tx)
-			logger.info('Tx size: {}'.format(len( tx_str.encode('utf-8') )))
-			break
-
 if __name__ == "__main__":
-	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
-	LOG_LEVEL = logging.INFO
-	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
+    FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+    LOG_LEVEL = logging.INFO
+    logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
-	# get arguments
-	args = define_and_get_arguments()
+    ## get arguments
+    args = define_and_get_arguments()
 
-	# set parameters
-	target_address = args.target_address
-	test_func = args.test_func
-	op_status = args.op_status
-	wait_interval = args.wait_interval
-	test_run = args.test_round
-	samples_head = args.samples_head
-	samples_size = args.samples_size
+    ## set parameters
+    target_address = args.target_address
+    test_func = args.test_func
+    op_status = args.op_status
+    wait_interval = args.wait_interval
+    test_run = args.test_round
+    samples_head = args.samples_head
+    samples_size = args.samples_size
 
-	# |------------------------ test function type -----------------------------|
-	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
-	# |-------------------------------------------------------------------------|
+    ## |------------------------ test function type -----------------------------|
+    ## | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
+    ## |-------------------------------------------------------------------------|
 
-	if(test_func == 0):
-		set_peer = args.set_peer
-		if(set_peer!=''):
-			name_op=set_peer.split('@')
-			# print(name_op[0], name_op[1])
-			# set_peerNodes('R2_pi4_4', 1, True)
-			set_peerNodes(name_op[0], int(name_op[1]), True)
-	elif(test_func == 1):
-		for x in range(test_run):
-			logger.info("Test run:{}".format(x+1))
-			Epoch_validator(target_address, samples_head, samples_size, 5)
-			time.sleep(wait_interval)
+    if(test_func == 0):
+    	set_peer = args.set_peer
+    	if(set_peer!=''):
+    		name_op=set_peer.split('@')
+    		# print(name_op[0], name_op[1])
+    		# set_peerNodes('R2_pi4_4', 1, True)
+    		set_peerNodes(name_op[0], int(name_op[1]), True)
+    elif(test_func == 1):
+    	for x in range(test_run):
+    		logger.info("Test run:{}".format(x+1))
+    		Epoch_validator(target_address, samples_head, samples_size, 5)
+    		time.sleep(wait_interval)
 
-		# get checkpoint after execution
-		json_checkpoints = checkpoint_netInfo(False)
-		for _item, _value in json_checkpoints.items():
-			logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
+    	# get checkpoint after execution
+    	json_checkpoints = checkpoint_netInfo(False)
+    	for _item, _value in json_checkpoints.items():
+    		logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 
-	elif(test_func == 2):
-		if(op_status == 1):
-			get_transactions(target_address)
-		elif(op_status == 2):
-			send_transaction(target_address, samples_head, samples_size, True)
-		elif(op_status == 3):
-			get_chain(target_address, True)
-		elif(op_status == 4):
-			count_tx_size()
-		elif(op_status == 5):
-			run_consensus(target_address, True, True)
-			# start_mining(target_address, True)
-		else:
-			json_checkpoints = checkpoint_netInfo(False)
-			for _item, _value in json_checkpoints.items():
-				logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
-	else:
-		# host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
-		# cache_fetch_share(target_address)
-		# verify_share(host_address)
-		# cache_recovered_shares(target_address)
-		# recovered_shares(host_address)
-		# print(create_randshare(target_address))
-		# cache_vote_shares(target_address)
-		# print(verify_vote_shares())
-		# vote_randshare(target_address)
+    elif(test_func == 2):
+        if(op_status == 1):
+            send_transaction(target_address, samples_head, samples_size, True)
+        elif(op_status == 2):
+            start_mining(target_address, True)
+        elif(op_status == 3):
+            check_head()
+        elif(op_status == 4):
+            start_voting(target_address, True)
+        elif(op_status == 11):
+            get_transactions(target_address)
+        elif(op_status == 12):
+            get_chain(target_address, True)
+        elif(op_status == 13):
+            count_tx_size()
+        elif(op_status == 9):
+            run_consensus(target_address, True, True)
+        else:
+            json_checkpoints = checkpoint_netInfo(False)
+            for _item, _value in json_checkpoints.items():
+                logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
+    else:
+        # host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
+        # cache_fetch_share(target_address)
+        # verify_share(host_address)
+        # cache_recovered_shares(target_address)
+        # recovered_shares(host_address)
+        # print(create_randshare(target_address))
+        # cache_vote_shares(target_address)
+        # print(verify_vote_shares())
+        # vote_randshare(target_address)
 
-		for x in range(test_run):
-			logger.info("Test run:{}".format(x+1))
-			Epoch_randomshare()
-			time.sleep(wait_interval)
+        for x in range(test_run):
+            logger.info("Test run:{}".format(x+1))
+            Epoch_randomshare()
+            time.sleep(wait_interval)

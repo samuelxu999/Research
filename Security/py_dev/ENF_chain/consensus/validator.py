@@ -406,8 +406,13 @@ class Validator(object):
 		verify_result = Transaction.verify(sender_pk, signature, transaction)
 		if(verify_result):
 			verified_transaction['signature'] = TypesUtil.string_to_hex(signature)
-			# discard duplicated tx
+			## discard duplicated tx in general scenario
 			if(verified_transaction not in self.transactions):
+				if(self.consensus==ConsensusType.PoE):
+					## In current round, duplicated ENF proof from a validator will be discarded.
+					for json_tx  in self.transactions:
+						if(verified_transaction['sender_address']==json_tx['sender_address']):
+							return False
 				self.transactions.append(verified_transaction)
 			return True
 		else:
@@ -419,11 +424,12 @@ class Validator(object):
 		Args:
 			@ json_block: return mined block
 		"""
-		# remove committed transactions in head block
-		head_block = self.current_head
-		for transaction in head_block['transactions']:
-			if(transaction in self.transactions):
-				self.transactions.remove(transaction)
+		if(not self.consensus==ConsensusType.PoE):
+			# remove committed transactions in head block
+			head_block = self.current_head
+			for transaction in head_block['transactions']:
+				if(transaction in self.transactions):
+					self.transactions.remove(transaction)
 
 		# commit transactions based on COMMIT_TRANS
 		commit_transactions = []
@@ -913,14 +919,14 @@ class Validator(object):
 				logger.info( "head proof:        {} -- new proof:        {}".format(head_proof, new_proof) )
 				logger.info( "head block height: {} -- new block height: {}".format(head_block['height'], new_block['height']) )
 				
-				# 1) new block is 1 larger height, then update current_head to new block 
+				## 1) new block is 1 larger height, then update current_head to new block 
 				if( head_block['height'] == (new_block['height']-1) ):
 					self.current_head = new_block
 					logger.info("Update current_head: {}    height: {}".format(self.current_head['hash'], 
 																				self.current_head['height']) )
 					return
 
-				# 2) new block has same height as current head
+				## 2) new block has the same height as current head
 				if( head_block['height']==new_block['height'] ):
 					# A) who holds smaller proof wins
 					if(new_proof<head_proof):
@@ -935,15 +941,27 @@ class Validator(object):
 						logger.info("Update current_head: {}    height: {}".format(self.current_head['hash'], 
 																					self.current_head['height']) )
 			elif(self.consensus==ConsensusType.PoE):
-				# provide head_block and new_block information
+				## show head_block and new_block information
 				logger.info( "new block sender:  {}".format(new_block['sender_address']))
 				logger.info( "head block height: {} -- new block height: {}".format(head_block['height'], new_block['height']) )
 				
-				# 1) new block is 1 larger height, then update current_head to new block 
+				## 1) new block is 1 larger height, then update current_head to new block 
 				if( head_block['height'] == (new_block['height']-1) ):
 					self.current_head = new_block
 					logger.info("Update current_head: {}    height: {}".format(self.current_head['hash'], 
 																				self.current_head['height']) )
+					return
+
+				## 2) new block has the same height as current head
+				if( head_block['height']==new_block['height'] ):
+					## A) who includes more ENF transactions wins
+					new_proof = len(new_block['transactions'])
+					head_proof = len(head_block['transactions'])
+					logger.info( "head proof:        {} -- new proof:        {}".format(head_proof, new_proof) )
+					if(new_proof>head_proof):
+						self.current_head = new_block
+						logger.info("Update current_head: {}    height: {}".format(self.current_head['hash'], 
+																					self.current_head['height']) )
 			else:
 				self.processed_head = new_block
 				logger.info("Fix processed_head: {}    height: {}".format(self.processed_head['hash'],
@@ -959,7 +977,7 @@ class Validator(object):
 		4) update chaininfo and save into local file
 		'''
 		if( self.consensus==ConsensusType.PoS or self.consensus==ConsensusType.PoE ):
-			# 1) if none of validator propose block, use empty block as header
+			## 1) if none of validator propose block, use empty block as header
 			if(self.processed_head == self.current_head):
 				#generate empty block
 				last_block = self.processed_head
@@ -974,13 +992,18 @@ class Validator(object):
 				self.current_head = json_block
 				logger.info("Set current_head as emptyblock: {}".format(self.current_head))
 			
-			# 2) set processed_head as current_head
+			## 2) set processed_head as current_head
 			self.processed_head = self.current_head
 
-			# 3) remove committed transactions in head block
-			for transaction in self.processed_head['transactions']:
-				if(transaction in self.transactions):
-					self.transactions.remove(transaction)
+			## 3) remove committed transactions in local txs pool
+			if(self.consensus==ConsensusType.PoE):
+				## a) all txs are only valid in current epoch, clear local txs pool 
+				self.transactions = []
+			else:
+				## b) remove committed transactions in head block from local txs pool
+				for transaction in self.processed_head['transactions']:
+					if(transaction in self.transactions):
+						self.transactions.remove(transaction)
 			logger.info("Fix processed_head: {}    height: {}".format(self.processed_head['hash'],
 																		self.processed_head['height']) )
 			# 4) update chaininfo and save into local file

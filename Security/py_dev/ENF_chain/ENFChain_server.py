@@ -4,7 +4,7 @@
 ========================
 WS_Server module
 ========================
-Created on May.21, 2019
+Created on Dec.10, 2020
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
 @TaskDescription: This module provide encapsulation of server API that handle and response client's request.
