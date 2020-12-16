@@ -90,6 +90,63 @@ def getSwarmhash(samples_id, samples_head, samples_size, is_random=False):
 
 	return post_ret['data']
 
+def launch_ENF(samples_head, samples_size):
+	# Instantiate the Wallet
+	mywallet = Wallet()
+	# Instantiate PeerNodes object
+	mypeer_nodes = PeerNodes()
+
+	# load accounts
+	mywallet.load_accounts()
+
+	## for each account to send ENF samples
+	head_pos = samples_head
+	for sender in mywallet.accounts:
+		sender_address = sender['address']
+		sender_private_key = sender['private_key']
+		## set recipient_address as default value: 0
+		recipient_address = '0'
+		time_stamp = time.time()
+
+		## value comes from hash value to indicate address that ENF samples are saved on swarm network.
+		json_value={}
+		json_value['sender_address'] = sender_address
+		json_value['swarm_hash'] = getSwarmhash(sender_address, head_pos, samples_size)
+		## convert json_value to string to ensure consistency in tx verification.
+		str_value = TypesUtil.json_to_string(json_value)
+
+		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
+
+		# sign transaction
+		sign_data = mytransaction.sign('samuelxu999')
+
+		# verify transaction
+		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
+		                                        mytransaction.recipient_address,
+		                                        mytransaction.time_stamp,
+		                                        mytransaction.value)
+
+		## --------------------- send transaction --------------------------------------
+		transaction_json = mytransaction.to_json()
+		transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
+
+		## move sample head to next section
+		head_pos+=samples_size
+
+		# print(transaction_json)
+
+		node_info = mypeer_nodes.load_ByAddress(sender_address)
+		json_nodes = TypesUtil.string_to_json(list(mypeer_nodes.get_nodelist())[0])
+		# print(json_nodes['node_url'])
+		json_response=SrvAPI.POST('http://'+json_nodes['node_url']+'/test/transaction/broadcast', 
+								transaction_json)
+
+	logger.info('launch ENF samples, current_pos: {}    next_pos: {}'.format(samples_head, head_pos))
+
+	## return updated head_pos for next epoch 
+	return head_pos
+
+
 def send_transaction(target_address, samples_head, samples_size, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
@@ -356,7 +413,8 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 
 	# S1: send test transactions
 	start_time=time.time()
-	send_transaction(target_address, samples_head, samples_size, True)
+	# send_transaction(target_address, samples_head, samples_size, True)
+	head_pos = launch_ENF(samples_head, samples_size)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -390,6 +448,8 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 	str_time_exec=" ".join(ls_time_exec)
 	# Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time.log', str_time_exec)
+
+	return head_pos
 
 # ====================================== Random share test ==================================
 # # request for share from peers and cache to local
@@ -707,10 +767,12 @@ if __name__ == "__main__":
     		# set_peerNodes('R2_pi4_4', 1, True)
     		set_peerNodes(name_op[0], int(name_op[1]), True)
     elif(test_func == 1):
+    	head_pos = samples_head
     	for x in range(test_run):
     		logger.info("Test run:{}".format(x+1))
-    		Epoch_validator(target_address, samples_head, samples_size, 5)
+    		next_pos = Epoch_validator(target_address, head_pos, samples_size, 5)
     		time.sleep(wait_interval)
+    		head_pos = next_pos
 
     	# get checkpoint after execution
     	json_checkpoints = checkpoint_netInfo(False)
