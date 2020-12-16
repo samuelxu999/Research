@@ -706,16 +706,20 @@ def checkpoint_netInfo(isDisplay=False):
 	return json_checkpoints
 
 def count_tx_size():
-    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-    chain_data = json_response['chain']
-    chain_length = json_response['length']
-    logger.info('Chain length: {}'.format(chain_length))
-    for block in chain_data:
-        if(block['transactions']!=[]):          
-            tx=block['transactions'][0]
-            tx_str=TypesUtil.json_to_string(tx)
-            logger.info('Tx size: {}'.format(len( tx_str.encode('utf-8') )))
-            break
+	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
+	chain_data = json_response['chain']
+	chain_length = json_response['length']
+	logger.info('Chain length: {}'.format(chain_length))
+	for block in chain_data:
+		if(block['transactions']!=[]): 
+			blk_str = TypesUtil.json_to_string(block)  
+			logger.info('Block size: {} Bytes'.format(len( blk_str.encode('utf-8') ))) 
+			logger.info('transactions count: {}'.format(len( block['transactions'] )))  
+
+			tx=block['transactions'][0]
+			tx_str=TypesUtil.json_to_string(tx)
+			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
+			break
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
