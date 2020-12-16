@@ -1,122 +1,127 @@
 {
-	"Desktop_dell7071": 
-	{
-		"address": "1ad48ca78653f3f4b16b0622432db7d995613c42",
-		"ip": "128.226.88.210:8180"
-	},
-	"Desktop_Sam": 
+	"localtest1": 
 	{
 		"address": "2afcd61faa3ac92087ee471d3dbab7d60280cf1d",
-		"ip": "128.226.77.51:8180"
+		"ip": "0.0.0.0:8181"
 	},
-	"Desktop_1": 
+	"localtest2": 
 	{
 		"address": "b656f00540643773b7d1d6cc1dd3e7591592cdb7",
-		"ip": "128.226.76.51:8180"
+		"ip": "0.0.0.0:8182"
 	},
-	"Desktop_3": 
+	"localtest3": 
 	{
 		"address": "08e4b570c8970086f692ec13ee9d10930e8c6e3c",
-		"ip": "128.226.88.123:8180"
+		"ip": "0.0.0.0:8183"
+	},
+	"localtest4": 
+	{
+		"address": "1ad48ca78653f3f4b16b0622432db7d995613c42",
+		"ip": "0.0.0.0:8184"
+	},
+	"Desktop_dell7071": 
+	{
+		"address": "0a062a8c969eb7a182f95f4023fc2ce0800ef0c7",
+		"ip": "128.226.88.210:8180"
 	},
 	"R1_pi_plus_1": 
 	{
-		"address": "ceeebaa052718c0a00adb87de857ba63608260e9",
+		"address": "cfc272fe5a06ce492453f8b0f843eb6a97080062",
 		"ip": "128.226.79.137:8180"
 	},
 	"R1_pi_plus_2": 
 	{
-		"address": "1699600976ec6fc0fe35d54174eb6094e671d2fd",
+		"address": "75db76633e98c4daea48ce4e77da8f9f92d4fb36",
 		"ip": "128.226.79.251:8180"
 	},
 	"R1_pi_plus_3": 
 	{
-		"address": "f55af09f40768ca05505767cd013b6b9a78579c4",
+		"address": "d4472d55fa867f920ad02bdb9619b4cd46aad778",
 		"ip": "128.226.88.37:8180"
 	},
 	"R1_pi_plus_4": 
 	{
-		"address": "e416c382f8ff6d883dec61a12a2ced1b80905992",
+		"address": "102931fc01a1e510b75b055dfa4273d617930709",
 		"ip": "128.226.76.62:8180"
 	},
 	"R2_pi_top": 
 	{
-		"address": "42ee7f41f06dc972a2e5e8b5facb5e91913fce7d",
+		"address": "5a04fa54045e2ee32a6869859d60df816fb30b5d",
 		"ip": "128.226.76.114:8180"
 	},
 	"R2_pi_bottom": 
 	{
-		"address": "abefa52a0ffb59072a3e7bf34e182f92fd09a3b1",
+		"address": "51e49d68a6b2600c0f8bddc151194a2064c8a553",
 		"ip": "128.226.78.148:8180"
 	},
 	"R2_tk_top": 
 	{
-		"address": "083d853e27ef075be81711c4393a8f256bc8e6b1",
+		"address": "7ed71fff4fd025d48d84968278595e099bde5a15",
 		"ip": "128.226.78.138:8180"
 	},
 	"R2_tk_bottom": 
 	{
-		"address": "77352970f5c3203c55b54c390f59f5fe75d7c012",
+		"address": "d17d5060ddeb2297909f5e89a0e0b1a07b4369fa",
 		"ip": "128.226.88.119:8180"
 	},
 	"Desk_pi_1": 
 	{
-		"address": "45961f1e9ac53a22afdc48e434e542077481a9c4",
+		"address": "5703e83625b6557e3891e7b42e5cb4f2f552f7a0",
 		"ip": "128.226.79.127:8180"
 	},
 	"Desk_pi_2": 
 	{
-		"address": "57d1d44a711f1bd5761a78088510dbf9d84502c5",
+		"address": "732e52596a49244624c1895b2ae663b9132c74d3",
 		"ip": "128.226.78.89:8180"
 	},
 	"Desk_pi_plus_1": 
 	{
-		"address": "0372804d1fc92a000d5ac68623bf32d8255014a6",
+		"address": "2778b6d54e7814f2cd9e2d39872a0a201e1eee2c",
 		"ip": "128.226.79.249:8180"
 	},
 	"Desk_pi_plus_2": 
 	{
-		"address": "79624546b854a4dcbde53260ab82b06b890337ae",
+		"address": "efd961b8006691da2d912239a9d730bf04a2a68f",
 		"ip": "128.226.88.144:8180"
 	},
 	"R1_pi4_1": 
 	{
-		"address": "8a6428129c1ac7e14d9fcf0aaf975ed8ec7088ec",
+		"address": "4ce50e5efaeb6c230e4dd3718cf331cb0742e6c9",
 		"ip": "128.226.77.157:8180"
 	},
 	"R1_pi4_2": 
 	{
-		"address": "22b7ee5e48509c99e45a9987e896d3b51fe76aba",
+		"address": "3db0833c9ce1e05fe35e9c247eb6ca7149649617",
 		"ip": "128.226.78.128:8180"
 	},
 	"R1_pi4_3": 
 	{
-		"address": "72cf2287a019af0f480311bdfd01d5ed83f96a86",
+		"address": "0387d9c14b7c93b8a91e6bb769eec7a7f48b5ec3",
 		"ip": "128.226.88.155:8180"
 	},
 	"R1_pi4_4": 
 	{
-		"address": "9b430cf77035688e2dbfb20fd608e610e8a08608",
+		"address": "25e30de57f4ac8344fc28c2d7bfc06403ca3612f",
 		"ip": "128.226.79.31:8180"
 	},
 	"R2_pi4_1": 
 	{
-		"address": "cef0c46327e9645988b2f68a83dbf5d53a0c5a04",
+		"address": "bf28559ae3fd1037fda3296c6ec1ed44a2233c82",
 		"ip": "128.226.78.195:8180"
 	},
 	"R2_pi4_2": 
 	{
-		"address": "f37cb96a8483cdee17b2d280520db3e98331665d",
+		"address": "c966e434ebad3588f147da9bd79a2bb484d5aa99",
 		"ip": "128.226.77.222:8180"
 	},
 	"R2_pi4_3": 
 	{
-		"address": "11991a833fa2e54acc92745bdddd2cee441646aa",
+		"address": "ceaff0415c466b242bd56e048a787d4a559042a2",
 		"ip": "128.226.88.120:8180"
 	},
 	"R2_pi4_4": 
 	{
-		"address": "a87299f9c9e8aef6fdf5813148248a74a364944c",
+		"address": "a39d977bd5e7d3ecabd1750e769e6855ea31062f",
 		"ip": "128.226.77.111:8180"
 	}
 }
