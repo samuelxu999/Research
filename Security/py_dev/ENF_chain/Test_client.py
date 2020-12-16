@@ -91,8 +91,8 @@ def getSwarmhash(samples_id, samples_head, samples_size, is_random=False):
 	return post_ret['data']
 
 def launch_ENF(samples_head, samples_size):
-	# Instantiate the Wallet
-	mywallet = Wallet()
+	# Instantiate the Wallet by using key_dir: keystore_net
+	mywallet = Wallet('keystore_net')
 	# Instantiate PeerNodes object
 	mypeer_nodes = PeerNodes()
 
@@ -192,39 +192,6 @@ def send_transaction(target_address, samples_head, samples_size, isBroadcast=Fal
                                 transaction_json)
     logger.info(json_response)
 
-def send_vote(target_address, isBroadcast=False):
-    # Instantiate the Wallet
-    mywallet = Wallet()
-
-    # load accounts
-    mywallet.load_accounts()
-
-    #list account address
-    logger.info(mywallet.list_address())
-
-    #----------------- test transaction --------------------
-    sender = mywallet.accounts[0]
-    # recipient = mywallet.accounts[-1]
-    # attacker = mywallet.accounts[1]
-
-    my_vote = VoteCheckPoint('385816343cc08cbc5350f4d1c92d2768e3be237ab364fb3bfc1dccde341205a2', 
-                            'fc4341bb9867b7d389d84cd32a0e298cad595c806dd9477d0403ccc59f929138', 
-                            1, 2, sender['address'])
-    json_vote = my_vote.to_json()
-    
-    # sign vote
-    sign_data = my_vote.sign(sender['private_key'], 'samuelxu999')
-    json_vote['signature'] = TypesUtil.string_to_hex(sign_data)
-
-    if(not isBroadcast):
-        json_response=SrvAPI.POST('http://'+target_address+'/test/vote/verify', 
-                                json_vote)
-    else:
-        json_response=SrvAPI.POST('http://'+target_address+'/test/vote/broadcast', 
-                                json_vote)
-    logger.info(json_response)
-
-
 def get_transactions(target_address):
     json_response=SrvAPI.GET('http://'+target_address+'/test/transactions/get')
     transactions = json_response['transactions']
@@ -303,59 +270,59 @@ def check_head():
 	json_response = {'Reorganize processed_head': 'broadcast'}
 
 def set_peerNodes(target_name, op_status=0, isBroadcast=False):
-    #--------------------------------------- load static nodes -------------------------------------
-    static_nodes = StaticNodes()
-    static_nodes.load_node()
+	#--------------------------------------- load static nodes -------------------------------------
+	static_nodes = StaticNodes()
+	static_nodes.load_node()
 
-    list_address = []
-    print('List loaded static nodes:')
-    for node in list(static_nodes.nodes):
-        #json_node = TypesUtil.string_to_json(node)
-        json_node = node
-        list_address.append(json_node['node_url'])
-        print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
+	list_address = []
+	print('List loaded static nodes:')
+	for node in list(static_nodes.nodes):
+		#json_node = TypesUtil.string_to_json(node)
+		json_node = node
+		list_address.append(json_node['node_url'])
+		print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
 
-    #print(list_address)
+	#print(list_address)
 
-    #-------------- localhost ----------------
-    target_node = static_nodes.get_node(target_name)
+	#-------------- localhost ----------------
+	target_node = static_nodes.get_node(target_name)
 
-    if( target_node=={}):
-        return
+	if( target_node=={}):
+		return
 
-    target_address = target_node['node_url']
-    # print(target_address)
+	target_address = target_node['node_url']
+	# print(target_address)
 
-    # Instantiate the Wallet
-    mywallet = Wallet()
+	# Instantiate the Wallet by using key_dir: keystore_net
+	mywallet = Wallet('keystore_net')
 
-    # load accounts
-    mywallet.load_accounts()
+	# load accounts
+	mywallet.load_accounts()
 
-    #list account address
-    #print(mywallet.list_address())
-    json_account = mywallet.get_account(target_node['node_address'])
-    #print(json_account)
+	#list account address
+	#print(mywallet.list_address())
+	json_account = mywallet.get_account(target_node['node_address'])
+	#print(json_account)
 
-    # ---------------- add and remove peer node --------------------
-    json_node = {}
-    if(json_account!=None):
-        json_node['address'] = json_account['address']
-        json_node['public_key'] = json_account['public_key']
-        json_node['node_url'] = target_node['node_url']
- 
-    if(op_status==1): 
-        if(not isBroadcast):  
-            add_node(target_address, json_node)
-        else:
-            add_node(list_address, json_node, True)
-    if(op_status==2):
-        if(not isBroadcast):
-            remove_node(target_address, json_node)
-        else:
-            remove_node(list_address, json_node, True)
-    
-    get_nodes(target_address)
+	# ---------------- add and remove peer node --------------------
+	json_node = {}
+	if(json_account!=None):
+		json_node['address'] = json_account['address']
+		json_node['public_key'] = json_account['public_key']
+		json_node['node_url'] = target_node['node_url']
+
+	if(op_status==1): 
+		if(not isBroadcast):  
+			add_node(target_address, json_node)
+		else:
+			add_node(list_address, json_node, True)
+	if(op_status==2):
+		if(not isBroadcast):
+			remove_node(target_address, json_node)
+		else:
+			remove_node(list_address, json_node, True)
+
+	get_nodes(target_address)
 
 def fetch_randshare(target_address, isBroadcast=False):
 	if(not isBroadcast):
