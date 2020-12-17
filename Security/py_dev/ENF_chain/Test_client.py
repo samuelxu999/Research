@@ -362,14 +362,6 @@ def create_randshare(target_address, isBroadcast=False):
 		json_response = {'broadcast_create_randshare': 'Succeed!'}
 	return json_response
 
-'''def save_testlog(log_data):
-	#save new key files
-	test_dir = 'test_results'
-	if(not os.path.exists(test_dir)):
-	    os.makedirs(test_dir)
-	test_file = test_dir + '/' + 'exec_time.log'
-	FileUtil.AddLine(test_file, log_data)'''
-
 # ====================================== validator test ==================================
 def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUNDED_TIME):
 	'''
@@ -598,9 +590,9 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time_randshare.log', str_time_exec)
 
-def checkpoint_netInfo(isDisplay=False):
+def checkpoint_netInfo(target_address, isDisplay=False):
 	# get validators information in net.
-	validator_info = validator_getinfo("0.0.0.0:8180", True)
+	validator_info = validator_getinfo(target_address, True)
 
 	fininalized_count = {}
 	justifized_count = {}
@@ -672,7 +664,7 @@ def checkpoint_netInfo(isDisplay=False):
 
 	return json_checkpoints
 
-def count_tx_size():
+def count_tx_size(target_address):
 	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
 	chain_data = json_response['chain']
 	chain_length = json_response['length']
@@ -746,13 +738,15 @@ if __name__ == "__main__":
     		head_pos = next_pos
 
     	# get checkpoint after execution
-    	json_checkpoints = checkpoint_netInfo(False)
+    	json_checkpoints = checkpoint_netInfo(target_address, False)
     	for _item, _value in json_checkpoints.items():
     		logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 
     elif(test_func == 2):
         if(op_status == 1):
             send_transaction(target_address, samples_head, samples_size, True)
+        elif(op_status == 10):
+        	launch_ENF(samples_head, samples_size)
         elif(op_status == 2):
             start_mining(target_address, True)
         elif(op_status == 3):
@@ -764,11 +758,11 @@ if __name__ == "__main__":
         elif(op_status == 12):
             get_chain(target_address, True)
         elif(op_status == 13):
-            count_tx_size()
+            count_tx_size(target_address)
         elif(op_status == 9):
             run_consensus(target_address, True, True)
         else:
-            json_checkpoints = checkpoint_netInfo(False)
+            json_checkpoints = checkpoint_netInfo(target_address, False)
             for _item, _value in json_checkpoints.items():
                 logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
     else:

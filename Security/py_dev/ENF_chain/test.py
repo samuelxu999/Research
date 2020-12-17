@@ -122,7 +122,7 @@ def swarm_test(args):
 	## ******************** download ENF samples **********************
 	swarm_hash = post_ret['data']
 	query_ret = Swarm_RPC.download_data(target_address,swarm_hash)
-	print("Fetch ENF samples from swarm network at: {}\n{}".format(swarm_hash, query_ret['data']))
+	print("Fetch ENF samples from swarm server: {} at: {}\n{}".format(target_address, swarm_hash, query_ret['data']))
 	
 
 def define_and_get_arguments(args=sys.argv[1:]):
