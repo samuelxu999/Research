@@ -1,6 +1,7 @@
 #This is used to unit function test.
 
 import sys
+import time
 import random
 import logging
 import argparse
@@ -9,6 +10,10 @@ from consensus.ENF_consensus import ENFUtil
 from utils.Swarm_RPC import Swarm_RPC
 
 logger = logging.getLogger(__name__)
+
+# tx commit timeout.
+TX_TIMEOUT = 10
+TX_INTERVAL = 0.1
 
 def load_ENF(args):
 	ENF_file = "./data/one_day_enf.csv"
@@ -114,15 +119,35 @@ def swarm_test(args):
 	tx_json['data']=tx_data
 	# print(tx_json)
 
+	start_time=time.time()
 	## random choose a swarm server
-	target_address = Swarm_RPC.get_service_address()
-	post_ret = Swarm_RPC.upload_data(target_address, tx_json)
-	print("Record ENF samples on swarm network at: {}".format(post_ret['data']))
+	record_address = Swarm_RPC.get_service_address()
+	post_ret = Swarm_RPC.upload_data(record_address, tx_json)
+	exec_time=time.time()-start_time
+	print("Record ENF samples on swarm server: {}, time: {:.3f}     at: {}".format(record_address, exec_time, post_ret['data']))
 
 	## ******************** download ENF samples **********************
-	swarm_hash = post_ret['data']
-	query_ret = Swarm_RPC.download_data(target_address,swarm_hash)
-	print("Fetch ENF samples from swarm server: {} at: {}\n{}".format(target_address, swarm_hash, query_ret['data']))
+	start_time=time.time()
+	tx_time = 0.0
+	while(True):
+		## random choose a swarm server
+		query_address = Swarm_RPC.get_service_address()
+		## use different swarm server address to evaluate data synchronous time.
+		if(query_address==record_address):
+			continue
+		swarm_hash = post_ret['data']
+		query_ret = Swarm_RPC.download_data(query_address,swarm_hash)
+		if(query_ret!=""):
+			break
+		time.sleep(TX_INTERVAL)
+		tx_time +=TX_INTERVAL
+		if(tx_time>=TX_TIMEOUT):
+			break
+	exec_time=time.time()-start_time
+	if(query_ret==""):
+		print("Timeout, download ENF samples fail.") 
+	else:
+		print("Fetch ENF samples from swarm server: {}, time: {:.3f}    at: {}\n{}".format(query_address, exec_time, swarm_hash, query_ret['data']))
 	
 
 def define_and_get_arguments(args=sys.argv[1:]):

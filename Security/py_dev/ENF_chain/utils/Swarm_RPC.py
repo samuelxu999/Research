@@ -16,6 +16,10 @@ import queue
 from utils.utilities import FileUtil, TypesUtil
 from utils.configuration import *
 
+# query swarm node tx timeout.
+TX_TIMEOUT = 3.0
+TX_INTERVAL = 0.1
+
 class SwarmThread(threading.Thread):
 	'''
 	Threading class to query ENF samples from swarm nodes by multiple threads pool
@@ -34,12 +38,22 @@ class SwarmThread(threading.Thread):
 		## query ENF sample from a swarm node
 		json_value = TypesUtil.string_to_json(ENF_transaction['value'])
 		swarm_hash = json_value['swarm_hash']
-		target_address = Swarm_RPC.get_service_address()
-		query_data = Swarm_RPC.download_data(target_address,swarm_hash)['data']
-		json_data = TypesUtil.string_to_json(query_data)
-
-		## save results into queue
-		self.argv[0].put(  [ENF_id, json_data['enf'], json_data['id']] )
+		tx_time = 0.0
+		while(True):
+			## random choose a swarm server
+			target_address = Swarm_RPC.get_service_address()
+			query_data = Swarm_RPC.download_data(target_address,swarm_hash)['data']
+			if(query_data!=""):
+				json_data = TypesUtil.string_to_json(query_data)
+				## save results into queue
+				self.argv[0].put(  [ENF_id, json_data['enf'], json_data['id']] )
+				break
+			## query step incremental
+			time.sleep(TX_INTERVAL)
+			tx_time +=TX_INTERVAL
+			## check timeout status.
+			if(tx_time>=TX_TIMEOUT):
+				break
 
 class Swarm_RPC(object):
 	'''
