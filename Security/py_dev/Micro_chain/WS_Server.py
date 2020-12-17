@@ -20,6 +20,8 @@ from flask import Flask, jsonify
 from flask import abort,make_response,request
 from argparse import ArgumentParser
 
+from network.nodes import *
+from network.wallet import Wallet
 from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
 from consensus.transaction import Transaction
 from consensus.block import Block
@@ -427,8 +429,59 @@ def disp_randomshare(json_shares):
 		for share_proof in share_proofs:
 			logger.info('    {}'.format(share_proof))
 
+def new_account():
+	## Instantiate the Wallet
+	mywallet = Wallet()
+
+	## load accounts
+	mywallet.load_accounts()
+
+	## new account
+	mywallet.create_account('samuelxu999')
+
+	if(len(mywallet.accounts)!=0):
+		account = mywallet.accounts[0]
+		print(TypesUtil.hex_to_string(account['public_key']))
+		print(len(account['address']))
+
+	#list account address
+	print(mywallet.list_address())
+
+def static_node():
+	## add static node from json.
+	static_nodes = StaticNodes()
+	static_nodes.load_node()
+
+	## load test node information from local 'static-nodes.json'
+	json_nodes = FileUtil.JSON_load('static-nodes.json')
+
+	## case 2) add all nodes
+	for (node_name, node_data) in json_nodes.items():
+		# print("Name: " + node_name)
+		# print("Data: " + str(node_data))
+		if( node_data !={}):
+			static_nodes.register_node(node_name, node_data['address'], node_data['ip'])
+
+	## save node test
+	static_nodes.save_node()
+
+	# reload static_nodes buffer for print
+	reload_nodes = static_nodes.nodes
+	#print(reload_nodes)
+
+	print('List loaded static nodes:')
+	for node in list(reload_nodes):
+	    #json_node = TypesUtil.string_to_json(node)
+	    json_node = node
+	    print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])	
+
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = ArgumentParser(description="Run microchain websocket server.")
+
+	parser.add_argument("--test_func", type=int, default=0, 
+						help="Execute test function: 0-run_validator, \
+													1-new_account(), \
+													2-static_node()")
 	parser.add_argument('-p', '--port', default=8080, type=int, 
 						help="port to listen on.")
 	parser.add_argument('--blockepoch', default=2, type=int, 
@@ -454,21 +507,26 @@ if __name__ == '__main__':
 	# get arguments
 	args = define_and_get_arguments()
 
-	# ------------------------ Instantiate the Validator ----------------------------------
-	myblockchain = Validator(consensus=ConsensusType.PoS, 
-							block_epoch=args.blockepoch,
-							pause_epoch=args.pauseepoch,
-							phase_delay=args.phasedelay)
-	myblockchain.load_chain()
+	if(args.test_func==1):
+		new_account()
+	elif(args.test_func==2):
+		static_node()
+	else:
+		# ------------------------ Instantiate the Validator ----------------------------------
+		myblockchain = Validator(consensus=ConsensusType.PoS, 
+								block_epoch=args.blockepoch,
+								pause_epoch=args.pauseepoch,
+								phase_delay=args.phasedelay)
+		myblockchain.load_chain()
 
-	myblockchain.print_config()
+		myblockchain.print_config()
 
-	# # -------------------------- Instantiate RandShare -------------------------------------
-	myrandshare = RandShare()
-	# json_sharesInfo=RandShare.load_sharesInfo()
-	# # display random shares
-	# disp_randomshare(json_sharesInfo)
-	randshare_daemon = RundShare_Daemon()
+		# # -------------------------- Instantiate RandShare -------------------------------------
+		myrandshare = RandShare()
+		# json_sharesInfo=RandShare.load_sharesInfo()
+		# # display random shares
+		# disp_randomshare(json_sharesInfo)
+		randshare_daemon = RundShare_Daemon()
 
-	app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
+		app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
 

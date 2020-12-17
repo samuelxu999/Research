@@ -26,3 +26,6 @@ do
 
 done
 
+## clear test data and results
+rm -rf ./chaindata/*
+rm -rf ./test_results/*

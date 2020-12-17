@@ -22,8 +22,9 @@ KEY_DATA_DIR = 'keystore'
 
 class Wallet(object):
 
-    def __init__(self):        
+    def __init__(self, key_data_dir=KEY_DATA_DIR):        
         self.accounts = []
+        self.key_data_dir = key_data_dir
 
 
     def create_account(self, sk_pw):
@@ -48,11 +49,11 @@ class Wallet(object):
                 'key_size': keys_numbers['key_size']}
 
         #save new key files
-        if(not os.path.exists(KEY_DATA_DIR)):
-            os.makedirs(KEY_DATA_DIR)
+        if(not os.path.exists(self.key_data_dir)):
+            os.makedirs(self.key_data_dir)
         key_file = DatetimeUtil.datetime_string(DatetimeUtil.timestamp_datetime(account['timestamp']), 
                             "UTC--%Y-%m-%d-%H-%M-%S") + '--' + account['address']
-        FileUtil.JSON_save(KEY_DATA_DIR+'/'+key_file, account)
+        FileUtil.JSON_save(self.key_data_dir+'/'+key_file, account)
 
         # append new account to list
         self.accounts.append(account)
@@ -61,10 +62,10 @@ class Wallet(object):
         """
         load all accounts from key files in keystore
         """
-        if(os.path.exists(KEY_DATA_DIR)):
-            list_files = FileUtil.list_files(KEY_DATA_DIR)
+        if(os.path.exists(self.key_data_dir)):
+            list_files = FileUtil.list_files(self.key_data_dir)
             for file in list_files:
-                account = FileUtil.JSON_load(KEY_DATA_DIR+'/'+file)
+                account = FileUtil.JSON_load(self.key_data_dir+'/'+file)
                 self.accounts.append(account)
     
     def list_address(self):
