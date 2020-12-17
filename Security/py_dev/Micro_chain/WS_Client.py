@@ -60,6 +60,52 @@ def validator_getinfo(target_address, isBroadcast=False):
 	return info_list
 
 
+def launch_txs(tx_size):
+	# Instantiate the Wallet by using key_dir: keystore_net
+	mywallet = Wallet('keystore_net')
+	# Instantiate PeerNodes object
+	mypeer_nodes = PeerNodes()
+
+	# load accounts
+	mywallet.load_accounts()
+
+	## for each account to send ENF samples
+	tx_count = 0
+	for sender in mywallet.accounts:
+		sender_address = sender['address']
+		sender_private_key = sender['private_key']
+		## set recipient_address as default value: 0
+		recipient_address = '0'
+		time_stamp = time.time()
+
+		# using random byte string for value of tx
+		str_value = TypesUtil.string_to_hex(os.urandom(tx_size))
+
+		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
+
+		# sign transaction
+		sign_data = mytransaction.sign('samuelxu999')
+
+		# verify transaction
+		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
+		                                        mytransaction.recipient_address,
+		                                        mytransaction.time_stamp,
+		                                        mytransaction.value)
+
+		## --------------------- send transaction --------------------------------------
+		transaction_json = mytransaction.to_json()
+		transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
+
+		node_info = mypeer_nodes.load_ByAddress(sender_address)
+		json_nodes = TypesUtil.string_to_json(list(mypeer_nodes.get_nodelist())[0])
+		# print(json_nodes['node_url'])
+		json_response=SrvAPI.POST('http://'+json_nodes['node_url']+'/test/transaction/broadcast', 
+								transaction_json)
+
+		tx_count+=1
+
+	logger.info('launch transactions: tx size {}    total count: {}'.format(tx_size, tx_count))
+
 def send_transaction(target_address, tx_size=1, isBroadcast=False):
     # Instantiate the Wallet
     mywallet = Wallet()
@@ -364,7 +410,7 @@ def create_randshare(target_address, isBroadcast=False):
 	FileUtil.AddLine(test_file, log_data)'''
 
 # ====================================== validator test ==================================
-def Epoch_validator(target_address, tx_size, phase_delay=BOUNDED_TIME):
+def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
 	'''
@@ -375,7 +421,10 @@ def Epoch_validator(target_address, tx_size, phase_delay=BOUNDED_TIME):
 
 	# S1: send test transactions
 	start_time=time.time()
-	send_transaction(target_address, tx_size, True)
+	if(op_status==1):
+		send_transaction(target_address, tx_size, True)
+	else:
+		launch_txs(tx_size)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -679,18 +728,24 @@ def checkpoint_netInfo(isDisplay=False):
 	return json_checkpoints
 
 def define_and_get_arguments(args=sys.argv[1:]):
-    parser = argparse.ArgumentParser(
-        description="Run websocket client."
-    )
-    parser.add_argument("--op_status", type=int, default=2, help="batch size of the training")
-    parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
-    parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
-    parser.add_argument("--target_address", type=str, default="0.0.0.0:8080", 
-    					help="Test target address - ip:port.")
-    parser.add_argument("--set_peer", type=str, default="", 
-    					help="set peer node. name@op")
-    args = parser.parse_args(args=args)
-    return args
+	parser = argparse.ArgumentParser(
+		description="Run websocket client."
+	)
+	parser.add_argument("--test_func", type=int, default=2, help="test function: \
+															0: set peer nodes \
+															1: validator test \
+															2: single step test \
+															3: randshare test")
+	parser.add_argument("--op_status", type=int, default=2, help="batch size of the training")
+	parser.add_argument("--tx_size", type=int, default=128, help="Size of value in transaction.")
+	parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
+	parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
+	parser.add_argument("--target_address", type=str, default="0.0.0.0:8080", 
+						help="Test target address - ip:port.")
+	parser.add_argument("--set_peer", type=str, default="", 
+						help="set peer node. name@op")
+	args = parser.parse_args(args=args)
+	return args
 
 def count_tx_size():
 	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
@@ -698,10 +753,14 @@ def count_tx_size():
 	chain_length = json_response['length']
 	logger.info('Chain length: {}'.format(chain_length))
 	for block in chain_data:
-		if(block['transactions']!=[]):			
+		if(block['transactions']!=[]): 
+			blk_str = TypesUtil.json_to_string(block)  
+			logger.info('Block size: {} Bytes'.format(len( blk_str.encode('utf-8') ))) 
+			logger.info('transactions count: {}'.format(len( block['transactions'] )))  
+
 			tx=block['transactions'][0]
 			tx_str=TypesUtil.json_to_string(tx)
-			logger.info('Tx size: {}'.format(len( tx_str.encode('utf-8') )))
+			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
 			break
 
 if __name__ == "__main__":
@@ -714,6 +773,8 @@ if __name__ == "__main__":
 
 	# set parameters
 	target_address = args.target_address
+	tx_size =args.tx_size
+	test_func = args.test_func
 	op_status = args.op_status
 	wait_interval = args.wait_interval
 	test_run = args.test_round
@@ -722,20 +783,17 @@ if __name__ == "__main__":
 	# | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
 	# |-------------------------------------------------------------------------|
 
-	if(op_status == 0):
+	if(test_func == 0):
 		set_peer = args.set_peer
 		if(set_peer!=''):
 			name_op=set_peer.split('@')
 			# print(name_op[0], name_op[1])
 			# set_peerNodes('R2_pi4_4', 1, True)
 			set_peerNodes(name_op[0], int(name_op[1]), True)
-	elif(op_status == 1):
-		# data_size = 1024*1024
-		data_size = 1024
-
+	elif(test_func == 1):
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
-			Epoch_validator(target_address, data_size, 5)
+			Epoch_validator(target_address, op_status, tx_size, 5)
 			time.sleep(wait_interval)
 
 		# get checkpoint after execution
@@ -743,13 +801,33 @@ if __name__ == "__main__":
 		for _item, _value in json_checkpoints.items():
 			logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 
-	elif(op_status == 2):
-		# data_size = 1024*1024
-		data_size = 1024
+	elif(test_func == 2):
+		if(op_status == 1):
+			send_transaction(target_address, tx_size, True)
+		elif(op_status == 10):
+			launch_txs(tx_size)
+		elif(op_status == 2):
+			start_mining(target_address, True)
+		elif(op_status == 3):
+			check_head()
+		elif(op_status == 4):
+			start_voting(target_address, True)
+		elif(op_status == 11):
+			get_transactions(target_address)
+		elif(op_status == 12):
+			get_chain(target_address, True)
+		elif(op_status == 13):
+			count_tx_size()
+		elif(op_status == 9):
+			run_consensus(target_address, True, True)
+		else:
+			json_checkpoints = checkpoint_netInfo(False)
+			for _item, _value in json_checkpoints.items():
+				logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
 		# send_transaction(target_address, data_size, True)
 		# time.sleep(1)
 		# get_transactions(target_address)
-		run_consensus(target_address, True, True)
+		# run_consensus(target_address, True, True)
 
 		# start_mining(target_address, True)
 
