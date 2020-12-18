@@ -1,6 +1,6 @@
 '''
 ========================
-WS_Client module
+Test_Client module
 ========================
 Created on Dec.10, 2020
 @author: Xu Ronghua
