@@ -230,6 +230,10 @@ class Validator(object):
 			json_head=self.processed_head
 			logger.info("Consensus run at height: {}    status: {}".format(json_head['height'], 
 																		self.runConsensus))
+			# ------------S0: collect ENF samples proof ---------------------------------
+			logger.info("Collecting ENF samples proof, timeout is: {}".format(self.phase_delay*3))
+			time.sleep(self.phase_delay*3)
+
 			# ------------S1: execute proof-of-work to mine new block--------------------
 			start_time=time.time()
 			new_block=self.mine_block()
