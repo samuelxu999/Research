@@ -170,12 +170,16 @@ class Validator(object):
 		self.pause_epoch = pause_epoch
 		# set delay time between operations in consensus protocol.
 		self.phase_delay = phase_delay
-		# define a thread to handle received messages by executing process_msg()
+		# define a thread to handle received messages by executing exec_consensus()
 		self.consensus_thread = threading.Thread(target=self.exec_consensus, args=())
 		# Set as daemon thread
 		self.consensus_thread.daemon = True
 		# Start the daemonized method execution
-		self.consensus_thread.start()   
+		self.consensus_thread.start()  
+		# Indicate current consensus status: 
+		# 0-ENF proposal; 1-ENF-mining; 2-fix head; 
+		# 3-voting-based finality; 4-synchronization
+		self.statusConsensus = 0 
 	
 	def process_msg(self):
 		'''
@@ -226,41 +230,82 @@ class Validator(object):
 			# reset idle time as 0
 			idle_time = 0.0
 
-			# ========================== Run consensus protocol ==========================
-			json_head=self.processed_head
-			logger.info("Consensus run at height: {}    status: {}".format(json_head['height'], 
-																		self.runConsensus))
-			# ------------S0: collect ENF samples proof ---------------------------------
-			logger.info("Collecting ENF samples proof, timeout is: {}".format(self.phase_delay*10))
-			time.sleep(self.phase_delay*10)
+			if(self.statusConsensus!=4):
+				## let sync_nodes as all peer nodes
+				sync_nodes = list(self.peer_nodes.get_nodelist())
 
-			# ------------S1: execute proof-of-work to mine new block--------------------
-			start_time=time.time()
-			new_block=self.mine_block()
-			exec_time=time.time()-start_time
-			FileUtil.save_testlog('test_results', 'exec_mining.log', format(exec_time*1000, '.3f'))
+				# ========================== Run consensus protocol ==========================
+				json_head=self.processed_head
+				logger.info("Consensus run at height: {}    status: {}".format(json_head['height'], 
+																			self.runConsensus))
+				# ------------S0: collect ENF samples proof ---------------------------------
+				# self.statusConsensus = 0
+				step_delay = self.phase_delay*10
+				logger.info("Collecting ENF samples proof, timeout is: {}".format(step_delay))
+				time.sleep(step_delay)
+
+				# ------------S1: execute proof-of-work to mine new block--------------------
+				self.statusConsensus = 1
+				step_delay = self.phase_delay*2
+				logger.info("Executing PoE mining, timeout is: {}".format(step_delay))
+				
+				start_time=time.time()
+				# 1) execute PoE mining
+				new_block=self.mine_block()
+				exec_time=time.time()-start_time
+				FileUtil.save_testlog('test_results', 'exec_mining.log', format(exec_time*1000, '.3f'))
+				
+				# 2) broadcast proposed block to peer nodes
+				if( (self.consensus==ConsensusType.PoW) or 
+					(not Block.isEmptyBlock(new_block)) ):
+					SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
+				time.sleep(step_delay)
+
+				# ------------S2: fix head of current block generation epoch ----------------
+				self.statusConsensus = 2
+				step_delay = self.phase_delay
+				logger.info("Fix processed head, timeout is: {}".format(step_delay))
+				self.fix_processed_head()
+				time.sleep(step_delay)
+
+				# ------------S3: voting block to finalize chain ----------------------------
+				self.statusConsensus = 3
+				step_delay = self.phase_delay*3
+				logger.info("Voting-based finality, timeout is: {}".format(step_delay))
+				
+				# 1) get processed_head as json
+				json_head= self.processed_head
+
+				# 2) only vote if current height arrive multiple of EPOCH_SIZE
+				if( (json_head['height'] % self.block_epoch) == 0):
+					vote_data = self.vote_checkpoint(json_head)	
+					SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
+					pause_epoch+=1
+					time.sleep(step_delay)
 			
-			# broadcast proposed block to peer nodes
-			if( (self.consensus==ConsensusType.PoW) or 
-				(not Block.isEmptyBlock(new_block)) ):
-				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
-			time.sleep(self.phase_delay*1.5)
+				# -----------------S4: pause and round synchronization ----------------------------
+				self.statusConsensus = 4
+				step_delay = self.phase_delay
+				logger.info("Wait for synchronization, timeout is: {}".format(step_delay))
+			else:
+				json_status = SrvAPI.get_statusConsensus(sync_nodes)
+				for node in sync_nodes:
+					json_node = TypesUtil.string_to_json(node)
+					node_status = json_status[json_node['address']]
+					if(node_status['consensus_status']==4):
+						# print("node {} sync".format(json_node['address']))
+						sync_nodes.remove(node)
 
-			# ------------S2: fix head of current block generation epoch ----------------
-			self.fix_processed_head()
-			time.sleep(self.phase_delay)
+				# check if all nodes are synchronous
+				if(len(sync_nodes)==0):
+					time.sleep(step_delay)
+					logger.info("Synchronization finished, move to next round.")
+					self.statusConsensus = 0
 
-			# ------------S3: voting block to finalize chain ----------------------------
-			json_head= self.processed_head
+				## synchronization latency
+				time.sleep(0.1)
 
-			# only vote if current height arrive multiple of EPOCH_SIZE
-			if( (json_head['height'] % self.block_epoch) == 0):
-				vote_data = self.vote_checkpoint(json_head)	
-				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
-				pause_epoch+=1
-				time.sleep(self.phase_delay*3)
-		
-			# if pause_epoch arrives threshold. stop consensus for synchronization
+			# if pause_epoch arrives threshold. stop consensus for checkpoint synchronization
 			if(pause_epoch==self.pause_epoch):
 				self.runConsensus=False
 				logger.info("Consensus run status: {}".format(self.runConsensus))
@@ -396,6 +441,15 @@ class Validator(object):
 
 		return validator_info
 
+	def get_status(self):
+		'''
+		Get validator status for synchronization
+		'''
+		validator_status = {}
+		validator_status['consensus_run'] = self.runConsensus
+		validator_status['consensus_status'] = self.statusConsensus
+
+		return validator_status
 
 	def valid_transaction(self, transaction, sender_pk, signature):
 		"""

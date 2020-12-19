@@ -701,6 +701,19 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	args = parser.parse_args(args=args)
 	return args
 
+def validator_getStatus():
+	ls_nodes = list(peer_nodes.get_nodelist())
+	json_status = SrvAPI.get_statusConsensus(ls_nodes)
+	unconditional_nodes = []
+	for node in ls_nodes:
+		json_node = TypesUtil.string_to_json(node)
+		node_status = json_status[json_node['address']]
+		if(node_status['consensus_status']!=4):
+			unconditional_nodes.append(node)
+		logger.info("{}    status: {}".format(json_node['address'], node_status))
+
+	logger.info("Non-syn node: {}".format(unconditional_nodes))
+
 if __name__ == "__main__":
     FORMAT = "%(asctime)s %(levelname)s | %(message)s"
     LOG_LEVEL = logging.INFO
@@ -761,6 +774,8 @@ if __name__ == "__main__":
             count_tx_size(target_address)
         elif(op_status == 9):
             run_consensus(target_address, True, True)
+        elif(op_status == 90):
+        	validator_getStatus()
         else:
             json_checkpoints = checkpoint_netInfo(target_address, False)
             for _item, _value in json_checkpoints.items():
