@@ -285,7 +285,7 @@ class Validator(object):
 			
 				# -----------------S4: pause and round synchronization ----------------------------
 				self.statusConsensus = 4
-				step_delay = self.phase_delay
+				step_delay = self.phase_delay*3
 				logger.info("Wait for synchronization, timeout is: {}".format(step_delay))
 			else:
 				json_status = SrvAPI.get_statusConsensus(sync_nodes)
