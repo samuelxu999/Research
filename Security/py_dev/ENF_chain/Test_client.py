@@ -15,6 +15,7 @@ import requests
 import json
 import time
 import logging
+import threading
 
 from network.wallet import Wallet
 from network.nodes import *
@@ -37,6 +38,57 @@ peer_nodes.load_ByAddress()
 ## Load ENF samples database for test
 ENF_file = "./data/one_day_enf.csv"
 ENF_data = FileUtil.csv_read(ENF_file)
+
+class TxsThread(threading.Thread):
+	'''
+	Threading class to handle multiple txs threads pool
+	'''
+	def __init__(self, argv):
+		threading.Thread.__init__(self)
+		self.argv = argv
+
+	#The run() method is the entry point for a thread.
+	def run(self):
+		## set parameters based on argv
+		tx_sender = self.argv[0]
+		mypeer_nodes = self.argv[1]
+		head_pos = self.argv[2]
+		samples_size = self.argv[3]
+
+		sender_address = tx_sender['address']
+		sender_private_key = tx_sender['private_key']
+		## set recipient_address as default value: 0
+		recipient_address = '0'
+		time_stamp = time.time()
+
+		## value comes from hash value to indicate address that ENF samples are saved on swarm network.
+		json_value={}
+		json_value['sender_address'] = sender_address
+		json_value['swarm_hash'] = getSwarmhash(sender_address, head_pos, samples_size)
+		## convert json_value to string to ensure consistency in tx verification.
+		str_value = TypesUtil.json_to_string(json_value)
+
+		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
+
+		# sign transaction
+		sign_data = mytransaction.sign('samuelxu999')
+
+		# verify transaction
+		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
+		                                        mytransaction.recipient_address,
+		                                        mytransaction.time_stamp,
+		                                        mytransaction.value)
+
+		## --------------------- send transaction --------------------------------------
+		transaction_json = mytransaction.to_json()
+		transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
+
+		node_info = mypeer_nodes.load_ByAddress(sender_address)
+		json_nodes = TypesUtil.string_to_json(list(mypeer_nodes.get_nodelist())[0])
+
+		## trigger broadcast_tx on tx_sender
+		SrvAPI.POST('http://'+json_nodes['node_url']+'/test/transaction/broadcast', 
+								transaction_json)
 
 # ====================================== client side REST API ==================================
 def run_consensus(target_address, exec_consensus, isBroadcast=False):
@@ -99,47 +151,27 @@ def launch_ENF(samples_head, samples_size):
 	# load accounts
 	mywallet.load_accounts()
 
-	## for each account to send ENF samples
+	# Create thread pool
+	threads_pool = []
+
+	## 1) for each account to send ENF samples
 	head_pos = samples_head
 	for sender in mywallet.accounts:
-		sender_address = sender['address']
-		sender_private_key = sender['private_key']
-		## set recipient_address as default value: 0
-		recipient_address = '0'
-		time_stamp = time.time()
+		## Create new threads for tx
+		p_thread = TxsThread( [sender, mypeer_nodes, head_pos, samples_size] )
 
-		## value comes from hash value to indicate address that ENF samples are saved on swarm network.
-		json_value={}
-		json_value['sender_address'] = sender_address
-		json_value['swarm_hash'] = getSwarmhash(sender_address, head_pos, samples_size)
-		## convert json_value to string to ensure consistency in tx verification.
-		str_value = TypesUtil.json_to_string(json_value)
+		## append to threads pool
+		threads_pool.append(p_thread)
 
-		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
-
-		# sign transaction
-		sign_data = mytransaction.sign('samuelxu999')
-
-		# verify transaction
-		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
-		                                        mytransaction.recipient_address,
-		                                        mytransaction.time_stamp,
-		                                        mytransaction.value)
-
-		## --------------------- send transaction --------------------------------------
-		transaction_json = mytransaction.to_json()
-		transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
+		## The start() method starts a thread by calling the run method.
+		p_thread.start()
 
 		## move sample head to next section
 		head_pos+=samples_size
-
-		# print(transaction_json)
-
-		node_info = mypeer_nodes.load_ByAddress(sender_address)
-		json_nodes = TypesUtil.string_to_json(list(mypeer_nodes.get_nodelist())[0])
-		# print(json_nodes['node_url'])
-		json_response=SrvAPI.POST('http://'+json_nodes['node_url']+'/test/transaction/broadcast', 
-								transaction_json)
+	
+	# 2) The join() waits for all threads to terminate.
+	for p_thread in threads_pool:
+		p_thread.join()
 
 	logger.info('launch ENF samples, current_pos: {}    next_pos: {}'.format(samples_head, head_pos))
 

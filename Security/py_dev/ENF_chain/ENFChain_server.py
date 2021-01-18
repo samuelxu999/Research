@@ -186,8 +186,10 @@ def broadcast_transaction():
 		abort(401, {'error': 'No transaction data'})
 
 	# broadcast transaction to peer nodes
-	#myblockchain.peer_nodes.load_ByAddress()
+	start_time=time.time()
 	SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), transaction_data, '/test/transaction/verify')
+	exec_time=time.time()-start_time
+	FileUtil.save_testlog('test_results', 'exec_broadcast_tx.log', format(exec_time*1000, '.3f'))
 
 	return jsonify({'broadcast_transaction': 'Succeed!'}), 201
 
