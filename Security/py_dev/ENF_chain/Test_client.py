@@ -10,296 +10,24 @@ Created on Dec.10, 2020
 '''
 import argparse
 import sys
-import random
-import requests
-import json
 import time
 import logging
-import threading
 
 from network.wallet import Wallet
 from network.nodes import *
-from consensus.transaction import Transaction
-from consensus.block import Block
-from consensus.vote import VoteCheckPoint
-from consensus.validator import Validator
-from consensus.consensus import POW, POE
 from utils.utilities import TypesUtil, FileUtil
 from utils.service_api import SrvAPI
-from utils.Swarm_RPC import Swarm_RPC
-from randomness.randshare import RandShare, RandOP
+from utils.db_adapter import DataManager
+from utils.ENFchain_RPC import ENFchain_RPC
+from utils.configuration import *
+from randomness.randshare import RandShare
 
 logger = logging.getLogger(__name__)
 
-## Instantiate the PeerNodes
-peer_nodes = PeerNodes()
-peer_nodes.load_ByAddress()
 
-## Load ENF samples database for test
-ENF_file = "./data/one_day_enf.csv"
-ENF_data = FileUtil.csv_read(ENF_file)
-
-class TxsThread(threading.Thread):
-	'''
-	Threading class to handle multiple txs threads pool
-	'''
-	def __init__(self, argv):
-		threading.Thread.__init__(self)
-		self.argv = argv
-
-	#The run() method is the entry point for a thread.
-	def run(self):
-		## set parameters based on argv
-		tx_sender = self.argv[0]
-		mypeer_nodes = self.argv[1]
-		head_pos = self.argv[2]
-		samples_size = self.argv[3]
-
-		sender_address = tx_sender['address']
-		sender_private_key = tx_sender['private_key']
-		## set recipient_address as default value: 0
-		recipient_address = '0'
-		time_stamp = time.time()
-
-		## value comes from hash value to indicate address that ENF samples are saved on swarm network.
-		json_value={}
-		json_value['sender_address'] = sender_address
-		json_value['swarm_hash'] = getSwarmhash(sender_address, head_pos, samples_size)
-		## convert json_value to string to ensure consistency in tx verification.
-		str_value = TypesUtil.json_to_string(json_value)
-
-		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
-
-		# sign transaction
-		sign_data = mytransaction.sign('samuelxu999')
-
-		# verify transaction
-		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
-		                                        mytransaction.recipient_address,
-		                                        mytransaction.time_stamp,
-		                                        mytransaction.value)
-
-		## --------------------- send transaction --------------------------------------
-		transaction_json = mytransaction.to_json()
-		transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
-
-		node_info = mypeer_nodes.load_ByAddress(sender_address)
-		json_nodes = TypesUtil.string_to_json(list(mypeer_nodes.get_nodelist())[0])
-
-		## trigger broadcast_tx on tx_sender
-		SrvAPI.POST('http://'+json_nodes['node_url']+'/test/transaction/broadcast', 
-								transaction_json)
-
-# ====================================== client side REST API ==================================
-def run_consensus(target_address, exec_consensus, isBroadcast=False):
-	json_msg={}
-	json_msg['consensus_run']=exec_consensus
-
-	if(not isBroadcast):
-		json_response=SrvAPI.POST('http://'+target_address+'/test/consensus/run', json_msg)
-		json_response = {'run_consensus': target_address, 'status': json_msg['consensus_run']}
-	else:
-		SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_msg, '/test/consensus/run', True)
-		json_response = {'run_consensus': 'broadcast', 'status': json_msg['consensus_run']}
-	logger.info(json_response)
-
-def validator_getinfo(target_address, isBroadcast=False):
-	info_list = []
-	if(not isBroadcast):
-		json_response = SrvAPI.GET('http://'+target_address+'/test/validator/getinfo')
-		info_list.append(json_response)
-	else:
-		for node in peer_nodes.get_nodelist():
-			json_node = TypesUtil.string_to_json(node)
-			json_response = SrvAPI.GET('http://'+json_node['node_url']+'/test/validator/getinfo')
-			info_list.append(json_response)
-	return info_list
-
-def getSwarmhash(samples_id, samples_head, samples_size, is_random=False):
-	if(is_random==True):
-		head_pos = random.randint(0,7200) 
-	else:
-		head_pos = samples_head 
-
-	ls_ENF = TypesUtil.np2list(ENF_data[head_pos:(head_pos+samples_size), 1]) 
-
-	## ******************** upload ENF samples **********************
-	## build json ENF data for transaction
-	tx_json = {}
-
-	json_ENF={}
-	json_ENF['id']=samples_id
-	json_ENF['enf']=ls_ENF
-	tx_data = TypesUtil.json_to_string(json_ENF)  
-
-	## save ENF data in transaction
-	tx_json['data']=tx_data
-	# print(tx_json)
-
-	## random choose a swarm server
-	target_address = Swarm_RPC.get_service_address()
-	post_ret = Swarm_RPC.upload_data(target_address, tx_json)	
-
-	return post_ret['data']
-
-def launch_ENF(samples_head, samples_size):
-	# Instantiate the Wallet by using key_dir: keystore_net
-	mywallet = Wallet('keystore_net')
-	# Instantiate PeerNodes object
-	mypeer_nodes = PeerNodes()
-
-	# load accounts
-	mywallet.load_accounts()
-
-	# Create thread pool
-	threads_pool = []
-
-	## 1) for each account to send ENF samples
-	head_pos = samples_head
-	for sender in mywallet.accounts:
-		## Create new threads for tx
-		p_thread = TxsThread( [sender, mypeer_nodes, head_pos, samples_size] )
-
-		## append to threads pool
-		threads_pool.append(p_thread)
-
-		## The start() method starts a thread by calling the run method.
-		p_thread.start()
-
-		## move sample head to next section
-		head_pos+=samples_size
-	
-	# 2) The join() waits for all threads to terminate.
-	for p_thread in threads_pool:
-		p_thread.join()
-
-	logger.info('launch ENF samples, current_pos: {}    next_pos: {}'.format(samples_head, head_pos))
-
-	## return updated head_pos for next epoch 
-	return head_pos
-
-
-def send_transaction(target_address, samples_head, samples_size, isBroadcast=False):
-    # Instantiate the Wallet
-    mywallet = Wallet()
-
-    # load accounts
-    mywallet.load_accounts()
-
-    ##----------------- build test transaction --------------------
-    sender = mywallet.accounts[0]
-    sender_address = sender['address']
-    sender_private_key = sender['private_key']
-    ## set recipient_address as default value: 0
-    recipient_address = '0'
-    time_stamp = time.time()
-    
-    ## value comes from hash value to indicate address that ENF samples are saved on swarm network.
-    json_value={}
-    json_value['sender_address'] = sender_address
-    json_value['swarm_hash'] = getSwarmhash(sender_address, samples_head, samples_size)
-    ## convert json_value to string to ensure consistency in tx verification.
-    str_value = TypesUtil.json_to_string(json_value)
-
-    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
-
-    # sign transaction
-    sign_data = mytransaction.sign('samuelxu999')
-
-    # verify transaction
-    dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
-                                            mytransaction.recipient_address,
-                                            mytransaction.time_stamp,
-                                            mytransaction.value)
-    
-    ## --------------------- send transaction --------------------------------------
-    transaction_json = mytransaction.to_json()
-    transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
-    # print(transaction_json)
-    if(not isBroadcast):
-        json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/verify', 
-        						transaction_json)
-    else:
-        json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/broadcast', 
-                                transaction_json)
-    logger.info(json_response)
-
-def get_transactions(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/transactions/get')
-    transactions = json_response['transactions']
-    logger.info(transactions)
-
-    # print(POE.proof_of_enf(transactions, '1ad48ca78653f3f4b16b0622432db7d995613c42'))
-
-def start_mining(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/mining')
-	#transactions = json_response['transactions']
-	else:
-		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/mining', True)
-		json_response = {'start mining': 'broadcast'}
-
-	logger.info(json_response)
-
-def start_voting(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/block/vote')
-	#transactions = json_response['transactions']
-	else:
-	#SrvAPI.broadcast(peer_nodes.get_nodelist(), {}, '/test/block/vote')
-		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/block/vote', True)
-		json_response = {'verify_vote': 'broadcast'}
-	logger.info(json_response)
-
-def get_nodes(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
-    nodes = json_response['nodes']
-    logger.info('Peer nodes:')
-    for node in nodes:
-        logger.info(node)
-
-def add_node(target_address, json_node, isBroadcast=False):
-    if(not isBroadcast):
-        json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/add', json_node)
-        logger.info(json_response)
-    else:
-        #json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/add')
-        for target_node in target_address:
-            try:
-                SrvAPI.POST('http://'+target_node+'/test/nodes/add', json_node)
-            except:
-                pass
-
-def remove_node(target_address, json_node, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
-		logger.info(json_response)
-	else:
-		#json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
-		for target_node in target_address:
-			try:
-				SrvAPI.POST('http://'+target_node+'/test/nodes/remove', json_node)
-			except:
-				pass
-
-def get_chain(target_address, isDisplay=False):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-	chain_data = json_response['chain']
-	chain_length = json_response['length']
-	logger.info('Chain length: {}'.format(chain_length))
-
-	if( isDisplay ):
-	    # only list latest 10 blocks
-	    if(chain_length>10):
-	        for block in chain_data[-10:]:
-	            logger.info("{}\n".format(block))
-	    else:
-	        for block in chain_data:
-	            logger.info("{}\n".format(block))
-
-def check_head():
-	SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/chain/checkhead')
-	json_response = {'Reorganize processed_head': 'broadcast'}
+# ------------------------ Instantiate the ENFchain_RPC ----------------------------------
+ENFchain_client = ENFchain_RPC(keystore="keystore", 
+								keystore_net="keystore_net")
 
 def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 	#--------------------------------------- load static nodes -------------------------------------
@@ -345,54 +73,21 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 
 	if(op_status==1): 
 		if(not isBroadcast):  
-			add_node(target_address, json_node)
+			ENFchain_client.add_node(target_address, json_node)
 		else:
-			add_node(list_address, json_node, True)
+			ENFchain_client.add_node(list_address, json_node, True)
 	if(op_status==2):
 		if(not isBroadcast):
-			remove_node(target_address, json_node)
+			ENFchain_client.remove_node(target_address, json_node)
 		else:
-			remove_node(list_address, json_node, True)
+			ENFchain_client.remove_node(list_address, json_node, True)
 
-	get_nodes(target_address)
-
-def fetch_randshare(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		# Instantiate the Wallet
-		mywallet = Wallet()
-		mywallet.load_accounts()
-		# get host address
-		json_node={}
-		json_node['address'] = mywallet.accounts[0]['address']
-		json_response=SrvAPI.POST('http://'+target_address+'/test/randshare/fetch', json_node)
-	else:
-		SrvAPI.broadcast_GET(target_address, '/test/randshare/cachefetched', True)
-		json_response = {'broadcast_fetch_randshare': 'Succeed!'}
-	return json_response
-
-def verify_randshare(target_address):
-	json_response=SrvAPI.broadcast_GET(target_address, '/test/randshare/verify', True)
-	return json_response
-
-def recovered_randshare(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/recovered')
-	return json_response
-
-def fetchvote_randshare(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/fetchvote')
-	return json_response
-
-def vote_randshare(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/cachevote')
-	return json_response
-
-def create_randshare(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/create')
-	else:
-		SrvAPI.broadcast_GET(target_address, '/test/randshare/create', True)
-		json_response = {'broadcast_create_randshare': 'Succeed!'}
-	return json_response
+	# display peering nodes
+	json_response=ENFchain_client.get_nodes(target_address)
+	nodes = json_response['nodes']
+	logger.info('Peer nodes:')
+	for node in nodes:
+		logger.info(node)
 
 # ====================================== validator test ==================================
 def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUNDED_TIME):
@@ -405,7 +100,7 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 	# S1: send test transactions
 	start_time=time.time()
 	# send_transaction(target_address, samples_head, samples_size, True)
-	head_pos = launch_ENF(samples_head, samples_size)
+	head_pos = ENFchain_client.launch_ENF(samples_head, samples_size)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -413,7 +108,7 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 
 	# S2: start mining 
 	start_time=time.time()   
-	start_mining(target_address, True)
+	ENFchain_client.start_mining(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -421,7 +116,7 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 
 	# S3: fix head of epoch 
 	start_time=time.time()   
-	check_head()
+	ENFchain_client.check_head()
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -429,9 +124,11 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 
 	# S4: voting block to finalize chain
 	start_time=time.time() 
-	start_voting(target_address, True)
+	ENFchain_client.start_voting(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
+
+	time.sleep(phase_delay)
 
 	logger.info("txs: {}    mining: {}    fix_head: {}    vote: {}\n".format(ls_time_exec[0],
 										ls_time_exec[1], ls_time_exec[2], ls_time_exec[3]))
@@ -442,91 +139,7 @@ def Epoch_validator(target_address, samples_head, samples_size, phase_delay=BOUN
 
 	return head_pos
 
-# ====================================== Random share test ==================================
-# # request for share from peers and cache to local
-def cache_fetch_share(target_address):
-	# read cached randshare
-	host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
-	if( host_shares == None):
-		host_shares = {}
-	fetch_share=fetch_randshare(target_address)
-	# logging.info(fetch_share)
-	for (node_name, share_data) in fetch_share.items():
-		host_shares[node_name]=share_data
-	# update host shares 
-	RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
-
-# request for recovered shares from peers and cache to local 
-def cache_recovered_shares(target_address):
-	# read cached randshare
-	recovered_shares=RandShare.load_sharesInfo(RandOP.RandRecovered)
-	if( recovered_shares == None):
-		recovered_shares = {}
-	host_recovered_shares=recovered_randshare(target_address)
-	for (node_name, share_data) in host_recovered_shares.items():
-		recovered_shares[node_name]=share_data
-	# update host shares 
-	RandShare.save_sharesInfo(recovered_shares, RandOP.RandRecovered)
-
-# request for vote shares from peers and cache to local 
-def cache_vote_shares(target_address):
-	# read cached randshare
-	vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
-	if( vote_shares == None):
-		vote_shares = {}
-	host_vote_shares=fetchvote_randshare(target_address)
-	# logging.info(host_vote_shares)
-	for (node_name, share_data) in host_vote_shares.items():
-		vote_shares[node_name]=share_data
-	# update host shares 
-	RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
-
-# test recovered shares
-def recovered_shares(host_address):		
-	# read cached randshare
-	recovered_shares=RandShare.load_sharesInfo(RandOP.RandRecovered)
-	if( recovered_shares == None):
-		recovered_shares = {}
-	# print(recovered_shares)
-
-	# get peer node information
-	peer_nodes = PeerNodes()
-	peer_nodes.load_ByAddress(host_address)
-	json_nodes = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
-	# get public numbers given peer's pk
-	public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
-
-	# get shares information
-	shares = recovered_shares[host_address]
-	# print(shares)
-	# instantiate RandShare to verify share proof.
-	myrandshare = RandShare()
-	myrandshare.p = public_numbers.n
-
-	secret=myrandshare.recover_secret(shares)
-	# print('secret recovered from node shares:', secret)
-	return secret
-
-# test new random generator
-def new_random(ls_secret):
-	# get host account information
-	mywallet = Wallet()
-	mywallet.load_accounts()
-	json_nodes=mywallet.accounts[0]
-	# get public numbers given pk
-	public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
-
-	# instantiate RandShare to verify share proof.
-	myrandshare = RandShare()
-	myrandshare.p = public_numbers.n
-
-	# calculate new random number
-	random_secret = myrandshare.calculate_random(ls_secret)
-
-	logger.info("New random secret: {}".format(random_secret))
-
-
-def Epoch_randomshare(phase_delay=BOUNDED_TIME):
+def Epoch_randomshare(target_address, phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
 	'''
@@ -542,8 +155,8 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	# for peer_node in list(peer_nodes.get_nodelist()):
 	# 	json_node = TypesUtil.string_to_json(peer_node)
-	# 	create_randshare(json_node['node_url'])
-	create_randshare(peer_nodes.get_nodelist(), True)
+	# 	ENFchain_client.create_randshare(json_node['node_url'])
+	ENFchain_client.create_randshare(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -554,8 +167,8 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	# for peer_node in list(peer_nodes.get_nodelist()):
 	# 	json_node = TypesUtil.string_to_json(peer_node)
-	# 	cache_fetch_share(json_node['node_url'])
-	fetch_randshare(peer_nodes.get_nodelist(), True)
+	# 	ENFchain_client.cache_fetch_share(json_node['node_url'])
+	ENFchain_client.fetch_randshare(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -564,7 +177,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# 3) verify received shares
 	logger.info("3) Verify received shares")
 	start_time=time.time()
-	verify_randshare(peer_nodes.get_nodelist())
+	ENFchain_client.verify_randshare(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -576,7 +189,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
 		# cache_vote_shares(json_node['node_url'])
-		vote_randshare(json_node['node_url'])
+		ENFchain_client.vote_randshare(json_node['node_url'])
 	# calculate voted shares 
 	verify_vote = RandShare.verify_vote_shares()
 	logging.info("verify_vote: {}".format(verify_vote))
@@ -590,7 +203,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
-		cache_recovered_shares(json_node['node_url'])
+		ENFchain_client.cache_recovered_shares(json_node['node_url'])
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -602,7 +215,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
-		ls_secret.append(recovered_shares(json_node['address']))
+		ls_secret.append(ENFchain_client.recovered_shares(json_node['address']))
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -611,7 +224,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# 7) calculate new random
 	logger.info("7) Calculate new random")
 	start_time=time.time()
-	new_random(ls_secret)
+	ENFchain_client.new_random(ls_secret)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 	
@@ -624,7 +237,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 def checkpoint_netInfo(target_address, isDisplay=False):
 	# get validators information in net.
-	validator_info = validator_getinfo(target_address, True)
+	validator_info = ENFchain_client.validator_getinfo(target_address, True)
 
 	fininalized_count = {}
 	justifized_count = {}
@@ -696,8 +309,23 @@ def checkpoint_netInfo(target_address, isDisplay=False):
 
 	return json_checkpoints
 
+def disp_chaindata(target_address, isDisplay=False):
+	json_response = ENFchain_client.get_chain(target_address)
+	chain_data = json_response['chain']
+	chain_length = json_response['length']
+	logger.info('Chain length: {}'.format(chain_length))
+
+	if( isDisplay ):
+		# only list latest 10 blocks
+		if(chain_length>10):
+		    for block in chain_data[-10:]:
+		        logger.info("{}\n".format(block))
+		else:
+		    for block in chain_data:
+		        logger.info("{}\n".format(block))
+
 def count_tx_size(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
+	json_response = ENFchain_client.get_chain(target_address)
 	chain_data = json_response['chain']
 	chain_length = json_response['length']
 	logger.info('Chain length: {}'.format(chain_length))
@@ -711,6 +339,35 @@ def count_tx_size(target_address):
 			tx_str=TypesUtil.json_to_string(tx)
 			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
 			break
+
+def count_vote_size(target_address):
+	# get validators information from a validator.
+	validator_info = ENFchain_client.validator_getinfo(target_address, False)[0]
+	if(validator_info['vote_count']!={}):
+		hf_block = validator_info['highest_finalized_checkpoint']
+		voter_db = DataManager(CHAIN_DATA_DIR, VOTER_DATA)
+		voter_name = 'voter_' + hf_block['sender_address']
+		ls_votes = voter_db.select_block(voter_name)
+		if(len(ls_votes)>0):
+			vote_str = TypesUtil.json_to_string(ls_votes[0]) 
+			logger.info('Vote size: {} Bytes'.format(len( vote_str.encode('utf-8') )))
+
+def validator_getStatus():
+	## Instantiate the PeerNodes and load all nodes information
+	peer_nodes = PeerNodes()
+	peer_nodes.load_ByAddress()
+	
+	ls_nodes = list(peer_nodes.get_nodelist())
+	json_status = SrvAPI.get_statusConsensus(ls_nodes)
+	unconditional_nodes = []
+	for node in ls_nodes:
+		json_node = TypesUtil.string_to_json(node)
+		node_status = json_status[json_node['address']]
+		if(node_status['consensus_status']!=4):
+			unconditional_nodes.append(node)
+		logger.info("{}    status: {}".format(json_node['address'], node_status))
+
+	logger.info("Non-syn node: {}".format(unconditional_nodes))
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
@@ -733,97 +390,89 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	args = parser.parse_args(args=args)
 	return args
 
-def validator_getStatus():
-	ls_nodes = list(peer_nodes.get_nodelist())
-	json_status = SrvAPI.get_statusConsensus(ls_nodes)
-	unconditional_nodes = []
-	for node in ls_nodes:
-		json_node = TypesUtil.string_to_json(node)
-		node_status = json_status[json_node['address']]
-		if(node_status['consensus_status']!=4):
-			unconditional_nodes.append(node)
-		logger.info("{}    status: {}".format(json_node['address'], node_status))
-
-	logger.info("Non-syn node: {}".format(unconditional_nodes))
-
 if __name__ == "__main__":
-    FORMAT = "%(asctime)s %(levelname)s | %(message)s"
-    LOG_LEVEL = logging.INFO
-    logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
+	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+	LOG_LEVEL = logging.INFO
+	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
-    ## get arguments
-    args = define_and_get_arguments()
+	ENFchain_RPC_logger = logging.getLogger("ENFchain_RPC")
+	ENFchain_RPC_logger.setLevel(logging.INFO)
 
-    ## set parameters
-    target_address = args.target_address
-    test_func = args.test_func
-    op_status = args.op_status
-    wait_interval = args.wait_interval
-    test_run = args.test_round
-    samples_head = args.samples_head
-    samples_size = args.samples_size
+	## get arguments
+	args = define_and_get_arguments()
 
-    ## |------------------------ test function type -----------------------------|
-    ## | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
-    ## |-------------------------------------------------------------------------|
+	## set parameters
+	target_address = args.target_address
+	test_func = args.test_func
+	op_status = args.op_status
+	wait_interval = args.wait_interval
+	test_run = args.test_round
+	samples_head = args.samples_head
+	samples_size = args.samples_size
 
-    if(test_func == 0):
-    	set_peer = args.set_peer
-    	if(set_peer!=''):
-    		name_op=set_peer.split('@')
-    		# print(name_op[0], name_op[1])
-    		# set_peerNodes('R2_pi4_4', 1, True)
-    		set_peerNodes(name_op[0], int(name_op[1]), True)
-    elif(test_func == 1):
-    	head_pos = samples_head
-    	for x in range(test_run):
-    		logger.info("Test run:{}".format(x+1))
-    		next_pos = Epoch_validator(target_address, head_pos, samples_size, 5)
-    		time.sleep(wait_interval)
-    		head_pos = next_pos
+	## |------------------------ test function type -----------------------------|
+	## | 0:set peer nodes | 1:round test | 2:single step test | 3:randshare test |
+	## |-------------------------------------------------------------------------|
 
-    	# get checkpoint after execution
-    	json_checkpoints = checkpoint_netInfo(target_address, False)
-    	for _item, _value in json_checkpoints.items():
-    		logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
+	if(test_func == 0):
+		set_peer = args.set_peer
+		if(set_peer!=''):
+			name_op=set_peer.split('@')
+			# print(name_op[0], name_op[1])
+			# set_peerNodes('R2_pi4_4', 1, True)
+			set_peerNodes(name_op[0], int(name_op[1]), True)
+	elif(test_func == 1):
+		head_pos = samples_head
+		for x in range(test_run):
+			logger.info("Test run:{}".format(x+1))
+			next_pos = Epoch_validator(target_address, head_pos, samples_size, 5)
+			time.sleep(wait_interval)
+			head_pos = next_pos
 
-    elif(test_func == 2):
-        if(op_status == 1):
-            send_transaction(target_address, samples_head, samples_size, True)
-        elif(op_status == 10):
-        	launch_ENF(samples_head, samples_size)
-        elif(op_status == 2):
-            start_mining(target_address, True)
-        elif(op_status == 3):
-            check_head()
-        elif(op_status == 4):
-            start_voting(target_address, True)
-        elif(op_status == 11):
-            get_transactions(target_address)
-        elif(op_status == 12):
-            get_chain(target_address, True)
-        elif(op_status == 13):
-            count_tx_size(target_address)
-        elif(op_status == 9):
-            run_consensus(target_address, True, True)
-        elif(op_status == 90):
-        	validator_getStatus()
-        else:
-            json_checkpoints = checkpoint_netInfo(target_address, False)
-            for _item, _value in json_checkpoints.items():
-                logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
-    else:
-        # host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
-        # cache_fetch_share(target_address)
-        # verify_share(host_address)
-        # cache_recovered_shares(target_address)
-        # recovered_shares(host_address)
-        # print(create_randshare(target_address))
-        # cache_vote_shares(target_address)
-        # print(verify_vote_shares())
-        # vote_randshare(target_address)
+		# get checkpoint after execution
+		json_checkpoints = checkpoint_netInfo(target_address, False)
+		for _item, _value in json_checkpoints.items():
+			logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 
-        for x in range(test_run):
-            logger.info("Test run:{}".format(x+1))
-            Epoch_randomshare()
-            time.sleep(wait_interval)
+	elif(test_func == 2):
+		if(op_status == 1):
+			ENFchain_client.send_transaction(target_address, samples_head, samples_size, True)
+		elif(op_status == 10):
+			ENFchain_client.launch_ENF(samples_head, samples_size)
+		elif(op_status == 2):
+			ENFchain_client.start_mining(target_address, True)
+		elif(op_status == 3):
+			ENFchain_client.check_head()
+		elif(op_status == 4):
+			ENFchain_client.start_voting(target_address, True)
+		elif(op_status == 11):
+			ENFchain_client.get_transactions(target_address)
+		elif(op_status == 12):
+			disp_chaindata(target_address, True)
+		elif(op_status == 13):
+			count_tx_size(target_address)
+		elif(op_status == 14):
+			count_vote_size(target_address)
+		elif(op_status == 9):
+			ENFchain_client.run_consensus(target_address, True, True)
+		elif(op_status == 90):
+			validator_getStatus()
+		else:
+			json_checkpoints = checkpoint_netInfo(target_address, False)
+			for _item, _value in json_checkpoints.items():
+				logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
+	else:
+		# host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
+		# cache_fetch_share(target_address)
+		# verify_share(host_address)
+		# cache_recovered_shares(target_address)
+		# recovered_shares(host_address)
+		# print(create_randshare(target_address))
+		# cache_vote_shares(target_address)
+		# print(verify_vote_shares())
+		# vote_randshare(target_address)
+
+		for x in range(test_run):
+			logger.info("Test run:{}".format(x+1))
+			Epoch_randomshare(target_address)
+			time.sleep(wait_interval)
