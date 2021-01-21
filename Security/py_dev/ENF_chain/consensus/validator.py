@@ -240,11 +240,11 @@ class Validator(object):
 																			self.runConsensus))
 				# ------------S0: collect ENF samples proof ---------------------------------
 				# self.statusConsensus = 0
-				step_delay = self.phase_delay*10
+				step_delay = self.phase_delay
 				logger.info("Collecting ENF samples proof, timeout is: {}".format(step_delay))
 				time.sleep(step_delay)
 
-				# ------------S1: execute proof-of-work to mine new block--------------------
+				# ------------S1: execute proof-of-ENF to mine new block--------------------
 				self.statusConsensus = 1
 				step_delay = self.phase_delay*2
 				logger.info("Executing PoE mining, timeout is: {}".format(step_delay))
@@ -270,7 +270,7 @@ class Validator(object):
 
 				# ------------S3: voting block to finalize chain ----------------------------
 				self.statusConsensus = 3
-				step_delay = self.phase_delay*3
+				step_delay = self.phase_delay*2
 				logger.info("Voting-based finality, timeout is: {}".format(step_delay))
 				
 				# 1) get processed_head as json
@@ -285,7 +285,7 @@ class Validator(object):
 			
 				# -----------------S4: pause and round synchronization ----------------------------
 				self.statusConsensus = 4
-				step_delay = self.phase_delay*3
+				step_delay = self.phase_delay
 				logger.info("Wait for synchronization, timeout is: {}".format(step_delay))
 			else:
 				json_status = SrvAPI.get_statusConsensus(sync_nodes)
