@@ -24,7 +24,7 @@ from randomness.randshare import RandShare
 
 logger = logging.getLogger(__name__)
 
-
+TX_TIMEOUT = 15
 # ------------------------ Instantiate the ENFchain_RPC ----------------------------------
 ENFchain_client = ENFchain_RPC(keystore="keystore", 
 								keystore_net="keystore_net")
@@ -369,6 +369,44 @@ def validator_getStatus():
 
 	logger.info("Non-syn node: {}".format(unconditional_nodes))
 
+## evaluation on how long to commit tx on ledger.
+def commit_tx_evaluate(target_address, samples_head, samples_size):
+	tx_time = 0.0
+
+	logger.info("launch ENF txs ...\n") 
+	head_pos = ENFchain_client.launch_ENF(samples_head, samples_size)
+
+	logger.info("get a tx in txs pool ...\n")
+	ls_txs = ENFchain_client.get_transactions(target_address)
+
+	ENF_json = {}
+	if(len(ls_txs)>0):
+		str_value = ls_txs[0]['value']
+		ENF_json = TypesUtil.string_to_json(str_value)
+		# print(ENF_json)
+
+
+	logger.info("wait until tx committee...\n")
+	start_time=time.time()
+	while(True):
+		query_ret=ENFchain_client.query_transaction(target_address, ENF_json)
+
+		if( query_ret!={} ):
+			break
+		time.sleep(0.5)
+		tx_time +=0.5
+		if(tx_time>=TX_TIMEOUT):
+			logger.info("Timeout, tx commit fail.") 
+			break
+
+	exec_time=time.time()-start_time
+	logger.info("tx committed time: {:.3f}\n".format(exec_time, '.3f')) 
+	FileUtil.save_testlog('test_results', 'exec_tx_commit.log', format(exec_time, '.3f'))
+
+
+	return head_pos
+
+
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
 	    description="Run websocket client."
@@ -425,8 +463,12 @@ if __name__ == "__main__":
 		head_pos = samples_head
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
-			next_pos = Epoch_validator(target_address, head_pos, samples_size, 5)
-			time.sleep(wait_interval)
+			if(op_status == 0):
+				next_pos = Epoch_validator(target_address, head_pos, samples_size, 5)
+				time.sleep(wait_interval)
+			else:
+				next_pos = commit_tx_evaluate(target_address, head_pos, samples_size)
+				time.sleep(wait_interval*8)
 			head_pos = next_pos
 
 		# get checkpoint after execution
@@ -446,7 +488,8 @@ if __name__ == "__main__":
 		elif(op_status == 4):
 			ENFchain_client.start_voting(target_address, True)
 		elif(op_status == 11):
-			ENFchain_client.get_transactions(target_address)
+			transactions = ENFchain_client.get_transactions(target_address)
+			logger.info(transactions)
 		elif(op_status == 12):
 			disp_chaindata(target_address, True)
 		elif(op_status == 13):

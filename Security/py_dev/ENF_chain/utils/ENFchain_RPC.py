@@ -232,8 +232,12 @@ class ENFchain_RPC(object):
 	def get_transactions(self, target_address):
 		json_response=SrvAPI.GET('http://'+target_address+'/test/transactions/get')
 		transactions = json_response['transactions']
-		logger.info(transactions)
 		# print(POE.proof_of_enf(transactions, '1ad48ca78653f3f4b16b0622432db7d995613c42'))
+		return transactions
+
+	def query_transaction(self, target_address, tx_json):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/transaction/query', tx_json)
+		return json_response
 
 	def start_mining(self, target_address, isBroadcast=False):
 		if(not isBroadcast):
