@@ -5,6 +5,7 @@ import time
 import random
 import logging
 import argparse
+import numpy as np
 from utils.utilities import FileUtil, TypesUtil, PlotUtil
 from consensus.ENF_consensus import ENFUtil
 from utils.Swarm_RPC import Swarm_RPC
@@ -43,7 +44,7 @@ def load_ENF(args):
 	head_pos = args.sample_head + sample_length
 	## get sample data for node 1
 	ls_ENF2 = TypesUtil.np2list(ENF_data[head_pos:(head_pos+sample_length)])
-	ENF_dataset.append(ls_ENF2)
+	#ENF_dataset.append(ls_ENF2)
 
 	fig_file = "ENF_figure"
 	PlotUtil.Plotline(ENF_dataset, is_show=args.show_fig, is_savefig=args.save_fig, datafile=fig_file)
@@ -148,7 +149,40 @@ def swarm_test(args):
 		print("Timeout, download ENF samples fail.") 
 	else:
 		print("Fetch ENF samples from swarm server: {}, time: {:.3f}    at: {}\n{}".format(query_address, exec_time, swarm_hash, query_ret['data']))
-	
+
+def show_ENF(args):
+	ENF_files = ["device1.csv", "device2.csv", "device3.csv", "power.csv"]
+	head_pos = args.sample_head
+	sample_length = args.sample_length
+	nodes_size = len(ENF_files)
+	ENF_dataset = []
+	ENF_samples = []
+	ENF_id = 0
+	for file in ENF_files:
+		ENF_file = "./data/" + file
+		ENF_data = FileUtil.csv_read(ENF_file)
+		# print("ENF date file:{}    shape: {}".format(ENF_file, ENF_data.shape))
+		if(ENF_id == nodes_size-1):
+			ls_ENF = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length)], dtype=np.float32)*5 )
+		else:
+			ls_ENF = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length)], dtype=np.float32) )
+		ENF_dataset.append(ls_ENF)
+		ENF_samples.append( [ENF_id, ls_ENF] )
+		ENF_id+=1
+
+	fig_file = "ENF_fig"
+	ls_legend = ["device1", "device2", "device3", "power"]
+	PlotUtil.Plotline(ENF_dataset, legend_label=ls_legend, is_show=args.show_fig, is_savefig=args.save_fig, datafile=fig_file)
+
+	## ******************* calculate ENF score for each node *****************
+	ls_ENF_score = []
+	for ENF_id in range(len(ENF_dataset)):
+		sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_samples, ENF_id)
+		ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
+		ls_ENF_score.append([ENF_id, ENF_score])
+
+	# print("ENF score is: {}".format(ls_ENF_score))
+	print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run test.")
@@ -181,5 +215,7 @@ if __name__ == '__main__':
 		ENF_Process(args)
 	elif(args.test_func==2):
 		swarm_test(args)
+	elif(args.test_func==3):
+		show_ENF(args)
 	else:
 		load_ENF(args)

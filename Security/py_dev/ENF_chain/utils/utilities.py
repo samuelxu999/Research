@@ -389,7 +389,7 @@ PlotUtil class for data visualization
 '''
 class PlotUtil(object):
 	@staticmethod
-	def Plotline(ENF_dataset, font_size=14, is_show=True, is_savefig=False, datafile=''):
+	def Plotline(ENF_dataset, legend_label='', font_size=14, is_show=True, is_savefig=False, datafile=''):
 		'''
 		Function: plot ENF data as line on fig
 		@arguments: 
@@ -399,8 +399,8 @@ class PlotUtil(object):
 			  is_savefig:	Save plot on local as *.png
 			  	datafile:	file name to save plot
 		'''
-		ls_color=['darkorange', 'seagreen']
-		legend_label = []
+		ls_color=['green', 'seagreen', 'darkorange', 'r', 'g', 'b', 'gray']
+		leg_label = []
 		for ENF_id in range(len(ENF_dataset)):
 			#generate x and y data
 			xdata = [];
@@ -411,13 +411,16 @@ class PlotUtil(object):
 				ydata.append( float(ls_dataset[i][1]) )
 
 			line_list=[]
-			line_list.append(plt.plot(xdata, ydata, lw=1.0, color=ls_color[ENF_id]))
-			legend_label.append("ENF-{}".format(ENF_id))
+			line_list.append(plt.plot(xdata, ydata, lw=2.0, color=ls_color[ENF_id]))
+			leg_label.append("ENF-{}".format(ENF_id))
 
 		plt.xlabel('Time slot', fontsize=font_size)
 		plt.ylabel('ENF (HZ)', fontsize=font_size) 
 		# plt.ylim(59.995, 60.005)
-		plt.legend(legend_label, loc='upper right', fontsize=font_size)
+		if(legend_label == ''):
+			plt.legend(leg_label, loc='best', fontsize=font_size)
+		else:
+			plt.legend(legend_label, loc='best', fontsize=font_size)
 		
 		if( is_show ):
 			plt.show()
