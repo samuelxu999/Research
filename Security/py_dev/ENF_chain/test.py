@@ -65,7 +65,8 @@ def ENF_Process(args):
 	ENF_dataset.append(ls_ENF2)
 
 	sqr_dist = ENFUtil.sqr_distance(ENF_dataset, scale=100)
-	print("Squire distance is: {}".format(sqr_dist))
+	if(args.show_info):
+		print("Squire distance is: {}".format(sqr_dist))
 
 	## ************** choose ENF samples from dataset ****************
 	sample_node = args.sample_node
@@ -91,14 +92,24 @@ def ENF_Process(args):
 	# print(ENF_score)
 
 	## ******************* calculate ENF score for each node *****************
+	start_time=time.time()
 	ls_ENF_score = []
 	for ENF_id in range(sample_node):
 		sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_samples, ENF_id)
 		ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
 		ls_ENF_score.append([ENF_id, ENF_score])
 
-	# print("ENF score is: {}".format(ls_ENF_score))
-	print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
+	exec_time=time.time()-start_time
+	if(args.show_info):
+		# print("ENF score is: {}".format(ls_ENF_score))
+		print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
+		
+		print("calculate ENF score: nodes size: {}    time: {:.3f}".format(sample_node, exec_time))
+	
+	if(args.save_log):
+		# Save to *.log file
+		log_file = 'exec_time_ENFscore_{}.log'.format(sample_node)
+		FileUtil.save_testlog('test_results', log_file, exec_time)
 
 def swarm_test(args):
 	ENF_file = "./data/one_day_enf.csv"
@@ -190,7 +201,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	parser.add_argument("--test_func", type=int, default=0, 
 						help="Execute test function: 0-function test, \
 													1-ENF_Process(), \
-													2-swarm_test()")
+													2-swarm_test(), \
+													3-show_ENF()")
 
 	parser.add_argument("--sample_node", type=int, default=10, help="Sample node size n for test.")
 
@@ -202,7 +214,11 @@ def define_and_get_arguments(args=sys.argv[1:]):
 
 	parser.add_argument("--show_fig", action="store_true", help="Show plot figure model.")
 
+	parser.add_argument("--show_info", action="store_true", help="Print test information on screen.")
+
 	parser.add_argument("--save_fig", action="store_true", help="Save plot figure on local disk.")
+
+	parser.add_argument("--save_log", action="store_true", help="Save test logs on local disk.")
 
 	args = parser.parse_args(args=args)
 	return args
