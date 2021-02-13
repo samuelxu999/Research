@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 ========================
 WS_Server module
@@ -16,12 +14,14 @@ import datetime
 import json
 import threading
 import logging
+import asyncio
 from flask import Flask, jsonify
 from flask import abort,make_response,request
 from argparse import ArgumentParser
 
 from network.nodes import *
 from network.wallet import Wallet
+from network.p2p import Kademlia_Server
 from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
 from consensus.transaction import Transaction
 from consensus.block import Block
@@ -29,6 +29,9 @@ from consensus.validator import Validator
 from consensus.consensus import *
 from utils.service_api import SrvAPI
 from randomness.randshare import RandShare, RandOP, RundShare_Daemon
+
+from kademlia.network import Server
+from kademlia.utils import digest
 
 logger = logging.getLogger(__name__)
 
@@ -484,6 +487,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 													2-static_node()")
 	parser.add_argument('-p', '--port', default=8080, type=int, 
 						help="port to listen on.")
+	parser.add_argument('-rp', '--rpc_port', default=30180, type=int, 
+							help="rpc_port to listen on.")
 	parser.add_argument('--blockepoch', default=2, type=int, 
 						help="Block proposal round epoch size.")
 	parser.add_argument('--pauseepoch', default=2, type=int, 
@@ -504,6 +509,9 @@ if __name__ == '__main__':
 	LOG_LEVEL = logging.INFO
 	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
+	kademlia_logger = logging.getLogger("kademlia")
+	kademlia_logger.setLevel(logging.DEBUG)
+
 	# get arguments
 	args = define_and_get_arguments()
 
@@ -512,7 +520,7 @@ if __name__ == '__main__':
 	elif(args.test_func==2):
 		static_node()
 	else:
-		# ------------------------ Instantiate the Validator ----------------------------------
+		## ------------------------ Instantiate the Validator ----------------------------------
 		myblockchain = Validator(consensus=ConsensusType.PoS, 
 								block_epoch=args.blockepoch,
 								pause_epoch=args.pauseepoch,
@@ -528,5 +536,28 @@ if __name__ == '__main__':
 		# disp_randomshare(json_sharesInfo)
 		randshare_daemon = RundShare_Daemon()
 
+		# ## ------------------------ Instantiate p2p server as thread ------------------------------
+		# my_p2p = Kademlia_Server(args.rpc_port, myblockchain.node_id)
+		# # my_p2p.run()
+
+		# p2p_thread = threading.Thread(target=my_p2p.run, args=())
+		# p2p_thread.daemon = True
+		
+		# p2p_thread.start()
+		
+		## -------------------------------- run app server ----------------------------------------
 		app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
+
+
+
+		# try:
+		# 	p2p_thread = threading.Thread(target=my_p2p.run, args=())
+		# 	p2p_thread.daemon = True
+		# 	p2p_thread.start()
+		# 	## -------------------------------- run app server ----------------------------------------
+		# 	app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
+		# except KeyboardInterrupt:
+		# 	pass
+		# finally:
+		# 	pass
 

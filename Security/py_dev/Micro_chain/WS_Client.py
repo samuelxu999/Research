@@ -12,301 +12,24 @@ Created on May.21, 2019
 '''
 import argparse
 import sys
-import requests
-import json
 import time
 import logging
 
 from network.wallet import Wallet
 from network.nodes import *
-from consensus.transaction import Transaction
-from consensus.block import Block
-from consensus.vote import VoteCheckPoint
-from consensus.validator import Validator
-from consensus.consensus import POW
 from utils.utilities import TypesUtil, FileUtil
 from utils.service_api import SrvAPI
-from randomness.randshare import RandShare, RandOP
+from utils.db_adapter import DataManager
+from utils.Microchain_RPC import Microchain_RPC
+from utils.configuration import *
+from randomness.randshare import RandShare
 
 logger = logging.getLogger(__name__)
 
-# Instantiate the PeerNodes
-peer_nodes = PeerNodes()
-peer_nodes.load_ByAddress()
+# ------------------------ Instantiate the ENFchain_RPC ----------------------------------
+Microchain_client = Microchain_RPC(keystore="keystore", 
+									keystore_net="keystore_net")
 
-# ====================================== client side REST API ==================================
-def run_consensus(target_address, exec_consensus, isBroadcast=False):
-	json_msg={}
-	json_msg['consensus_run']=exec_consensus
-
-	if(not isBroadcast):
-		json_response=SrvAPI.POST('http://'+target_address+'/test/consensus/run', json_msg)
-		json_response = {'run_consensus': target_address, 'status': json_msg['consensus_run']}
-	else:
-		SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_msg, '/test/consensus/run', True)
-		json_response = {'run_consensus': 'broadcast', 'status': json_msg['consensus_run']}
-	logger.info(json_response)
-
-def validator_getinfo(target_address, isBroadcast=False):
-	info_list = []
-	if(not isBroadcast):
-		json_response = SrvAPI.GET('http://'+target_address+'/test/validator/getinfo')
-		info_list.append(json_response)
-	else:
-		for node in peer_nodes.get_nodelist():
-			json_node = TypesUtil.string_to_json(node)
-			json_response = SrvAPI.GET('http://'+json_node['node_url']+'/test/validator/getinfo')
-			info_list.append(json_response)
-	return info_list
-
-
-def launch_txs(tx_size):
-	# Instantiate the Wallet by using key_dir: keystore_net
-	mywallet = Wallet('keystore_net')
-	# Instantiate PeerNodes object
-	mypeer_nodes = PeerNodes()
-
-	# load accounts
-	mywallet.load_accounts()
-
-	## for each account to send ENF samples
-	tx_count = 0
-	for sender in mywallet.accounts:
-		sender_address = sender['address']
-		sender_private_key = sender['private_key']
-		## set recipient_address as default value: 0
-		recipient_address = '0'
-		time_stamp = time.time()
-
-		# using random byte string for value of tx
-		str_value = TypesUtil.string_to_hex(os.urandom(tx_size))
-
-		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, str_value)
-
-		# sign transaction
-		sign_data = mytransaction.sign('samuelxu999')
-
-		# verify transaction
-		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
-		                                        mytransaction.recipient_address,
-		                                        mytransaction.time_stamp,
-		                                        mytransaction.value)
-
-		## --------------------- send transaction --------------------------------------
-		transaction_json = mytransaction.to_json()
-		transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
-
-		node_info = mypeer_nodes.load_ByAddress(sender_address)
-		json_nodes = TypesUtil.string_to_json(list(mypeer_nodes.get_nodelist())[0])
-		# print(json_nodes['node_url'])
-		json_response=SrvAPI.POST('http://'+json_nodes['node_url']+'/test/transaction/broadcast', 
-								transaction_json)
-
-		tx_count+=1
-
-	logger.info('launch transactions: tx size {}    total count: {}'.format(tx_size, tx_count))
-
-def send_transaction(target_address, tx_size=1, isBroadcast=False):
-    # Instantiate the Wallet
-    mywallet = Wallet()
-
-    # load accounts
-    mywallet.load_accounts()
-
-    #list account address
-    #print(mywallet.list_address())
-
-    #----------------- test transaction --------------------
-    sender = mywallet.accounts[0]
-    # recipient = mywallet.accounts[-1]
-    # attacker = mywallet.accounts[1]
-
-    # generate transaction
-    sender_address = sender['address']
-    sender_private_key = sender['private_key']
-    # recipient_address = recipient['address']
-    recipient_address = '72cf2287a019af0f480311bdfd01d5ed83f96a86'
-    time_stamp = time.time()
-    #value = 15
-    value = TypesUtil.string_to_hex(os.urandom(tx_size))
-
-    mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, value)
-
-    # sign transaction
-    sign_data = mytransaction.sign('samuelxu999')
-
-    # verify transaction
-    dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
-                                            mytransaction.recipient_address,
-                                            mytransaction.time_stamp,
-                                            mytransaction.value)
-    #send transaction
-    transaction_json = mytransaction.to_json()
-    transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
-    # print(transaction_json)
-    if(not isBroadcast):
-        json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/verify', 
-        						transaction_json)
-    else:
-        json_response=SrvAPI.POST('http://'+target_address+'/test/transaction/broadcast', 
-                                transaction_json)
-    logger.info(json_response)
-
-def send_vote(target_address, isBroadcast=False):
-    # Instantiate the Wallet
-    mywallet = Wallet()
-
-    # load accounts
-    mywallet.load_accounts()
-
-    #list account address
-    logger.info(mywallet.list_address())
-
-    #----------------- test transaction --------------------
-    sender = mywallet.accounts[0]
-    # recipient = mywallet.accounts[-1]
-    # attacker = mywallet.accounts[1]
-
-    my_vote = VoteCheckPoint('385816343cc08cbc5350f4d1c92d2768e3be237ab364fb3bfc1dccde341205a2', 
-                            'fc4341bb9867b7d389d84cd32a0e298cad595c806dd9477d0403ccc59f929138', 
-                            1, 2, sender['address'])
-    json_vote = my_vote.to_json()
-    
-    # sign vote
-    sign_data = my_vote.sign(sender['private_key'], 'samuelxu999')
-    json_vote['signature'] = TypesUtil.string_to_hex(sign_data)
-
-    if(not isBroadcast):
-        json_response=SrvAPI.POST('http://'+target_address+'/test/vote/verify', 
-                                json_vote)
-    else:
-        json_response=SrvAPI.POST('http://'+target_address+'/test/vote/broadcast', 
-                                json_vote)
-    logger.info(json_response)
-
-
-def get_transactions(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/transactions/get')
-    transactions = json_response['transactions']
-    logger.info(transactions)
-
-def start_mining(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/mining')
-	#transactions = json_response['transactions']
-	else:
-		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/mining', True)
-		json_response = {'start mining': 'broadcast'}
-
-	logger.info(json_response)
-
-def start_voting(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/block/vote')
-	#transactions = json_response['transactions']
-	else:
-	#SrvAPI.broadcast(peer_nodes.get_nodelist(), {}, '/test/block/vote')
-		SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/block/vote', True)
-		json_response = {'verify_vote': 'broadcast'}
-	logger.info(json_response)
-
-def get_nodes(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
-    nodes = json_response['nodes']
-    logger.info('Peer nodes:')
-    for node in nodes:
-        logger.info(node)
-
-def add_node(target_address, json_node, isBroadcast=False):
-    if(not isBroadcast):
-        json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/add', json_node)
-        logger.info(json_response)
-    else:
-        #json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/add')
-        for target_node in target_address:
-            try:
-                SrvAPI.POST('http://'+target_node+'/test/nodes/add', json_node)
-            except:
-                pass
-
-def remove_node(target_address, json_node, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
-		logger.info(json_response)
-	else:
-		#json_response=SrvAPI.broadcast_POST(peer_nodes.get_nodelist(), json_node, '/test/nodes/remove')
-		for target_node in target_address:
-			try:
-				SrvAPI.POST('http://'+target_node+'/test/nodes/remove', json_node)
-			except:
-				pass
-
-def get_chain(target_address, isDisplay=False):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-	chain_data = json_response['chain']
-	chain_length = json_response['length']
-	logger.info('Chain length: {}'.format(chain_length))
-
-	if( isDisplay ):
-	    # only list latest 10 blocks
-	    if(chain_length>10):
-	        for block in chain_data[-10:]:
-	            logger.info("{}\n".format(block))
-	    else:
-	        for block in chain_data:
-	            logger.info("{}\n".format(block))
-
-def check_head():
-	SrvAPI.broadcast_GET(peer_nodes.get_nodelist(), '/test/chain/checkhead')
-	json_response = {'Reorganize processed_head': 'broadcast'}
-
-def test_valid_transactions(target_address):
-    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-    chain_data = json_response['chain']
-
-    last_block = chain_data[-1]
-    #print('List transactions:')
-    for transaction_data in last_block['transactions']:
-        #print(transaction_data)
-        # ====================== rebuild transaction ==========================
-        dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
-                                            transaction_data['recipient_address'],
-                                            transaction_data['time_stamp'],
-                                            transaction_data['value'])
-        
-        sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
-        #print(dict_transaction)
-        #print(sign_str)
-
-        peer_nodes.load_ByAddress(transaction_data['sender_address'])
-        sender_node = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
-        #print(sender_node)
-        # ====================== verify transaction ==========================
-        if(sender_node!={}):
-            sender_pk= sender_node['public_key']
-            verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
-        else:
-            verify_result = False
-        return verify_result
-
-def test_valid_block(target_address):
-
-    json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-    chain_data = json_response['chain']
-
-    # new a block to test
-    last_block = chain_data[-1]
-    parent_block = Block.json_to_block(last_block)
-
-    nonce = POW.proof_of_work(last_block, [])
-    new_block = Block(parent_block, [], nonce)
-    new_block.print_data()
-
-    #print(chain_data[-1])
-    json_response=SrvAPI.POST('http://'+target_address+'/test/block/verify', 
-                                new_block.to_json())
-
-    return(json_response['verify_block'])
 
 def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 	#--------------------------------------- load static nodes -------------------------------------
@@ -333,7 +56,7 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 	# print(target_address)
 
 	# Instantiate the Wallet by using key_dir: keystore_net
-	mywallet = Wallet('keystore_local')
+	mywallet = Wallet('keystore_net')
 
 	# load accounts
 	mywallet.load_accounts()
@@ -352,62 +75,21 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 
 	if(op_status==1): 
 		if(not isBroadcast):  
-			add_node(target_address, json_node)
+			Microchain_client.add_node(target_address, json_node)
 		else:
-			add_node(list_address, json_node, True)
+			Microchain_client.add_node(list_address, json_node, True)
 	if(op_status==2):
 		if(not isBroadcast):
-			remove_node(target_address, json_node)
+			Microchain_client.remove_node(target_address, json_node)
 		else:
-			remove_node(list_address, json_node, True)
+			Microchain_client.remove_node(list_address, json_node, True)
 
-	get_nodes(target_address)
-
-def fetch_randshare(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		# Instantiate the Wallet
-		mywallet = Wallet()
-		mywallet.load_accounts()
-		# get host address
-		json_node={}
-		json_node['address'] = mywallet.accounts[0]['address']
-		json_response=SrvAPI.POST('http://'+target_address+'/test/randshare/fetch', json_node)
-	else:
-		SrvAPI.broadcast_GET(target_address, '/test/randshare/cachefetched', True)
-		json_response = {'broadcast_fetch_randshare': 'Succeed!'}
-	return json_response
-
-def verify_randshare(target_address):
-	json_response=SrvAPI.broadcast_GET(target_address, '/test/randshare/verify', True)
-	return json_response
-
-def recovered_randshare(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/recovered')
-	return json_response
-
-def fetchvote_randshare(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/fetchvote')
-	return json_response
-
-def vote_randshare(target_address):
-	json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/cachevote')
-	return json_response
-
-def create_randshare(target_address, isBroadcast=False):
-	if(not isBroadcast):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/randshare/create')
-	else:
-		SrvAPI.broadcast_GET(target_address, '/test/randshare/create', True)
-		json_response = {'broadcast_create_randshare': 'Succeed!'}
-	return json_response
-
-'''def save_testlog(log_data):
-	#save new key files
-	test_dir = 'test_results'
-	if(not os.path.exists(test_dir)):
-	    os.makedirs(test_dir)
-	test_file = test_dir + '/' + 'exec_time.log'
-	FileUtil.AddLine(test_file, log_data)'''
+	# display peering nodes
+	json_response=Microchain_client.get_nodes(target_address)
+	nodes = json_response['nodes']
+	logger.info('Peer nodes:')
+	for node in nodes:
+		logger.info(node)
 
 # ====================================== validator test ==================================
 def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME):
@@ -422,9 +104,9 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 	# S1: send test transactions
 	start_time=time.time()
 	if(op_status==1):
-		send_transaction(target_address, tx_size, True)
+		Microchain_client.send_transaction(target_address, tx_size, True)
 	else:
-		launch_txs(tx_size)
+		Microchain_client.launch_txs(tx_size)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -432,7 +114,7 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 
 	# S2: start mining 
 	start_time=time.time()   
-	start_mining(target_address, True)
+	Microchain_client.start_mining(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -440,7 +122,7 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 
 	# S3: fix head of epoch 
 	start_time=time.time()   
-	check_head()
+	Microchain_client.check_head()
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -448,7 +130,7 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 
 	# S4: voting block to finalize chain
 	start_time=time.time() 
-	start_voting(target_address, True)
+	Microchain_client.start_voting(target_address, True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -460,89 +142,6 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 	FileUtil.save_testlog('test_results', 'exec_time.log', str_time_exec)
 
 # ====================================== Random share test ==================================
-# # request for share from peers and cache to local
-def cache_fetch_share(target_address):
-	# read cached randshare
-	host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
-	if( host_shares == None):
-		host_shares = {}
-	fetch_share=fetch_randshare(target_address)
-	# logging.info(fetch_share)
-	for (node_name, share_data) in fetch_share.items():
-		host_shares[node_name]=share_data
-	# update host shares 
-	RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
-
-# request for recovered shares from peers and cache to local 
-def cache_recovered_shares(target_address):
-	# read cached randshare
-	recovered_shares=RandShare.load_sharesInfo(RandOP.RandRecovered)
-	if( recovered_shares == None):
-		recovered_shares = {}
-	host_recovered_shares=recovered_randshare(target_address)
-	for (node_name, share_data) in host_recovered_shares.items():
-		recovered_shares[node_name]=share_data
-	# update host shares 
-	RandShare.save_sharesInfo(recovered_shares, RandOP.RandRecovered)
-
-# request for vote shares from peers and cache to local 
-def cache_vote_shares(target_address):
-	# read cached randshare
-	vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
-	if( vote_shares == None):
-		vote_shares = {}
-	host_vote_shares=fetchvote_randshare(target_address)
-	# logging.info(host_vote_shares)
-	for (node_name, share_data) in host_vote_shares.items():
-		vote_shares[node_name]=share_data
-	# update host shares 
-	RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
-
-# test recovered shares
-def recovered_shares(host_address):		
-	# read cached randshare
-	recovered_shares=RandShare.load_sharesInfo(RandOP.RandRecovered)
-	if( recovered_shares == None):
-		recovered_shares = {}
-	# print(recovered_shares)
-
-	# get peer node information
-	peer_nodes = PeerNodes()
-	peer_nodes.load_ByAddress(host_address)
-	json_nodes = TypesUtil.string_to_json(list(peer_nodes.get_nodelist())[0])
-	# get public numbers given peer's pk
-	public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
-
-	# get shares information
-	shares = recovered_shares[host_address]
-	# print(shares)
-	# instantiate RandShare to verify share proof.
-	myrandshare = RandShare()
-	myrandshare.p = public_numbers.n
-
-	secret=myrandshare.recover_secret(shares)
-	# print('secret recovered from node shares:', secret)
-	return secret
-
-# test new random generator
-def new_random(ls_secret):
-	# get host account information
-	mywallet = Wallet()
-	mywallet.load_accounts()
-	json_nodes=mywallet.accounts[0]
-	# get public numbers given pk
-	public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
-
-	# instantiate RandShare to verify share proof.
-	myrandshare = RandShare()
-	myrandshare.p = public_numbers.n
-
-	# calculate new random number
-	random_secret = myrandshare.calculate_random(ls_secret)
-
-	logger.info("New random secret: {}".format(random_secret))
-
-
 def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
@@ -559,8 +158,8 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	# for peer_node in list(peer_nodes.get_nodelist()):
 	# 	json_node = TypesUtil.string_to_json(peer_node)
-	# 	create_randshare(json_node['node_url'])
-	create_randshare(peer_nodes.get_nodelist(), True)
+	# 	Microchain_client.create_randshare(json_node['node_url'])
+	Microchain_client.create_randshare(peer_nodes.get_nodelist(), True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -571,8 +170,8 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	# for peer_node in list(peer_nodes.get_nodelist()):
 	# 	json_node = TypesUtil.string_to_json(peer_node)
-	# 	cache_fetch_share(json_node['node_url'])
-	fetch_randshare(peer_nodes.get_nodelist(), True)
+	# 	Microchain_client.cache_fetch_share(json_node['node_url'])
+	Microchain_client.fetch_randshare(peer_nodes.get_nodelist(), True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -581,7 +180,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# 3) verify received shares
 	logger.info("3) Verify received shares")
 	start_time=time.time()
-	verify_randshare(peer_nodes.get_nodelist())
+	Microchain_client.verify_randshare(peer_nodes.get_nodelist(), True)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -593,7 +192,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
 		# cache_vote_shares(json_node['node_url'])
-		vote_randshare(json_node['node_url'])
+		Microchain_client.vote_randshare(json_node['node_url'])
 	# calculate voted shares 
 	verify_vote = RandShare.verify_vote_shares()
 	logging.info("verify_vote: {}".format(verify_vote))
@@ -607,7 +206,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
-		cache_recovered_shares(json_node['node_url'])
+		Microchain_client.cache_recovered_shares(json_node['node_url'])
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -619,7 +218,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
-		ls_secret.append(recovered_shares(json_node['address']))
+		ls_secret.append(Microchain_client.recovered_shares(json_node['address']))
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -628,7 +227,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# 7) calculate new random
 	logger.info("7) Calculate new random")
 	start_time=time.time()
-	new_random(ls_secret)
+	Microchain_client.new_random(ls_secret)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 	
@@ -639,23 +238,23 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	# Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time_randshare.log', str_time_exec)
 
-def show_netInfo():
-	validator_info = validator_getinfo("0.0.0.0:8080", True)
-	for validator in validator_info:
-		logger.info("node_id:    {}    committee_size: {}".format(validator['node_id'],
-														validator['committee_size']))
+# def show_netInfo():
+# 	validator_info = Microchain_client.validator_getinfo("0.0.0.0:8080", True)
+# 	for validator in validator_info:
+# 		logger.info("node_id:    {}    committee_size: {}".format(validator['node_id'],
+# 														validator['committee_size']))
 		
-		logger.info("processed head:               {}     height: {}".format(validator['processed_head']['hash'],
-			                                                           validator['processed_head']['height']))
-		logger.info("highest justified checkpoint: {}     height: {}".format(validator['highest_justified_checkpoint']['hash'],
-			                                                           validator['highest_justified_checkpoint']['height']))
-		logger.info("highest finalized checkpoint: {}     height: {}".format(validator['highest_finalized_checkpoint']['hash'],
-                                                           validator['highest_finalized_checkpoint']['height']))
-		logger.info("vote_count: {}\n".format(validator['vote_count']))
+# 		logger.info("processed head:               {}     height: {}".format(validator['processed_head']['hash'],
+# 			                                                           validator['processed_head']['height']))
+# 		logger.info("highest justified checkpoint: {}     height: {}".format(validator['highest_justified_checkpoint']['hash'],
+# 			                                                           validator['highest_justified_checkpoint']['height']))
+# 		logger.info("highest finalized checkpoint: {}     height: {}".format(validator['highest_finalized_checkpoint']['hash'],
+#                                                            validator['highest_finalized_checkpoint']['height']))
+# 		logger.info("vote_count: {}\n".format(validator['vote_count']))
 
-def checkpoint_netInfo(isDisplay=False):
+def checkpoint_netInfo(target_address, isDisplay=False):
 	# get validators information in net.
-	validator_info = validator_getinfo("0.0.0.0:8080", True)
+	validator_info = Microchain_client.validator_getinfo(target_address, True)
 
 	fininalized_count = {}
 	justifized_count = {}
@@ -727,6 +326,69 @@ def checkpoint_netInfo(isDisplay=False):
 
 	return json_checkpoints
 
+def disp_chaindata(target_address, isDisplay=False):
+	json_response = Microchain_client.get_chain(target_address)
+	chain_data = json_response['chain']
+	chain_length = json_response['length']
+	logger.info('Chain length: {}'.format(chain_length))
+
+	if( isDisplay ):
+		# only list latest 10 blocks
+		if(chain_length>10):
+		    for block in chain_data[-10:]:
+		        logger.info("{}\n".format(block))
+		else:
+		    for block in chain_data:
+		        logger.info("{}\n".format(block))
+
+def count_tx_size(target_address):
+	json_response = Microchain_client.get_chain(target_address)
+	chain_data = json_response['chain']
+	chain_length = json_response['length']
+	logger.info('Chain length: {}'.format(chain_length))
+	for block in chain_data:
+		if(block['transactions']!=[]): 
+			blk_str = TypesUtil.json_to_string(block)  
+			logger.info('Block size: {} Bytes'.format(len( blk_str.encode('utf-8') ))) 
+			logger.info('transactions count: {}'.format(len( block['transactions'] )))  
+
+			tx=block['transactions'][0]
+			tx_str=TypesUtil.json_to_string(tx)
+			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
+			break
+
+def count_vote_size(target_address):
+	# get validators information from a validator.
+	validator_info = Microchain_client.validator_getinfo(target_address, False)[0]
+	if(validator_info['vote_count']!={}):
+		hf_block = validator_info['highest_finalized_checkpoint']
+		if( hf_block['nonce']== 0 or hf_block['sender_address'] == 'Null'):
+			logger.info('No valid vote to check.')
+			return
+		voter_db = DataManager(CHAIN_DATA_DIR, VOTER_DATA)
+		voter_name = 'voter_' + hf_block['sender_address']
+		ls_votes = voter_db.select_block(voter_name)
+		if(len(ls_votes)>0):
+			vote_str = TypesUtil.json_to_string(ls_votes[0]) 
+			logger.info('Vote size: {} Bytes'.format(len( vote_str.encode('utf-8') )))
+
+def validator_getStatus():
+	## Instantiate the PeerNodes and load all nodes information
+	peer_nodes = PeerNodes()
+	peer_nodes.load_ByAddress()
+	
+	ls_nodes = list(peer_nodes.get_nodelist())
+	json_status = SrvAPI.get_statusConsensus(ls_nodes)
+	unconditional_nodes = []
+	for node in ls_nodes:
+		json_node = TypesUtil.string_to_json(node)
+		node_status = json_status[json_node['address']]
+		if(node_status['consensus_status']!=4):
+			unconditional_nodes.append(node)
+		logger.info("{}    status: {}".format(json_node['address'], node_status))
+
+	logger.info("Non-syn node: {}".format(unconditional_nodes))
+
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
 		description="Run websocket client."
@@ -747,26 +409,13 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	args = parser.parse_args(args=args)
 	return args
 
-def count_tx_size():
-	json_response=SrvAPI.GET('http://'+target_address+'/test/chain/get')
-	chain_data = json_response['chain']
-	chain_length = json_response['length']
-	logger.info('Chain length: {}'.format(chain_length))
-	for block in chain_data:
-		if(block['transactions']!=[]): 
-			blk_str = TypesUtil.json_to_string(block)  
-			logger.info('Block size: {} Bytes'.format(len( blk_str.encode('utf-8') ))) 
-			logger.info('transactions count: {}'.format(len( block['transactions'] )))  
-
-			tx=block['transactions'][0]
-			tx_str=TypesUtil.json_to_string(tx)
-			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
-			break
-
 if __name__ == "__main__":
 	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
 	LOG_LEVEL = logging.INFO
 	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
+
+	Microchain_RPC_logger = logging.getLogger("Microchain_RPC")
+	Microchain_RPC_logger.setLevel(logging.INFO)
 
 	# get arguments
 	args = define_and_get_arguments()
@@ -803,52 +452,30 @@ if __name__ == "__main__":
 
 	elif(test_func == 2):
 		if(op_status == 1):
-			send_transaction(target_address, tx_size, True)
+			Microchain_client.send_transaction(target_address, tx_size, True)
 		elif(op_status == 10):
-			launch_txs(tx_size)
+			Microchain_client.launch_txs(tx_size)
 		elif(op_status == 2):
-			start_mining(target_address, True)
+			Microchain_client.start_mining(target_address, True)
 		elif(op_status == 3):
-			check_head()
+			Microchain_client.check_head()
 		elif(op_status == 4):
-			start_voting(target_address, True)
+			Microchain_client.start_voting(target_address, True)
 		elif(op_status == 11):
-			get_transactions(target_address)
+			transactions = Microchain_client.get_transactions(target_address)
+			logger.info(transactions)
 		elif(op_status == 12):
-			get_chain(target_address, True)
+			disp_chaindata(target_address, True)
 		elif(op_status == 13):
-			count_tx_size()
+			count_tx_size(target_address)
+		elif(op_status == 14):
+			count_vote_size(target_address)
 		elif(op_status == 9):
-			run_consensus(target_address, True, True)
+			Microchain_client.run_consensus(target_address, True, True)
 		else:
 			json_checkpoints = checkpoint_netInfo(False)
 			for _item, _value in json_checkpoints.items():
-				logger.info("{}: {}    {}".format(_item, _value[0], _value[1])) 
-		# send_transaction(target_address, data_size, True)
-		# time.sleep(1)
-		# get_transactions(target_address)
-		# run_consensus(target_address, True, True)
-
-		# start_mining(target_address, True)
-
-		# check_head()
-
-		# start_voting(target_address, True)
-
-		# get_chain(target_address, True)
-		# count_tx_size()
-
-		# print('Valid last_block:', test_valid_block(target_address))
-
-		# print('Valid transactions:', test_valid_transactions(target_address)) 
-
-		# send_vote(target_address) 
-
-		# show_netInfo()
-		# json_checkpoints = checkpoint_netInfo(False)
-		# print(json_checkpoints)
-
-		pass  
+				logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 	else:
 		# host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
 		# cache_fetch_share(target_address)

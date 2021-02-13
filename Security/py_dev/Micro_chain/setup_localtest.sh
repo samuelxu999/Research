@@ -19,14 +19,19 @@ do
 	cp -r ./consensus local_test$i/
 	cp -r ./randomness local_test$i/
 	cp -r ./utils local_test$i/
+	cp -r ./kademlia local_test$i/
 
 	# clear test data and results
 	rm -rf local_test$i/chaindata/*
+	rm -rf local_test$i/randomdata/*
 	rm -rf local_test$i/test_results/*
+	rm -f local_test$i/nodedata/peer_nodes
 
 done
 
 ## clear test data and results
 rm -rf ./chaindata/*
+rm -rf ./randomdata/*
 rm -rf ./test_results/*
+rm -f ./nodedata/peer_nodes
 touch ./WS_Server.py
