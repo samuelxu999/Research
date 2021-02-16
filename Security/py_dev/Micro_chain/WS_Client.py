@@ -470,6 +470,9 @@ if __name__ == "__main__":
 			count_tx_size(target_address)
 		elif(op_status == 14):
 			count_vote_size(target_address)
+		elif(op_status == 15):
+			neighbors = Microchain_client.get_neighbors(target_address)
+			logger.info(neighbors)
 		elif(op_status == 9):
 			Microchain_client.run_consensus(target_address, True, True)
 		else:

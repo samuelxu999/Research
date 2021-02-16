@@ -242,6 +242,12 @@ def mine_block():
 	
 	return jsonify(response), 200
 
+@app.route('/test/nodes/neighbors', methods=['GET'])
+def get_neighbors():
+	neighbors = my_p2p.kademlia_srv.bootstrappable_neighbors()
+	response = {'neighbors': neighbors}
+	return jsonify(response), 200
+
 @app.route('/test/nodes/get', methods=['GET'])
 def get_nodes():
 	myblockchain.peer_nodes.load_ByAddress()
@@ -499,6 +505,14 @@ def define_and_get_arguments(args=sys.argv[1:]):
 						help="if set, debug model will be used.")
 	parser.add_argument("--threaded", action="store_true", 
 						help="if set, support threading request.")
+	parser.add_argument("--firstnode", action="store_true", 
+						help="if set, bootstrap as first node of network.")
+	parser.add_argument("--bootstrapnode", default='128.226.88.210:30180', type=str, 
+						help="bootstrap node address format[ip:port] to join the network.")
+	parser.add_argument('--save_state', default=3600, type=int, 
+							help="frequency for save_state_regularly.")
+	parser.add_argument('--refresh_neighbors', default=3600, type=int, 
+							help="frequency for refresh_neighbors_regularly.")
 	args = parser.parse_args()
 
 	return args
@@ -509,11 +523,15 @@ if __name__ == '__main__':
 	LOG_LEVEL = logging.INFO
 	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
-	kademlia_logger = logging.getLogger("kademlia")
-	kademlia_logger.setLevel(logging.DEBUG)
-
 	# get arguments
 	args = define_and_get_arguments()
+
+	if(args.debug):
+		kademlia_logger = logging.getLogger("kademlia")
+		kademlia_logger.setLevel(logging.DEBUG)
+		p2p_logger = logging.getLogger("p2p")
+		p2p_logger.setLevel(logging.DEBUG)
+
 
 	if(args.test_func==1):
 		new_account()
@@ -537,27 +555,14 @@ if __name__ == '__main__':
 		randshare_daemon = RundShare_Daemon()
 
 		# ## ------------------------ Instantiate p2p server as thread ------------------------------
-		# my_p2p = Kademlia_Server(args.rpc_port, myblockchain.node_id)
-		# # my_p2p.run()
+		my_p2p = Kademlia_Server(rpc_port = args.rpc_port, 
+								freq_loop = [args.save_state, args.refresh_neighbors], 
+								node_id=myblockchain.node_id)
+		
+		## bind my_p2p.run() to a thread.daemon
+		p2p_thread = threading.Thread(target=my_p2p.run, args=(args.firstnode, args.bootstrapnode,))
+		p2p_thread.daemon = True		
+		p2p_thread.start()
 
-		# p2p_thread = threading.Thread(target=my_p2p.run, args=())
-		# p2p_thread.daemon = True
-		
-		# p2p_thread.start()
-		
 		## -------------------------------- run app server ----------------------------------------
 		app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
-
-
-
-		# try:
-		# 	p2p_thread = threading.Thread(target=my_p2p.run, args=())
-		# 	p2p_thread.daemon = True
-		# 	p2p_thread.start()
-		# 	## -------------------------------- run app server ----------------------------------------
-		# 	app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
-		# except KeyboardInterrupt:
-		# 	pass
-		# finally:
-		# 	pass
-

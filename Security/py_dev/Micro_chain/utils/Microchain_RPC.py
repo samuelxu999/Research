@@ -203,6 +203,10 @@ class Microchain_RPC(object):
 			json_response = {'verify_vote': 'broadcast'}
 		logger.info(json_response)
 
+	def get_neighbors(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/neighbors')
+		return json_response
+		
 	def get_nodes(self, target_address):
 		json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
 		return json_response
