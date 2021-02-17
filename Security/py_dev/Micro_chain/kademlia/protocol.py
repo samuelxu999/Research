@@ -2,7 +2,7 @@ import random
 import asyncio
 import logging
 
-from kademlia.rpcudp import RPCProtocol
+from rpcudp.protocol import RPCProtocol
 
 from kademlia.node import Node
 from kademlia.routing import RoutingTable
