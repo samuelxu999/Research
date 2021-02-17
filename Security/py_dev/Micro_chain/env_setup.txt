@@ -13,3 +13,4 @@ Or update step by step:
 [cryptography]	python3.X -m pip install cryptography==2.6.1
 [pycrypto]		python3.X -m pip install pycrypto==2.6.1
 [merklelib]		python3.X -m pip install merklelib==1.0
+[umsgpack]		python3.X -m pip install umsgpack

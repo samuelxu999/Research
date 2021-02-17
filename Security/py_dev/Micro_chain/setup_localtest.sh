@@ -20,6 +20,7 @@ do
 	cp -r ./randomness local_test$i/
 	cp -r ./utils local_test$i/
 	cp -r ./kademlia local_test$i/
+	cp -r ./rpcudp local_test$i/
 
 	# clear test data and results
 	rm -rf local_test$i/chaindata/*
