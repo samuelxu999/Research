@@ -15,6 +15,7 @@ import json
 import threading
 import logging
 import asyncio
+import socket
 from flask import Flask, jsonify
 from flask import abort,make_response,request
 from argparse import ArgumentParser
@@ -29,9 +30,6 @@ from consensus.validator import Validator
 from consensus.consensus import *
 from utils.service_api import SrvAPI
 from randomness.randshare import RandShare, RandOP, RundShare_Daemon
-
-from kademlia.network import Server
-from kademlia.utils import digest
 
 logger = logging.getLogger(__name__)
 
@@ -242,10 +240,25 @@ def mine_block():
 	
 	return jsonify(response), 200
 
-@app.route('/test/nodes/neighbors', methods=['GET'])
-def get_neighbors():
-	neighbors = my_p2p.kademlia_srv.bootstrappable_neighbors()
+@app.route('/test/p2p/neighbors', methods=['GET'])
+def p2p_neighbors():
+	neighbors = my_p2p.get_neighbors()
 	response = {'neighbors': neighbors}
+	return jsonify(response), 200
+
+@app.route('/test/p2p/peers', methods=['GET'])
+def p2p_peers():
+	peers = my_p2p.get_peers()
+	response = {'peers': peers}
+	return jsonify(response), 200
+
+@app.route('/test/account/info', methods=['GET'])
+def account_info():
+	base_account = myblockchain.wallet.accounts[0]
+	json_info = {}
+	json_info['address'] = base_account['address']
+	json_info['public_key'] = base_account['public_key']
+	response = {'info': json_info}
 	return jsonify(response), 200
 
 @app.route('/test/nodes/get', methods=['GET'])
@@ -509,29 +522,29 @@ def define_and_get_arguments(args=sys.argv[1:]):
 						help="if set, bootstrap as first node of network.")
 	parser.add_argument("--bootstrapnode", default='128.226.88.210:30180', type=str, 
 						help="bootstrap node address format[ip:port] to join the network.")
-	parser.add_argument('--save_state', default=3600, type=int, 
+	parser.add_argument('--save_state', default=600, type=int, 
 							help="frequency for save_state_regularly.")
-	parser.add_argument('--refresh_neighbors', default=3600, type=int, 
+	parser.add_argument('--refresh_neighbors', default=600, type=int, 
 							help="frequency for refresh_neighbors_regularly.")
 	args = parser.parse_args()
 
 	return args
 
 if __name__ == '__main__':
-	# FORMAT = "%(asctime)s %(levelname)s %(filename)s(l:%(lineno)d) - %(message)s"
-	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+	FORMAT = "%(asctime)s %(levelname)s %(filename)s(l:%(lineno)d) - %(message)s"
+	# FORMAT = "%(asctime)s %(levelname)s | %(message)s"
 	LOG_LEVEL = logging.INFO
 	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
-	# get arguments
+	## get arguments
 	args = define_and_get_arguments()
 
+	## if debug mode, show debug information.
 	if(args.debug):
 		kademlia_logger = logging.getLogger("kademlia")
 		kademlia_logger.setLevel(logging.DEBUG)
 		p2p_logger = logging.getLogger("p2p")
 		p2p_logger.setLevel(logging.DEBUG)
-
 
 	if(args.test_func==1):
 		new_account()
@@ -555,12 +568,12 @@ if __name__ == '__main__':
 		randshare_daemon = RundShare_Daemon()
 
 		# ## ------------------------ Instantiate p2p server as thread ------------------------------
-		my_p2p = Kademlia_Server(rpc_port = args.rpc_port, 
+		my_p2p = Kademlia_Server(rpc_port = args.rpc_port, bootstrapnode = args.bootstrapnode,
 								freq_loop = [args.save_state, args.refresh_neighbors], 
 								node_id=myblockchain.node_id)
 		
 		## bind my_p2p.run() to a thread.daemon
-		p2p_thread = threading.Thread(target=my_p2p.run, args=(args.firstnode, args.bootstrapnode,))
+		p2p_thread = threading.Thread(target=my_p2p.run, args=(args.firstnode,))
 		p2p_thread.daemon = True		
 		p2p_thread.start()
 

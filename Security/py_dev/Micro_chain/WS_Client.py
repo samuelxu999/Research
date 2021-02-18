@@ -14,6 +14,7 @@ import argparse
 import sys
 import time
 import logging
+import asyncio
 
 from network.wallet import Wallet
 from network.nodes import *
@@ -389,6 +390,22 @@ def validator_getStatus():
 
 	logger.info("Non-syn node: {}".format(unconditional_nodes))
 
+async def _get_peers(target_address):
+	## get p2p peers
+	live_peers = Microchain_client.get_peers(target_address)['peers']
+	# print(live_peers)
+
+	## set address list for each peer
+	ls_peers = [peer[1]+":808"+str(peer[2])[-1] for peer in live_peers ]
+	# print(ls_peers)	
+
+	## async call get_account to query each peer's info
+	cos = list(map(Microchain_client.get_account, ls_peers))
+	gathered = await asyncio.gather(*cos)
+	info_peers = [node['info'] for node in gathered if node is not None]	
+
+	return info_peers
+
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
 		description="Run websocket client."
@@ -398,14 +415,14 @@ def define_and_get_arguments(args=sys.argv[1:]):
 															1: validator test \
 															2: single step test \
 															3: randshare test")
-	parser.add_argument("--op_status", type=int, default=2, help="batch size of the training")
+	parser.add_argument("--op_status", type=int, default=0, help="operational function mode")
 	parser.add_argument("--tx_size", type=int, default=128, help="Size of value in transaction.")
 	parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
 	parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
 	parser.add_argument("--target_address", type=str, default="0.0.0.0:8080", 
 						help="Test target address - ip:port.")
 	parser.add_argument("--set_peer", type=str, default="", 
-						help="set peer node. name@op")
+						help="set peer node, fromat: name@op. this is used for static_nodes setup.")
 	args = parser.parse_args(args=args)
 	return args
 
@@ -433,12 +450,28 @@ if __name__ == "__main__":
 	# |-------------------------------------------------------------------------|
 
 	if(test_func == 0):
-		set_peer = args.set_peer
-		if(set_peer!=''):
-			name_op=set_peer.split('@')
-			# print(name_op[0], name_op[1])
-			# set_peerNodes('R2_pi4_4', 1, True)
-			set_peerNodes(name_op[0], int(name_op[1]), True)
+		if(op_status == 1):
+			set_peer = args.set_peer
+			if(set_peer!=''):
+				name_op=set_peer.split('@')
+				# print(name_op[0], name_op[1])
+				# set_peerNodes('R2_pi4_4', 1, True)
+				set_peerNodes(name_op[0], int(name_op[1]), True)
+		elif(op_status == 2):
+			neighbors = Microchain_client.get_neighbors(target_address)
+			logger.info(neighbors)
+		elif(op_status == 3):
+			peers = Microchain_client.get_peers(target_address)
+			logger.info(peers)
+		elif(op_status == 4):
+			tasks = [_get_peers(target_address)]
+			loop = asyncio.get_event_loop()
+			done, pending = loop.run_until_complete(asyncio.wait(tasks))
+			for future in done:
+				logger.info(future.result())
+			loop.close()
+		else:
+			pass
 	elif(test_func == 1):
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
@@ -470,9 +503,6 @@ if __name__ == "__main__":
 			count_tx_size(target_address)
 		elif(op_status == 14):
 			count_vote_size(target_address)
-		elif(op_status == 15):
-			neighbors = Microchain_client.get_neighbors(target_address)
-			logger.info(neighbors)
 		elif(op_status == 9):
 			Microchain_client.run_consensus(target_address, True, True)
 		else:

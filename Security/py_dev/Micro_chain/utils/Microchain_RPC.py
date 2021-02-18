@@ -204,9 +204,17 @@ class Microchain_RPC(object):
 		logger.info(json_response)
 
 	def get_neighbors(self, target_address):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/neighbors')
+		json_response=SrvAPI.GET('http://'+target_address+'/test/p2p/neighbors')
 		return json_response
-		
+
+	def get_peers(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/p2p/peers')
+		return json_response
+
+	async def get_account(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/account/info')
+		return json_response
+
 	def get_nodes(self, target_address):
 		json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
 		return json_response
