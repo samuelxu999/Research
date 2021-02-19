@@ -552,10 +552,12 @@ if __name__ == '__main__':
 		static_node()
 	else:
 		## ------------------------ Instantiate the Validator ----------------------------------
-		myblockchain = Validator(consensus=ConsensusType.PoS, 
+		myblockchain = Validator(port=args.port,
+								consensus=ConsensusType.PoS, 
 								block_epoch=args.blockepoch,
 								pause_epoch=args.pauseepoch,
-								phase_delay=args.phasedelay)
+								phase_delay=args.phasedelay,
+								frequency_peers=args.refresh_neighbors)
 		myblockchain.load_chain()
 
 		myblockchain.print_config()

@@ -390,22 +390,6 @@ def validator_getStatus():
 
 	logger.info("Non-syn node: {}".format(unconditional_nodes))
 
-async def _get_peers(target_address):
-	## get p2p peers
-	live_peers = Microchain_client.get_peers(target_address)['peers']
-	# print(live_peers)
-
-	## set address list for each peer
-	ls_peers = [peer[1]+":808"+str(peer[2])[-1] for peer in live_peers ]
-	# print(ls_peers)	
-
-	## async call get_account to query each peer's info
-	cos = list(map(Microchain_client.get_account, ls_peers))
-	gathered = await asyncio.gather(*cos)
-	info_peers = [node['info'] for node in gathered if node is not None]	
-
-	return info_peers
-
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
 		description="Run websocket client."
@@ -464,7 +448,7 @@ if __name__ == "__main__":
 			peers = Microchain_client.get_peers(target_address)
 			logger.info(peers)
 		elif(op_status == 4):
-			tasks = [_get_peers(target_address)]
+			tasks = [Microchain_client.get_peers_info(target_address)]
 			loop = asyncio.get_event_loop()
 			done, pending = loop.run_until_complete(asyncio.wait(tasks))
 			for future in done:

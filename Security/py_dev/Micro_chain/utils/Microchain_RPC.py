@@ -13,6 +13,7 @@ import time
 import logging
 import threading
 import copy
+import asyncio
 
 from network.wallet import Wallet
 from network.nodes import *
@@ -213,7 +214,24 @@ class Microchain_RPC(object):
 
 	async def get_account(self, target_address):
 		json_response=SrvAPI.GET('http://'+target_address+'/test/account/info')
+		json_response['info']['node_url'] = target_address
 		return json_response
+
+	async def get_peers_info(self, target_address):
+		## get p2p peers
+		live_peers = self.get_peers(target_address)['peers']
+		# print(live_peers)
+
+		## set address list for each peer
+		ls_peers = [peer[1]+":808"+str(peer[2])[-1] for peer in live_peers ]
+		# print(ls_peers)	
+
+		## async call get_account to query each peer's info
+		cos = list(map(self.get_account, ls_peers))
+		gathered = await asyncio.gather(*cos)
+		info_peers = [node['info'] for node in gathered if node is not None]	
+
+		return info_peers
 
 	def get_nodes(self, target_address):
 		json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')

@@ -15,7 +15,7 @@ import binascii
 import threading
 import logging
 import time
-
+import asyncio
 import json
 import time
 from urllib.parse import urlparse
@@ -34,10 +34,11 @@ from utils.db_adapter import DataManager
 from consensus.consensus import *
 from utils.configuration import *
 from utils.service_api import SrvAPI
+from utils.Microchain_RPC import Microchain_RPC
 
 logger = logging.getLogger(__name__)
 
-class Validator(object):
+class Validator():
 	'''
 	--------------------------- A Validator contains the following arguments: ----------------------------------
 	self.node_id: 						GUID 
@@ -68,10 +69,12 @@ class Validator(object):
 	--------------------------------------------------------------------------------------------------------------
 	''' 
 
-	def __init__(self, 	consensus=ConsensusType.PoW, 
+	def __init__(self, 	port, 
+						consensus=ConsensusType.PoW, 
 						block_epoch=EPOCH_SIZE, 
 						pause_epoch=1, 
-						phase_delay=BOUNDED_TIME):
+						phase_delay=BOUNDED_TIME,
+						frequency_peers=600):
 
 		# Instantiate the Wallet
 		self.wallet = Wallet()
@@ -175,8 +178,66 @@ class Validator(object):
 		# Set as daemon thread
 		self.consensus_thread.daemon = True
 		# Start the daemonized method execution
-		self.consensus_thread.start()   
-	
+		self.consensus_thread.start()
+
+		# ------------------------ Instantiate the ENFchain_RPC ----------------------------------
+		self.RPC_client = Microchain_RPC(keystore="keystore", 
+											keystore_net="keystore_net")   
+		self.frequency_peers=frequency_peers
+		## define a thread to handle refresh_peers()
+		self.peers_thread = threading.Thread(target=self.refresh_peers, args=(frequency_peers, port,))
+		## Set as daemon thread
+		self.peers_thread.daemon = True
+		## Start the daemonized method execution
+		self.peers_thread.start()
+
+	def refresh_peers(self, frequency, port):
+		'''
+		daemon thread function: handle message and save into local database
+		'''
+		# this variable is used as waiting time when there is no message for process.
+		while(True):
+			time.sleep(frequency)
+			logger.info("Refresh alive peers' information")
+			try:
+				target_address = "0.0.0.0:"+str(port)
+				tasks = [self.RPC_client.get_peers_info(target_address)]
+				loop = asyncio.new_event_loop()
+				done, pending = loop.run_until_complete(asyncio.wait(tasks))
+				peers_info = []
+				for future in done:
+					peers_info = future.result()
+				loop.close()
+				# temp_nodes = PeerNodes()
+				## 1) for each json_peer to add peers
+				ls_peer = []
+				for json_peer in peers_info:
+					# logger.info(json_peer['address'])
+					self.peer_nodes.register_node(json_peer['address'], 
+													json_peer['public_key'], 
+													json_peer['node_url'])
+					ls_peer.append(json_peer['address'])
+				## reload peer node
+				self.peer_nodes.load_ByAddress()
+
+				ls_nodes = []
+				peer_nodes = copy.deepcopy(self.peer_nodes.nodes)
+				for node in peer_nodes:
+					ls_nodes.append(node[1])
+				# logger.info(ls_peer)
+				# logger.info(ls_nodes)
+				## 2) remove inactive peers
+				for node in ls_nodes: 
+					if(node not in ls_peer):
+						self.peer_nodes.remove_node(node)
+				# reload peer node
+				self.peer_nodes.load_ByAddress()
+			except:
+				logger.info('\n! Some error happen in peers_thread.\n')
+			finally:
+				pass
+
+
 	def process_msg(self):
 		'''
 		daemon thread function: handle message and save into local database
