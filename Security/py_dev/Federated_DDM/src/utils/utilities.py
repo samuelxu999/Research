@@ -343,3 +343,17 @@ class TypesUtil(object):
 	    	return hashlib.sha256(block_string).hexdigest()
 	    else:
 	    	return None
+
+'''
+FuncUtil class to support utils functions
+'''
+class FuncUtil(object):
+	# sha 256 hash func
+	@staticmethod
+	def hashfunc_sha256(data_value):
+		return hashlib.sha256(data_value).hexdigest()
+
+	# sha1 hash func
+	@staticmethod
+	def hashfunc_sha1(data_value):
+		return hashlib.sha1(data_value).hexdigest()
