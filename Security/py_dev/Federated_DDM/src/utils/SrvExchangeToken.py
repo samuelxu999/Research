@@ -171,11 +171,11 @@ if __name__ == "__main__":
 	logging.basicConfig(format=FORMAT)
 	logger.setLevel(level=logging.DEBUG)
 
-	addr_list = './addr_list.json'
+	addr_list = '../addr_list.json'
 
 	http_provider = 'http://localhost:8042'
 	contract_addr = SrvExchangeToken.getAddress('SrvExchangeToken', addr_list)
-	contract_config = '../contract_dev/build/contracts/SrvExchange.json'
+	contract_config = '../../contract_dev/build/contracts/SrvExchange.json'
 
 
 	#new SrvExchangeToken object

@@ -14,8 +14,8 @@ import sys
 import time
 import threading
 
-from utilities import FileUtil
-from service_utils import SrvExchangeClient
+from utils.utilities import FileUtil
+from utils.brokerClient_RPC import SrvExchangeClient
 
 logger = logging.getLogger(__name__)
 
@@ -211,14 +211,9 @@ def Services_test(args):
 	data_args = {}
 	services_host = FileUtil.JSON_load("services_list.json")
 
-	# if(args.broker_op==1):
-	#     node_address = SrvExchangeClient.getAddress("rack1_PI_Plus_2", addr_list)
-	# else:
-	#     node_address = SrvExchangeClient.getAddress("rack1_PI_Plus_1", addr_list)
-
 	for i in range(args.tx_round):
 		logger.info("Test run:{}".format(i+1))
-		data_args['service_addr'] = services_host['docker_nodes']
+		data_args['service_addr'] = services_host['server_nodes']
 		# data_args['host_address'] = node_address
 
 		start_time=time.time()

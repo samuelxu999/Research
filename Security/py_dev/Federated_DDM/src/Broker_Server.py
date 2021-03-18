@@ -16,8 +16,8 @@ from argparse import ArgumentParser
 from flask import Flask, jsonify
 from flask import abort,make_response,request
 
-from utilities import FileUtil, TypesUtil
-from SrvExchangeToken import SrvExchangeToken
+from utils.utilities import FileUtil, TypesUtil
+from utils.SrvExchangeToken import SrvExchangeToken
 
 app = Flask(__name__)
 
