@@ -216,7 +216,7 @@ class AccountUtils(object):
 			## publisher set description and requirement.
 			recipient_address = SrvExchangeClient.getAddress("rack1_PI_Plus_1", addr_list)
 			json_data = {}
-			json_data['name'] = "samuel"
+			json_data['product'] = "Data access service"
 			json_data['resource'] = "/test/api/v1.0/dt"
 			json_data['action'] = "GET"
 			json_data['price'] = 80
@@ -307,14 +307,14 @@ class TenderUtils(object):
 
 		verify_result = Transaction.verify(sender_pk, sign_data, dict_transaction)
 
-		logger.info("verify transaction: {}".format(verify_result))
-
 		exec_time=time.time()-start_time
 		ls_time_exec.append( format( exec_time*1000, '.3f' ) ) 
 
 		# Prepare log messgae
 		str_time_exec=" ".join(ls_time_exec)
 		FileUtil.save_testlog('test_results', 'exec_tx_verify.log', str_time_exec)
+
+		return verify_result
 
 	@staticmethod
 	def tx_commit(tx_data):
@@ -328,21 +328,15 @@ class TenderUtils(object):
 		## 1) calculate tx_hash given tx_data
 		logger.info("tx value:{}".format(tx_data))
 		dict_tx = Transaction.json_to_hash(tx_data)
-		# test_data = {'sender_address': '670a8061427285962a4715954c54411ecb9ccc95', 'recipient_address': '0xea12421586661067abe5b8b7222f2bef79d69b8c', 'time_stamp': 1616101416.2954514, 'value': '100', 'signature': '84843dbf1a990c8b6ea5c2763605781e47159eb66e3f1072158d18011c5a5f24a5144a19069ab031e822c0cb4ad961c095d356e56bae3f4b7b87ce60e595ed8e'}
-		# dict_tx = Transaction.json_to_hash(test_data)
 		tx_hash = FuncUtil.hashfunc_sha1(str(dict_tx).encode('utf8'))
-		# logger.info("tx hash:{}".format(tx_hash))
 
 		# 2) evaluate tx committed time
 		start_time=time.time()
-		logger.info("commit tx_hash:{} to blockchain...\n".format(tx_hash)) 
+		logger.info("commit tx_hash:{} to blockchain.\n".format(tx_hash)) 
 
 		# -------- prepare parameter for tx ------------
 		tx_json = {}
 		key_str = str(tx_hash)
-		# value_json = {}
-		# value_json['ENF']=json_ENF['ENF']
-		# value_json['sign_ENF']=TypesUtil.string_to_hex(sign_ENF)
 
 		# convert json to tx format
 		value_str = TypesUtil.json_to_tx(tx_data)

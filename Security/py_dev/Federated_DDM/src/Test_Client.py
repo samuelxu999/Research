@@ -105,11 +105,12 @@ if __name__ == "__main__":
 	elif(args.test_func==2): 
 		AccountUtils.new_account()
 	elif(args.test_func==3):
-		TenderUtils.tx_verify(args.tx_hash)
+		verify_result = TenderUtils.tx_verify(args.tx_hash)
+		logger.info("verify transaction: {}".format(verify_result))
 	elif(args.test_func==4):
 		json_tx = AccountUtils.build_tx(args.broker_op)
-		tx_ret = TenderUtils.tx_commit(json_tx)
-		print(tx_ret)
+		tx_summary = TenderUtils.tx_commit(json_tx)
+		logger.info("tx summary: {}".format(tx_summary))
 	else:
 		Services_demo(args)
 		pass
