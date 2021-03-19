@@ -120,12 +120,22 @@ class BrokerUtils(object):
 			node_address = SrvExchangeClient.getAddress("rack1_PI_Plus_2", addr_list)
 			data_args['host_address'] = node_address
 			data_args['zone_id'] = "zone-2"
-			data_args['tx_ref'] = "0xd67b57e6ae47623f"
+			# data_args['tx_ref'] = "0xd67b57e6ae47623f"
+			tx_sum = {}
+			tx_sum['hash']='7729B6FAC11AB5464DA9BFBE62D655D1AFB6D84D079716D02250B8D1649D1758'
+			tx_sum['height'] = '11139'
+			tx_sum['tx_hash'] = '7d7130f0971d728cde03e2cbbbfb4cee714dd1ab'
+			data_args['tx_ref'] = TypesUtil.json_to_string(tx_sum)
 		else:
 			node_address = SrvExchangeClient.getAddress("rack1_PI_Plus_1", addr_list)
 			data_args['host_address'] = node_address
 			data_args['zone_id'] = "zone-1"  
-			data_args['tx_ref'] = "0xea12421586661067"     
+			# data_args['tx_ref'] = "0xea12421586661067" 
+			tx_sum = {}
+			tx_sum['hash']='9602B5E48D6712B873A1F353ADD7D7D11DBE6F0675F459B457DBD2FCD3768072'
+			tx_sum['height'] = '10992'
+			tx_sum['tx_hash'] = 'fad5ddc97e0c006c10d58aca22ad31be36ff0a77'
+			data_args['tx_ref'] = TypesUtil.json_to_string(tx_sum)    
 
 		SrvExchangeClient.delegateBroker(data_args)  
 

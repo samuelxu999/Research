@@ -57,6 +57,21 @@ def Services_test(args):
 
 		time.sleep(args.wait_interval)
 
+def tx_verify_test(args):
+	for i in range(args.tx_round):
+		logger.info("Test run:{}".format(i+1))
+		verify_result = TenderUtils.tx_verify(args.tx_hash)
+		logger.info("verify transaction: {}".format(verify_result))	
+
+		time.sleep(args.wait_interval)
+
+def tx_commit_test(args):
+	for i in range(args.tx_round):
+		logger.info("Test run:{}".format(i+1))
+		json_tx = AccountUtils.build_tx(args.broker_op)
+		tx_summary = TenderUtils.tx_commit(json_tx)
+		logger.info("tx summary: {}".format(tx_summary))
+
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
 	    description="Run websocket client test."
@@ -66,8 +81,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	                    help="Execute test function: 0-Services_demo, \
 	                                                1-Services_test, \
 	                                                2-new_account(), \
-	                                                3-tx_verify(), \
-	                                                4-tx_commit()")
+	                                                3-tx_verify_test(), \
+	                                                4-tx_commit_test()")
 	parser.add_argument("--service_op", type=int, default=0, 
 	                    help="Execute test function: 0-test_getBroker(), \
 	                                                1-test_initalizeBroker(), \
@@ -105,12 +120,9 @@ if __name__ == "__main__":
 	elif(args.test_func==2): 
 		AccountUtils.new_account()
 	elif(args.test_func==3):
-		verify_result = TenderUtils.tx_verify(args.tx_hash)
-		logger.info("verify transaction: {}".format(verify_result))
+		tx_verify_test(args)
 	elif(args.test_func==4):
-		json_tx = AccountUtils.build_tx(args.broker_op)
-		tx_summary = TenderUtils.tx_commit(json_tx)
-		logger.info("tx summary: {}".format(tx_summary))
+		tx_commit_test(args)
 	else:
 		Services_demo(args)
 		pass
