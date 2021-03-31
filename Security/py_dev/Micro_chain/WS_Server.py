@@ -571,9 +571,10 @@ if __name__ == '__main__':
 		randshare_daemon = RundShare_Daemon()
 
 		# ## ------------------------ Instantiate p2p server as thread ------------------------------
+		base_account = myblockchain.wallet.accounts[0]
 		my_p2p = Kademlia_Server(rpc_port=args.rpc_port, bootstrapnode=args.bootstrapnode,
 								freq_loop=[args.save_state, args.refresh_neighbors], 
-								node_id=myblockchain.node_id)
+								node_id=base_account['address'])
 		
 		## bind my_p2p.run() to a thread.daemon
 		p2p_thread = threading.Thread(target=my_p2p.run, args=(args.firstnode,))
