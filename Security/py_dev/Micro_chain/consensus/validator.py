@@ -250,10 +250,12 @@ class Validator():
 						self.peer_nodes.register_node(json_host['address'], 
 														json_host['public_key'], 
 														json_host['node_url'])
-						ls_peer.append(json_host['address'])
 
 						## reload peer node
 						self.peer_nodes.load_ByAddress()
+
+					## put host node into ls_peer
+					ls_peer.append(json_host['address'])
 
 				ls_nodes = []
 				peer_nodes = copy.deepcopy(self.peer_nodes.nodes)
@@ -263,6 +265,7 @@ class Validator():
 				## 3) remove inactive peers from consensus node list
 				for node in ls_nodes: 
 					if(node not in ls_peer):
+						logger.info('Remove {} from consensus node list.'.format(node))
 						self.peer_nodes.remove_node(node)
 				# reload peer node
 				self.peer_nodes.load_ByAddress()
