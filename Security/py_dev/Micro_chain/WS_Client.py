@@ -391,9 +391,8 @@ def validator_getStatus():
 	logger.info("Non-syn node: {}".format(unconditional_nodes))
 
 def define_and_get_arguments(args=sys.argv[1:]):
-	parser = argparse.ArgumentParser(
-		description="Run websocket client."
-	)
+	parser = argparse.ArgumentParser(description="Run websocket client.")
+	
 	parser.add_argument("--test_func", type=int, default=2, help="test function: \
 															0: set peer nodes \
 															1: validator test \
@@ -463,7 +462,7 @@ if __name__ == "__main__":
 			time.sleep(wait_interval)
 
 		# get checkpoint after execution
-		json_checkpoints = checkpoint_netInfo(False)
+		json_checkpoints = checkpoint_netInfo(target_address, False)
 		for _item, _value in json_checkpoints.items():
 			logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 
@@ -490,7 +489,7 @@ if __name__ == "__main__":
 		elif(op_status == 9):
 			Microchain_client.run_consensus(target_address, True, True)
 		else:
-			json_checkpoints = checkpoint_netInfo(False)
+			json_checkpoints = checkpoint_netInfo(target_address, False)
 			for _item, _value in json_checkpoints.items():
 				logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 	else:

@@ -552,7 +552,8 @@ if __name__ == '__main__':
 		static_node()
 	else:
 		## ------------------------ Instantiate the Validator ----------------------------------
-		myblockchain = Validator(port=args.port,
+		myblockchain = Validator(port=args.port, 
+								bootstrapnode=args.bootstrapnode,
 								consensus=ConsensusType.PoS, 
 								block_epoch=args.blockepoch,
 								pause_epoch=args.pauseepoch,
@@ -570,8 +571,8 @@ if __name__ == '__main__':
 		randshare_daemon = RundShare_Daemon()
 
 		# ## ------------------------ Instantiate p2p server as thread ------------------------------
-		my_p2p = Kademlia_Server(rpc_port = args.rpc_port, bootstrapnode = args.bootstrapnode,
-								freq_loop = [args.save_state, args.refresh_neighbors], 
+		my_p2p = Kademlia_Server(rpc_port=args.rpc_port, bootstrapnode=args.bootstrapnode,
+								freq_loop=[args.save_state, args.refresh_neighbors], 
 								node_id=myblockchain.node_id)
 		
 		## bind my_p2p.run() to a thread.daemon
