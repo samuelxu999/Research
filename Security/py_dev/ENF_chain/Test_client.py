@@ -12,6 +12,7 @@ import argparse
 import sys
 import time
 import logging
+import asyncio
 
 from network.wallet import Wallet
 from network.nodes import *
@@ -453,12 +454,33 @@ if __name__ == "__main__":
 	## |-------------------------------------------------------------------------|
 
 	if(test_func == 0):
-		set_peer = args.set_peer
-		if(set_peer!=''):
-			name_op=set_peer.split('@')
-			# print(name_op[0], name_op[1])
-			# set_peerNodes('R2_pi4_4', 1, True)
-			set_peerNodes(name_op[0], int(name_op[1]), True)
+		if(op_status == 1):
+			set_peer = args.set_peer
+			if(set_peer!=''):
+				name_op=set_peer.split('@')
+				# print(name_op[0], name_op[1])
+				# set_peerNodes('R2_pi4_4', 1, True)
+				set_peerNodes(name_op[0], int(name_op[1]), True)
+		elif(op_status == 2):
+			neighbors = ENFchain_client.get_neighbors(target_address)
+			logger.info(neighbors)
+		elif(op_status == 3):
+			peers = ENFchain_client.get_peers(target_address)
+			logger.info(peers)
+		elif(op_status == 4):
+			tasks = [ENFchain_client.get_peers_info(target_address)]
+			loop = asyncio.get_event_loop()
+			done, pending = loop.run_until_complete(asyncio.wait(tasks))
+			for future in done:
+				logger.info(future.result())
+			loop.close()
+		else:
+			# display peering nodes
+			json_response=ENFchain_client.get_nodes(target_address)
+			nodes = json_response['nodes']
+			logger.info('Consensus nodes:')
+			for node in nodes:
+				logger.info(node)
 	elif(test_func == 1):
 		head_pos = samples_head
 		for x in range(test_run):

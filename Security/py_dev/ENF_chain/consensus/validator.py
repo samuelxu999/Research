@@ -15,7 +15,7 @@ import binascii
 import threading
 import logging
 import time
-
+import asyncio
 import json
 import time
 from urllib.parse import urlparse
@@ -34,6 +34,7 @@ from utils.db_adapter import DataManager
 from consensus.consensus import *
 from utils.configuration import *
 from utils.service_api import SrvAPI
+from utils.ENFchain_RPC import ENFchain_RPC
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +69,12 @@ class Validator(object):
 	--------------------------------------------------------------------------------------------------------------
 	''' 
 
-	def __init__(self, 	consensus=ConsensusType.PoW, 
+	def __init__(self, 	port, bootstrapnode,
+						consensus=ConsensusType.PoW, 
 						block_epoch=EPOCH_SIZE, 
 						pause_epoch=1, 
-						phase_delay=BOUNDED_TIME):
+						phase_delay=BOUNDED_TIME,
+						frequency_peers=600):
 
 		# Instantiate the Wallet
 		self.wallet = Wallet()
@@ -180,6 +183,100 @@ class Validator(object):
 		# 0-ENF proposal; 1-ENF-mining; 2-fix head; 
 		# 3-voting-based finality; 4-synchronization
 		self.statusConsensus = 0 
+
+		# ------------------------ Instantiate the ENFchain_RPC ----------------------------------
+		self.RPC_client = ENFchain_RPC(keystore="keystore", 
+											keystore_net="keystore_net")   
+		self.frequency_peers = frequency_peers
+		self.bootstrapnode = bootstrapnode
+		self.port = port
+		## define a thread to handle refresh_peers()
+		self.peers_thread = threading.Thread(target=self.refresh_peers, args=())
+		## Set as daemon thread
+		self.peers_thread.daemon = True
+		## Start the daemonized method execution
+		self.peers_thread.start()
+
+	def refresh_peers(self):
+		'''
+		daemon thread function: handle message and save into local database
+		'''
+		# this variable is used as waiting time when there is no message for process.
+		while(True):
+			time.sleep(self.frequency_peers)
+			logger.info("Refresh alive peers' information")
+			try:
+				bootstrapnode_address = self.bootstrapnode.split(':')[0]+":81"+ self.bootstrapnode.split(':')[1][3:] 
+				host_address = "0.0.0.0:"+str(self.port)
+
+				## Prerequisite: query p2p peers information
+				tasks = [self.RPC_client.get_peers_info(host_address)]
+				loop = asyncio.new_event_loop()
+				done, pending = loop.run_until_complete(asyncio.wait(tasks))
+				peers_info = []
+				for future in done:
+					peers_info = future.result()
+				loop.close()
+
+				## 1) for each json_peer to add peers
+				ls_peer = []
+				for json_peer in peers_info:
+					## Do not add bootstrapnode into consensus node list
+					# logger.info('node_url: {}    bootstrapnode:{}'.format(json_peer['node_url'],bootstrapnode_address))
+					if(json_peer['node_url']==bootstrapnode_address):
+						logger.info('Not add bootstrapnode into consensus node list.')
+					else:
+						# logger.info(json_peer['address'])
+						self.peer_nodes.register_node(json_peer['address'], 
+														json_peer['public_key'], 
+														json_peer['node_url'])
+						ls_peer.append(json_peer['address'])
+
+				## reload peer node
+				self.peer_nodes.load_ByAddress()
+
+				## 2) Add host node into consensus node list and ls_peer
+				if(self.wallet.accounts!=0):
+					json_host = {}
+					host_account = self.wallet.accounts[0]
+					json_host['address'] = host_account['address']
+					json_host['public_key'] = host_account['public_key']
+					json_host['node_url'] = host_address
+
+					ls_nodes = []
+					peer_nodes = copy.deepcopy(self.peer_nodes.nodes)
+					for node in peer_nodes:
+						ls_nodes.append(node[1])
+
+					# logger.info('host_address: {}    ls_nodes:{}'.format(json_host['address'], ls_nodes))
+					if(json_host['address'] not in ls_nodes):
+						logger.info('Add host node into consensus node list.')
+						self.peer_nodes.register_node(json_host['address'], 
+														json_host['public_key'], 
+														json_host['node_url'])
+
+						## reload peer node
+						self.peer_nodes.load_ByAddress()
+
+					## put host node into ls_peer
+					ls_peer.append(json_host['address'])
+
+				ls_nodes = []
+				peer_nodes = copy.deepcopy(self.peer_nodes.nodes)
+				for node in peer_nodes:
+					ls_nodes.append(node[1])
+
+				## 3) remove inactive peers from consensus node list
+				for node in ls_nodes: 
+					if(node not in ls_peer):
+						logger.info('Remove {} from consensus node list.'.format(node))
+						self.peer_nodes.remove_node(node)
+				# reload peer node
+				self.peer_nodes.load_ByAddress()
+			except:
+				logger.info('\n! Some error happen in peers_thread.\n')
+			finally:
+				pass
 	
 	def process_msg(self):
 		'''

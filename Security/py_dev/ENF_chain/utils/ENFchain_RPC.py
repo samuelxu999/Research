@@ -13,12 +13,12 @@ import time
 import logging
 import threading
 import copy
+import asyncio
 
 from network.wallet import Wallet
 from network.nodes import *
 from consensus.transaction import Transaction
 from consensus.block import Block
-from consensus.validator import Validator
 from consensus.consensus import POW, POE
 from utils.utilities import TypesUtil, FileUtil
 from utils.service_api import SrvAPI
@@ -255,6 +255,35 @@ class ENFchain_RPC(object):
 			SrvAPI.broadcast_GET(self.peer_nodes.get_nodelist(), '/test/block/vote', True)
 			json_response = {'verify_vote': 'broadcast'}
 		logger.info(json_response)
+
+	def get_neighbors(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/p2p/neighbors')
+		return json_response
+
+	def get_peers(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/p2p/peers')
+		return json_response
+
+	async def get_account(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/account/info')
+		json_response['info']['node_url'] = target_address
+		return json_response
+
+	async def get_peers_info(self, target_address):
+		## get p2p peers
+		live_peers = self.get_peers(target_address)['peers']
+		# print(live_peers)
+
+		## set address list for each peer
+		ls_peers = [peer[1]+":818"+str(peer[2])[-1] for peer in live_peers ]
+		# print(ls_peers)	
+
+		## async call get_account to query each peer's info
+		cos = list(map(self.get_account, ls_peers))
+		gathered = await asyncio.gather(*cos)
+		info_peers = [node['info'] for node in gathered if node is not None]	
+
+		return info_peers
 
 	def get_nodes(self, target_address):
 		json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')

@@ -4,3 +4,4 @@ pycrypto==2.6.1
 merklelib==1.0
 matplotlib
 numpy
+umsgpack

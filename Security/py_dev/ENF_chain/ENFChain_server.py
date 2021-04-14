@@ -20,6 +20,7 @@ from argparse import ArgumentParser
 
 from network.nodes import *
 from network.wallet import Wallet
+from network.p2p import Kademlia_Server
 from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
 from consensus.transaction import Transaction
 from consensus.block import Block
@@ -244,6 +245,27 @@ def mine_block():
 	
 	return jsonify(response), 200
 
+@app.route('/test/p2p/neighbors', methods=['GET'])
+def p2p_neighbors():
+	neighbors = my_p2p.get_neighbors()
+	response = {'neighbors': neighbors}
+	return jsonify(response), 200
+
+@app.route('/test/p2p/peers', methods=['GET'])
+def p2p_peers():
+	peers = my_p2p.get_peers()
+	response = {'peers': peers}
+	return jsonify(response), 200
+
+@app.route('/test/account/info', methods=['GET'])
+def account_info():
+	base_account = myblockchain.wallet.accounts[0]
+	json_info = {}
+	json_info['address'] = base_account['address']
+	json_info['public_key'] = base_account['public_key']
+	response = {'info': json_info}
+	return jsonify(response), 200
+
 @app.route('/test/nodes/get', methods=['GET'])
 def get_nodes():
 	myblockchain.peer_nodes.load_ByAddress()
@@ -444,6 +466,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 
 	parser.add_argument('-p', '--port', default=8180, type=int, 
 						help="port to listen on.")
+	parser.add_argument('-rp', '--rpc_port', default=31180, type=int, 
+							help="rpc_port to listen on.")
 	parser.add_argument('--blockepoch', default=2, type=int, 
 						help="Block proposal round epoch size.")
 	parser.add_argument('--pauseepoch', default=2, type=int, 
@@ -454,6 +478,14 @@ def define_and_get_arguments(args=sys.argv[1:]):
 						help="if set, debug model will be used.")
 	parser.add_argument("--threaded", action="store_true", 
 						help="if set, support threading request.")
+	parser.add_argument("--firstnode", action="store_true", 
+						help="if set, bootstrap as first node of network.")
+	parser.add_argument("--bootstrapnode", default='128.226.88.210:31180', type=str, 
+						help="bootstrap node address format[ip:port] to join the network.")
+	parser.add_argument('--save_state', default=600, type=int, 
+							help="frequency for save_state_regularly.")
+	parser.add_argument('--refresh_neighbors', default=600, type=int, 
+							help="frequency for refresh_neighbors_regularly.")
 	args = parser.parse_args()
 
 	return args
@@ -514,26 +546,48 @@ if __name__ == '__main__':
 	# get arguments
 	args = define_and_get_arguments()
 
+	## if debug mode, show debug information.
+	if(args.debug):
+		kademlia_logger = logging.getLogger("kademlia")
+		kademlia_logger.setLevel(logging.DEBUG)
+		p2p_logger = logging.getLogger("p2p")
+		p2p_logger.setLevel(logging.DEBUG)
+
 	if(args.test_func==1):
 		new_account()
 	elif(args.test_func==2):
 		static_node()
 	else:
-		# ------------------------ Instantiate the Validator ----------------------------------
-		myblockchain = Validator(consensus=ConsensusType.PoE, 
+		## ------------------------ Instantiate the Validator ----------------------------------
+		myblockchain = Validator(port=args.port, 
+								bootstrapnode=args.bootstrapnode,
+								consensus=ConsensusType.PoE, 
 								block_epoch=args.blockepoch,
 								pause_epoch=args.pauseepoch,
-								phase_delay=args.phasedelay)
+								phase_delay=args.phasedelay,
+								frequency_peers=args.refresh_neighbors)
 		myblockchain.load_chain()
 
 		myblockchain.print_config()
 
-		# # -------------------------- Instantiate RandShare -------------------------------------
+		## -------------------------- Instantiate RandShare -------------------------------------
 		myrandshare = RandShare()
 		# json_sharesInfo=RandShare.load_sharesInfo()
 		# # display random shares
 		# disp_randomshare(json_sharesInfo)
 		randshare_daemon = RundShare_Daemon()
 
+		## ------------------------ Instantiate p2p server as thread ------------------------------
+		base_account = myblockchain.wallet.accounts[0]
+		my_p2p = Kademlia_Server(rpc_port=args.rpc_port, bootstrapnode=args.bootstrapnode,
+								freq_loop=[args.save_state, args.refresh_neighbors], 
+								node_id=base_account['address'])
+		
+		## bind my_p2p.run() to a thread.daemon
+		p2p_thread = threading.Thread(target=my_p2p.run, args=(args.firstnode,))
+		p2p_thread.daemon = True		
+		p2p_thread.start()
+
+		## -------------------------------- run app server ----------------------------------------
 		app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=args.threaded)
 
