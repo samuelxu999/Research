@@ -454,7 +454,12 @@ if __name__ == "__main__":
 				logger.info(future.result())
 			loop.close()
 		else:
-			pass
+			# display peering nodes
+			json_response=Microchain_client.get_nodes(target_address)
+			nodes = json_response['nodes']
+			logger.info('Consensus nodes:')
+			for node in nodes:
+				logger.info(node)
 	elif(test_func == 1):
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))

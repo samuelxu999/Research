@@ -436,6 +436,30 @@ class Validator():
 				break				
 		return json_node
 
+	def valid_round(self, node_address):
+		'''
+		Verify round operation: check if a node is valid given current block height
+		'''
+		if(node_address==None):
+			return False
+
+		ls_nodes=list(self.peer_nodes.get_nodelist())
+
+		## get address list of nodes
+		ls_address = []
+		for node in ls_nodes:
+			json_node = TypesUtil.string_to_json(node)
+			ls_address.append(json_node['address'])
+		parent_block = self.processed_head
+
+		## sort ls_address
+		sort_address = sorted(ls_address, reverse=True)
+
+		## rid is round id used to get node which is qualified for round proposal
+		rid = parent_block['height'] % len(sort_address)
+		
+		## return verify result	
+		return sort_address[rid]==node_address
 
 	def load_chain(self):
 		'''
@@ -548,9 +572,14 @@ class Validator():
 			nonce = POW.proof_of_work(block_data, commit_transactions)
 			new_block = Block(parent_block, commit_transactions, nonce)
 		elif(self.consensus==ConsensusType.PoS):
-			# propose new block given stake weight
-			if( POS.proof_of_stake(block_data, commit_transactions, self.node_id, 
-									TEST_STAKE_WEIGHT, self.sum_stake )!=0 ):
+			## get host address
+			host_account = None
+			if(self.wallet.accounts!=0):
+				host_account = self.wallet.accounts[0]
+			# propose new block: 1) given PoS algorithm or 2) valid round
+			if( (POS.proof_of_stake(block_data, commit_transactions, self.node_id, 
+									TEST_STAKE_WEIGHT, self.sum_stake )!=0) or
+									(self.valid_round(host_account['address'])==True) ):
 				new_block = Block(parent_block, commit_transactions, self.node_id)	
 			else:
 				# generate empty block without transactions
@@ -629,10 +658,14 @@ class Validator():
 				logger.info("PoW verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
 				return False
 		elif(self.consensus==ConsensusType.PoS):
+			## check if a valid PoS proof
 			if( not POS.valid_proof(current_block['merkle_root'], current_block['previous_hash'], current_block['nonce'], 
 									TEST_STAKE_WEIGHT, self.sum_stake) ):
 				logger.info("PoS verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
-				return False
+				## If not a valid PoS proof, then check if sender has a valid round proof
+				if(not self.valid_round(current_block['sender_address'])): 
+					logger.info("Round verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
+					return False
 		else:
 			return False
 
