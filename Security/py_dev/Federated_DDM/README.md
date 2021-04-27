@@ -4,7 +4,9 @@ Official implementation of paper "Fed-DDM: A Federated Ledgers based Framework f
 ## Developing environment
 For Ethereum private network configuration, please refer to [link](https://github.com/samuelxu999/Blockchain_dev/tree/master/MyChains).
 
-For smart contract development, please refer to [Truffle](https://truffleframework.com/docs) for truffle environment setup and usage. The demo application is developed by python and Flask.
+For smart contract development, please refer to [Truffle](https://truffleframework.com/docs) for truffle environment setup and usage.
+
+For Tendermint network setup, please refer to: [Tendermint_dev](https://github.com/samuelxu999/Blockchain_dev/tree/master/Tendermint).
 
 ## Microservices implementation
 The concept proof system is deployed and run on a microservices SOA framework. You can access microservices projects reousrce on github: 
@@ -50,6 +52,7 @@ The prototype desgin of Fed-DDM by using python. The functions are mainly for ba
 	--- utils: utilities and tools to support core functions, like RPC wrappers for inter-ledger and intra-ledger interaction (Tender_RPC.py and brokerClient_RPC.py), Interface of smart contract (SrvExchangeToken.py), and web service APIs for front-end apps (brokerClient_RPC.py and service_utils.py)
 
 * apps:
+
 	---  Test_Client.py: works as client node to interact with broker_servers and nodes in intra-ledger.
 
 	--- Broker_Server.py.py: This module provide encapsulation of RestFul web-service API that handle and response client's request.
