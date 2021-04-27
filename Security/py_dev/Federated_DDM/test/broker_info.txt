@@ -1,0 +1,33 @@
+Publisher: 
+	vid:0xd5318DA88545F1A72F97A791c9E7D5d0E597874b 
+	zid: zone-1 
+	status: 3 
+	balance:100 
+	txs: [{	"hash": "9602B5E48D6712B873A1F353ADD7D7D11DBE6F0675F459B457DBD2FCD3768072", 
+			"height": "10992", 
+			"tx_hash": "fad5ddc97e0c006c10d58aca22ad31be36ff0a77"}]
+
+Subscriber: 
+	vid:0xea12421586661067abe5b8b7222f2bef79D69B8C 
+	zid: zone-2 
+	status: 3 
+	balance:0 
+	txs: [{	"hash": "7729B6FAC11AB5464DA9BFBE62D655D1AFB6D84D079716D02250B8D1649D1758", 
+			"height": "11139", 
+			"tx_hash": "7d7130f0971d728cde03e2cbbbfb4cee714dd1ab"}]
+
+Transaction on intra-ledger: zone-1
+key: fad5ddc97e0c006c10d58aca22ad31be36ff0a77
+value: {'sender_address': '670a8061427285962a4715954c54411ecb9ccc95', 
+		'recipient_address': '0xd5318da88545f1a72f97a791c9e7d5d0e597874b', 
+		'time_stamp': 1616107756.2772546, 
+		'value': {'product': 'Data access service', 'resource': '/test/api/v1.0/dt', 'action': 'GET', 'price': 80, 'conditions': {'value': {'start': '8:30', 'end': '19:25', 'week': 'M|T|F'}, 'type': 'Timespan'}}, 
+		'signature': '2c7a6d1c324738fc53ec74621b07332694bc324dedbaaabfb7ddb27583e2e9153e9db75bb3254628a3dc0ad9d8101984d64bd053689c4d6f5c16d9110c00786a'}
+
+Transaction on intra-ledger: zone-2			
+key: 7d7130f0971d728cde03e2cbbbfb4cee714dd1ab
+value: {'sender_address': '670a8061427285962a4715954c54411ecb9ccc95', 
+		'recipient_address': '0xea12421586661067abe5b8b7222f2bef79d69b8c', 
+		'time_stamp': 1616107991.025505, 
+		'value': 100, 
+		'signature': 'c746cba4ff60b23c7eaf766262b92607dc0e0da964a66933704c62c70feeb9d2d4e9d043bbb9b68d9f1ec6f1a1a2d99501edbad51c52a6ff111b17e1437d4ee3'}
