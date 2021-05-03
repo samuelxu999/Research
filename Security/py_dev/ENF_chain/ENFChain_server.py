@@ -558,6 +558,15 @@ if __name__ == '__main__':
 	elif(args.test_func==2):
 		static_node()
 	else:
+		## ---------------------- Instantiate the Wallet ---------------------------
+		mywallet = Wallet()
+
+		## load accounts
+		mywallet.load_accounts()
+
+		if(len(mywallet.accounts)==0):
+			mywallet.create_account('samuelxu999')
+
 		## ------------------------ Instantiate the Validator ----------------------------------
 		myblockchain = Validator(port=args.port, 
 								bootstrapnode=args.bootstrapnode,

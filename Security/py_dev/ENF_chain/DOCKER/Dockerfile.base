@@ -1,0 +1,49 @@
+## Use an python3.6 official image as base image
+FROM python:3.6-slim
+
+## Developer information
+MAINTAINER Samuel Xu <samuelxu999@gmail.com>
+
+## ------------- Dependencies and tools installation ----------------
+## Install system tools and dependencies
+RUN apt-get update && \
+	apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    unzip \
+    nano \
+    sqlite3 \
+    libsqlite3-dev
+
+## Install pip tools and configurations
+RUN python3 -m pip install --upgrade pip
+
+
+## ========================================== Install openssh =========================================
+RUN apt-get install -y openssh-server
+RUN mkdir /var/run/sshd
+RUN echo 'root:samuelxu999' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+## SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+## Minimize image size 
+RUN apt-get autoremove -y && apt-get autoclean -y
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+## =========================== Setup docker user account ==================================
+## Add user so that container does not run as root 
+RUN useradd -m docker 
+RUN echo "docker:samuelxu999" | chpasswd 
+RUN usermod -s /bin/bash docker 
+RUN usermod -aG sudo docker 
+ENV HOME /home/docker
+
+## Make port 22 available to the ssh access outside the container
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
