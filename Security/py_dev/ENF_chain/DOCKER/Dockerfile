@@ -17,7 +17,6 @@ RUN chown -R docker:docker ${HOME}/app
 ## ----------- Install requirements ------------
 COPY ./requirements.txt ${HOME}/app/
 RUN apt-get update -y
-RUN apt-get install -y libssl-dev libffi-dev
 RUN python3 -m pip install -r ${HOME}/app/requirements.txt
 
 ## Minimize image size 
@@ -29,4 +28,4 @@ WORKDIR ${HOME}/app
 EXPOSE 31180 8180
 
 ## Default command
-#CMD ["./BlendCAC_server.py"]
+#CMD ["python3", "ENFChain_server.py --blockepoch 3 --pauseepoch 3 --phasedelay 2 -p 8180 --rp 31180 --refresh_neighbors 15"]
