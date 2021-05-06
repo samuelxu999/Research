@@ -5,3 +5,4 @@ merklelib==1.0
 matplotlib
 numpy
 umsgpack
+requests
