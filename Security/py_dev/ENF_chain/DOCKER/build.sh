@@ -27,6 +27,9 @@ cp ../swarm_server.json app/
 ## copy data
 cp -r ../data app/
 
+## copy requirements.txt 
+cp ../requirements.txt ./
+
 ## Check image name
 if [[ "" == $2 ]]; then
 	IMAGE_NAME="ecoledger_node"
