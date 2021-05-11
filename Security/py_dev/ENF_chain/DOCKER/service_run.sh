@@ -69,5 +69,5 @@ elif [ "show" == "$OPERATION" ]; then
 	docker container ls
 ## show usage
 else
-	echo "Usage $0 list|start|show| -image_type(x86|armv7l) -container_name rpc_port port bootstrapnode_ip:port"
+	echo "Usage $0 -operation(start|stop|show) -image_type(x86|arm) -container_name(ecoledger-node@id) -rpc_port(31180) -port(8180) -bootstrapnode(ip:port)"
 fi
