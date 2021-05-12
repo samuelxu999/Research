@@ -56,13 +56,13 @@ Run 'docker exec command' to interact with tools and scripts in container.
 
 ## service_run.sh
 
-$./service_run.sh --operation --container_name --rpc_port --port --bootstrapnode
+$./service_run.sh --operation --container_name --image_type --rpc_port --port --bootstrapnode
 
 Startup container and run services in container. 
 
-1) For bootstrapnode, execute './service_run.sh start ecoledger-node 31180 8180'
+1) For bootstrapnode on x86 platform like desktop, execute './service_run.sh start ecoledger-node x86 31180 8180'
 
-2) For ENF_node, execute './service_run.sh start ecoledger-node1 31181 8181 0.0.0.0:31180'
+2) For ENF_node on arm platform like Respberry Pi, execute './service_run.sh start ecoledger-node1 arm 31181 8181 0.0.0.0:31180'
 
 Execute './service_run.sh stop --container_name' can stop running container
 
