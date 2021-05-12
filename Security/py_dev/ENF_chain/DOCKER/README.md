@@ -44,7 +44,7 @@ This is used to startup container. For example, './run_node.sh ecoledger-node1'.
 
 ## run_bash.sh
 
-$./run_bash.sh --container_name --rpc_port --port
+$./run_bash.sh --container_name
 
 This is used to test in development. For example, './run_bash.sh ecoledger-node1'. After container startup, automatically attach to container with sh CLI.
 
