@@ -80,22 +80,22 @@
 	"Desk_pi_node_1": 
 	{
 		"address": "5703e83625b6557e3891e7b42e5cb4f2f552f7a0",
-		"ip": "128.226.79.127:8180",
+		"ip": "128.226.79.68:8180",
 		"user": "pi"
 	},
 	"Desk_pi_node_2": 
 	{
 		"address": "732e52596a49244624c1895b2ae663b9132c74d3",
-		"ip": "128.226.78.89:8180",
+		"ip": "128.226.78.244:8180",
 		"user": "pi"
 	},
-	"Desk_pi_plus_1": 
+	"Desk_pi_plus_Sam1": 
 	{
 		"address": "2778b6d54e7814f2cd9e2d39872a0a201e1eee2c",
 		"ip": "128.226.79.249:8180",
 		"user": "pi"
 	},
-	"Desk_pi_plus_2": 
+	"Desk_pi_plus_Sam2": 
 	{
 		"address": "efd961b8006691da2d912239a9d730bf04a2a68f",
 		"ip": "128.226.88.239:8180",
