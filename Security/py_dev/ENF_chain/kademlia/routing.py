@@ -62,7 +62,7 @@ class KBucket:
         if node.id in self.nodes:
             del self.nodes[node.id]
             self.nodes[node.id] = node
-        elif len(self) < self.ksize:
+        elif len(self.nodes) < self.ksize:
             self.nodes[node.id] = node
         else:
             if node.id in self.replacement_nodes:
