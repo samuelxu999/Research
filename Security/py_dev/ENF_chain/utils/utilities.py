@@ -17,6 +17,8 @@ import glob, os, fnmatch
 import numpy as np
 import csv
 import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 
 '''

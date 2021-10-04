@@ -568,8 +568,8 @@ class Validator(object):
 					for json_tx  in self.transactions:
 						if(verified_transaction['sender_address']==json_tx['sender_address']):
 							return False
-				self.transactions.append(verified_transaction)
-			return True
+					self.transactions.append(verified_transaction)
+					return True
 		else:
 			return False
  
