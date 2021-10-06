@@ -548,27 +548,44 @@ class Validator(object):
 
 		return validator_status
 
-	def valid_transaction(self, transaction, sender_pk, signature):
+	def valid_transaction(self, json_transaction):
 		"""
 		Verify a received transaction and append to local transactions pool
 		Args:
-			@ transaction: transacton directionary data
-			@ sender_pk: sender's public key
-			@ signature: digital signature signed by sender
+			@ transaction: transacton json data
 			@ return: True or False
 		"""
-		verified_transaction = transaction
-		verify_result = Transaction.verify(sender_pk, signature, transaction)
+
+		## ====================== rebuild transaction ==========================
+		dict_transaction = Transaction.get_dict(json_transaction['sender_address'], 
+												json_transaction['recipient_address'],
+												json_transaction['time_stamp'],
+												json_transaction['value'])
+		## get signature (string) from transaction_json
+		sign_str = TypesUtil.hex_to_string(json_transaction['signature'])
+
+		## get node data from self.peer_nodes buffer
+		sender_node=self.get_node(json_transaction['sender_address'])
+
+		## ====================== verify transaction ==========================
+		## a) check if a tx comes from the authorized node, like committee members.
+		if(sender_node!={}):
+		    sender_pk= sender_node['public_key']
+		    verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
+		else:
+			verify_result = False
+
+		## 2) check if a tx comes from the same sender in current round. 
 		if(verify_result):
-			verified_transaction['signature'] = TypesUtil.string_to_hex(signature)
 			## discard duplicated tx in general scenario
-			if(verified_transaction not in self.transactions):
+			if(json_transaction not in self.transactions):
 				if(self.consensus==ConsensusType.PoE):
 					## In current round, duplicated ENF proof from a validator will be discarded.
 					for json_tx  in self.transactions:
-						if(verified_transaction['sender_address']==json_tx['sender_address']):
+						if(json_transaction['sender_address']==json_tx['sender_address']):
 							return False
-					self.transactions.append(verified_transaction)
+					## append tx to local txs pool.
+					self.transactions.append(json_transaction)
 					return True
 		else:
 			return False
@@ -849,28 +866,10 @@ class Validator(object):
 			@ json_tran: transaction json message
 			@ verify_result: return True or False
 		'''
-		verify_result = False
-
-		# ====================== rebuild transaction ==========================
-		dict_transaction = Transaction.get_dict(json_tran['sender_address'], 
-												json_tran['recipient_address'],
-												json_tran['time_stamp'],
-												json_tran['value'])
-
-		sign_data = TypesUtil.hex_to_string(json_tran['signature'])
-		#print(dict_transaction)
-		#print(sign_data)
-
-		# get node data from self.peer_nodes buffer
-		sender_node=self.get_node(json_tran['sender_address'])
 
 		# ====================== verify transaction ==========================
-		if(sender_node!={}):
-			sender_pk= sender_node['public_key']
-			#verify_data = Transaction.verify(sender_pk, sign_data, dict_transaction)
-			verify_result = self.valid_transaction(dict_transaction, sender_pk, sign_data)
-		else:
-			verify_result = False	
+		verify_result = self.valid_transaction(json_tran)
+	
 		return verify_result
 
 	def accept_block(self, json_block):
