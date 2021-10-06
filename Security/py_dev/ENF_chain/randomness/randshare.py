@@ -19,7 +19,7 @@ from utils.utilities import FileUtil, TypesUtil, DatetimeUtil
 from utils.configuration import *
 from utils.service_api import SrvAPI
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # Define random share operation type
 class RandOP(Enum):
@@ -27,94 +27,6 @@ class RandOP(Enum):
     RandDistribute = 1
     RandVote = 2
     RandRecovered = 3
-
-class RundShare_Daemon(object):
-	def __init__(self):
-		# Instantiate the Wallet
-		self.wallet = Wallet()
-		self.wallet.load_accounts()
-		# Instantiate the PeerNodes
-		self.peer_nodes = PeerNodes()
-		self.peer_nodes.load_ByAddress()
-		
-		self.randomshare_cmd = 0
-		# define a thread to handle received messages by executing process_msg()
-		self.randomshare_thread = threading.Thread(target=self.process_randomshare, args=())
-		# Set as daemon thread
-		self.randomshare_thread.daemon = True
-		# Start the daemonized method execution
-		self.randomshare_thread.start() 
-
-	def set_cmd(self, randshare_cmd):
-		self.randomshare_cmd = randshare_cmd
-
-	def process_randomshare(self):
-		'''
-		daemon thread function: execute random share protocol
-		'''
-		# this variable is used as waiting time when there is no message for process.
-		idle_time=0.0
-		while(True):
-			# ========= idle time incremental strategy, the maximum is 1 seconds ========
-			if( self.randomshare_cmd==0 ):
-				idle_time+=0.1
-				if(idle_time>1.0):
-					idle_time=1.0
-				time.sleep(idle_time)
-				continue
-			
-			# ========================== Run ramdon share protocol ==========================
-			if( self.randomshare_cmd==1 ):
-				logger.info("Cache fetched randshare...")
-
-				start_time=time.time()
-				# randshare_instance = RandShare()
-				# 1) read cached host_shares
-				host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
-				if( host_shares == None):
-					host_shares = {}
-				# get host address
-				host_node=self.wallet.list_address()[0]
-				# 2) for each peer node to fetch host share information
-				for peer_node in list(self.peer_nodes.get_nodelist()):
-					json_peer = TypesUtil.string_to_json(peer_node)
-					# fetch_share=fetch_randshare(target_address)
-					json_node={}
-					json_node['address'] = host_node
-					# print(json_node)
-					fetch_share=SrvAPI.POST('http://'+json_peer['node_url']+'/test/randshare/fetch', json_node)
-
-					for (node_name, share_data) in fetch_share.items():
-						host_shares[node_name]=share_data
-				# 3) update host shares 
-				RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
-				exec_time=time.time()-start_time
-				FileUtil.save_testlog('test_results', 'exec_cachefetched_shares.log', format(exec_time*1000, '.3f'))
-
-			if( self.randomshare_cmd==2 ):
-				logger.info("Cache vote randshare...")
-
-				start_time=time.time()
-				# randshare_instance = RandShare()
-				# 1) read cached vote shares
-				vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
-				if( vote_shares == None):
-					vote_shares = {}
-				# 2) for each peer node to fetch vote information
-				for peer_node in list(self.peer_nodes.get_nodelist()):
-					json_node = TypesUtil.string_to_json(peer_node)
-					# cache_vote_shares(json_node['node_url'])
-					# host_vote_shares=fetchvote_randshare(json_node['node_url'])
-					host_vote_shares = SrvAPI.GET('http://'+json_node['node_url']+'/test/randshare/fetchvote')
-					for (node_name, share_data) in host_vote_shares.items():
-						vote_shares[node_name]=share_data
-				# 3) update vote shares 
-				RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
-				exec_time=time.time()-start_time
-				FileUtil.save_testlog('test_results', 'exec_cachevote_shares.log', format(exec_time*1000, '.3f'))
-
-			self.randomshare_cmd=0 
-
 
 
 class RandShare(object):
@@ -149,6 +61,90 @@ class RandShare(object):
 		nodes = self.peer_nodes.get_nodelist()
 		self.n = len(nodes)
 		self.t = math.ceil(2*self.n/3)
+
+		# ------------------------ Instantiate randomshare daemon ----------------------------------
+		self.randomshare_cmd = 0
+		# define a thread to handle received messages by executing process_msg()
+		self.randomshare_thread = threading.Thread(target=self.process_randomshare, args=())
+		# Set as daemon thread
+		self.randomshare_thread.daemon = True
+		# Start the daemonized method execution
+		self.randomshare_thread.start() 
+
+	def set_cmd(self, randshare_cmd):
+		self.randomshare_cmd = randshare_cmd
+
+	def process_randomshare(self):
+		'''
+		daemon thread function: execute random share protocol
+		'''
+		# this variable is used as waiting time when there is no message for process.
+		idle_time=0.0
+		while(True):
+			# ========= idle time incremental strategy, the maximum is 1 seconds ========
+			if( self.randomshare_cmd==0 ):
+				idle_time+=0.1
+				if(idle_time>1.0):
+					idle_time=1.0
+				## refresh <n, t> given peer_nodes
+				self.peer_nodes.load_ByAddress()
+				self.n = len(self.peer_nodes.get_nodelist())
+				self.t = math.ceil(2*self.n/3)
+				# log.info("Update randshare: <n-{}, t-{}>".format(self.n, self.t))
+				time.sleep(idle_time)
+				continue
+			
+			# ========================== Run ramdon share protocol ==========================
+			if( self.randomshare_cmd==1 ):
+				log.info("Cache fetched randshare...")
+
+				start_time=time.time()
+				# randshare_instance = RandShare()
+				# 1) read cached host_shares
+				host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
+				if( host_shares == None):
+					host_shares = {}
+				# get host address
+				host_node=self.wallet.list_address()[0]
+				# 2) for each peer node to fetch host share information
+				for peer_node in list(self.peer_nodes.get_nodelist()):
+					json_peer = TypesUtil.string_to_json(peer_node)
+					# fetch_share=fetch_randshare(target_address)
+					json_node={}
+					json_node['address'] = host_node
+					# print(json_node)
+					fetch_share=SrvAPI.POST('http://'+json_peer['node_url']+'/test/randshare/fetch', json_node)
+
+					for (node_name, share_data) in fetch_share.items():
+						host_shares[node_name]=share_data
+				# 3) update host shares 
+				RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
+				exec_time=time.time()-start_time
+				FileUtil.save_testlog('test_results', 'exec_cachefetched_shares.log', format(exec_time*1000, '.3f'))
+
+			if( self.randomshare_cmd==2 ):
+				log.info("Cache vote randshare...")
+
+				start_time=time.time()
+				# randshare_instance = RandShare()
+				# 1) read cached vote shares
+				vote_shares=RandShare.load_sharesInfo(RandOP.RandVote)
+				if( vote_shares == None):
+					vote_shares = {}
+				# 2) for each peer node to fetch vote information
+				for peer_node in list(self.peer_nodes.get_nodelist()):
+					json_node = TypesUtil.string_to_json(peer_node)
+					# cache_vote_shares(json_node['node_url'])
+					# host_vote_shares=fetchvote_randshare(json_node['node_url'])
+					host_vote_shares = SrvAPI.GET('http://'+json_node['node_url']+'/test/randshare/fetchvote')
+					for (node_name, share_data) in host_vote_shares.items():
+						vote_shares[node_name]=share_data
+				# 3) update vote shares 
+				RandShare.save_sharesInfo(vote_shares, RandOP.RandVote)
+				exec_time=time.time()-start_time
+				FileUtil.save_testlog('test_results', 'exec_cachevote_shares.log', format(exec_time*1000, '.3f'))
+
+			self.randomshare_cmd=0 
 
 	def print_config(self):
 		#list account address

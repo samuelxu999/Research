@@ -27,7 +27,7 @@ from consensus.block import Block
 from consensus.validator import Validator
 from consensus.consensus import *
 from utils.service_api import SrvAPI
-from randomness.randshare import RandShare, RandOP, RundShare_Daemon
+from randomness.randshare import RandShare, RandOP
 
 logger = logging.getLogger(__name__)
 
@@ -403,7 +403,7 @@ def fetch_randshare():
 # request for share from peers and cache to local
 @app.route('/test/randshare/cachefetched', methods=['GET'])
 def cachefetched_randshare():
-	randshare_daemon.set_cmd(1)
+	myrandshare.set_cmd(1)
 	return jsonify({'cachefetched_randshare': 'Succeed!'}), 200
 
 # verify share and proof 
@@ -429,7 +429,7 @@ def fetch_vote_randshare():
 # retrive vote shares from peers and locally cache for verify vote 
 @app.route('/test/randshare/cachevote', methods=['GET'])
 def cache_vote_randshare():
-	randshare_daemon.set_cmd(2)
+	myrandshare.set_cmd(2)
 	return jsonify({'vote_randshare': 'Succeed!'}), 200
 
 def disp_randomshare(json_shares):
@@ -561,6 +561,8 @@ if __name__ == '__main__':
 		kademlia_logger.setLevel(logging.DEBUG)
 		p2p_logger = logging.getLogger("p2p")
 		p2p_logger.setLevel(logging.DEBUG)
+		# randshare_logger = logging.getLogger("randshare")
+		# randshare_logger.setLevel(logging.DEBUG)
 
 	if(args.test_func==1):
 		new_account()
@@ -593,7 +595,6 @@ if __name__ == '__main__':
 		# json_sharesInfo=RandShare.load_sharesInfo()
 		# # display random shares
 		# disp_randomshare(json_sharesInfo)
-		randshare_daemon = RundShare_Daemon()
 
 		## ------------------------ Instantiate p2p server as thread ------------------------------
 		base_account = myblockchain.wallet.accounts[0]
