@@ -237,11 +237,13 @@ class RandShare(object):
 		Verify received random shares from other nodes.
 		Mark correct ones as 1 and save result into local.
 		'''
-		# 1) read cached randshare 
+		## 1) read cached randshare 
 		host_shares=RandShare.load_sharesInfo(RandOP.RandDistribute)
 		if( host_shares == None):
 			host_shares = {}
-		# 2) for each peer node to verify shares
+		## 2) for each peer node to verify shares
+		## a) save self.p for restore later.
+		backup_p = self.p
 		for peer_node in list(self.peer_nodes.get_nodelist()):
 			json_node = TypesUtil.string_to_json(peer_node)
 			# get public numbers given peer's pk
@@ -262,7 +264,9 @@ class RandShare(object):
 			# print('verify S', share_index, ':', verify_S==share_proofs[1])
 			if(verify_S==share_proofs[1]):
 				host_shares[host_address]['status']=1
-				# update host shares 
+		## b) restore self.p
+		self.p = backup_p
+		## 3) update host shares 
 		RandShare.save_sharesInfo(host_shares, RandOP.RandDistribute)
 
 	def recovered_randomshare(self):
