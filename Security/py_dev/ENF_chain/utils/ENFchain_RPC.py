@@ -419,7 +419,7 @@ class ENFchain_RPC(object):
 		shares = recovered_shares[host_address]
 		# print(shares)
 		# instantiate RandShare to verify share proof.
-		myrandshare = RandShare()
+		myrandshare = RandShare(daemon=False)
 		myrandshare.p = public_numbers.n
 
 		secret=myrandshare.recover_secret(shares)
@@ -434,7 +434,7 @@ class ENFchain_RPC(object):
 		public_numbers = RandShare.get_public_numbers(json_nodes['public_key'])
 
 		# instantiate RandShare to verify share proof.
-		myrandshare = RandShare()
+		myrandshare = RandShare(daemon=False)
 		myrandshare.p = public_numbers.n
 
 		# calculate new random number
