@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 from utils.utilities import FileUtil, TypesUtil, PlotUtil
 from consensus.ENF_consensus import ENFUtil
+from consensus.ENF_analyze import ENF_analyzer
 from utils.Swarm_RPC import Swarm_RPC
 
 logger = logging.getLogger(__name__)
@@ -195,6 +196,54 @@ def show_ENF(args):
 	# print("ENF score is: {}".format(ls_ENF_score))
 	print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
 
+def deepfake_detect(args):
+	myAnalyzer = ENF_analyzer()
+	myAnalyzer.print_chaininfo()
+	myAnalyzer.print_voteinfo()
+
+	## choose check point
+	if(args.op_status==1):
+		block_hash = myAnalyzer.chain_info['highest_justified_checkpoint']['hash']
+	elif(args.op_status==2):
+		block_hash = myAnalyzer.chain_info['highest_finalized_checkpoint']['hash']
+	else:
+		block_hash = myAnalyzer.chain_info['processed_head']['hash']
+	
+	json_block = myAnalyzer.getBlock(block_hash)
+
+	print('Verify block:{}'.format(block_hash))
+
+	ENF_id = 0
+	ENF_vectors = []
+	for tx in json_block['transactions']:
+		json_value = TypesUtil.string_to_json(tx['value'])
+
+		## get a swarm service node address
+		swarm_node = Swarm_RPC.get_service_address()
+
+		## query raw ENF proof
+		enf_proof = Swarm_RPC.download_data(swarm_node, json_value['swarm_hash'])
+		#print(enf_proof)
+
+		if(enf_proof['status'] == 200):
+			enf_data = TypesUtil.string_to_json(enf_proof['data'])
+			ENF_vectors.append([ENF_id, enf_data['enf']])
+			ENF_id+=1
+
+	## ******************* calculate ENF score for each node *****************
+	ls_ENF_score = []
+	for ENF_id in range(len(ENF_vectors)):
+		sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_vectors, ENF_id)
+		ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
+		ls_ENF_score.append([ENF_id, ENF_score])
+
+	sorted_ENF_score = sorted(ls_ENF_score, key=lambda x:x[1])
+
+	print("Sorted ENF score is: {}".format(sorted_ENF_score))
+
+	#print('Ground truth ENF is: {}'.format(json_block['transactions'][sorted_ENF_score[0][0]]))
+
+
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run test.")
 
@@ -203,6 +252,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 													1-ENF_Process(), \
 													2-swarm_test(), \
 													3-show_ENF()")
+
+	parser.add_argument("--op_status", type=int, default=0, help="test case type.")
 
 	parser.add_argument("--sample_node", type=int, default=10, help="Sample node size n for test.")
 
@@ -224,6 +275,9 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	return args
 
 if __name__ == '__main__':
+	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+	LOG_LEVEL = logging.INFO
+	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
 	args = define_and_get_arguments()
 
@@ -233,5 +287,7 @@ if __name__ == '__main__':
 		swarm_test(args)
 	elif(args.test_func==3):
 		show_ENF(args)
+	elif(args.test_func==4):
+		deepfake_detect(args)
 	else:
 		load_ENF(args)
