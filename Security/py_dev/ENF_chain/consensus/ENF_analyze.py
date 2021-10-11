@@ -11,10 +11,13 @@ Created on Oct.10, 2021
 
 import os
 import logging
+import numpy as np
 from consensus.block import Block
+from consensus.ENF_consensus import ENFUtil
 from utils.db_adapter import DataManager
 from utils.configuration import *
 from utils.utilities import FileUtil, TypesUtil
+from utils.Swarm_RPC import Swarm_RPC
 
 logger = logging.getLogger(__name__)
 
@@ -85,11 +88,88 @@ class ENF_analyzer(object):
 		'''
 		get block data given bloch hash.
 		Args:			
-			@block_hash: hash value refered to a block			
-			@return: block data (json)
+			@block_hash: 	hash value refered to a block			
+			@return: 		block data (json)
 		'''
 		ls_block = self.chain_db.select_block(CHAIN_TABLE, block_hash)
 		if( ls_block==[] ):
 			return {}
 		else:
 			return TypesUtil.string_to_json(ls_block[0][2])
+
+	def getENF_vectors(self, json_block):
+		'''
+		get ENF proof data given bloch data (json).
+		Args:			
+			@json_block: 	json fromat of a block	data		
+			@return: 		ENF_vectors (list)
+		'''
+		ENF_id = 0
+		ENF_vectors = []
+
+		## for each tx to get enf_proof
+		for tx in json_block['transactions']:
+			json_value = TypesUtil.string_to_json(tx['value'])
+
+			## get a swarm service node address
+			swarm_node = Swarm_RPC.get_service_address()
+
+			## query raw ENF proof from network
+			enf_proof = Swarm_RPC.download_data(swarm_node, json_value['swarm_hash'])
+
+			## add valid enf_proof data to ENF_vectors
+			if(enf_proof['status'] == 200):
+				enf_data = TypesUtil.string_to_json(enf_proof['data'])
+				ENF_vectors.append([ENF_id, enf_data['enf'], json_value['sender_address']])
+				ENF_id+=1
+
+		return ENF_vectors
+
+	def getENF_scores(self, ENF_vectors, Is_sorted=False):
+		'''
+		calculate ENF score list given ENF_vectors.
+		Args:			
+			@ENF_vectors: 	list fromat of ENF_vectors		
+			@return: 		ENF_scores (list)
+		'''
+
+		ls_ENF_scores = []
+		## calculate ENF score for each node 
+		for ENF_id in range(len(ENF_vectors)):
+			sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_vectors, ENF_id)
+			ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
+			ls_ENF_scores.append([ENF_id, ENF_score, ENF_vectors[ENF_id][2]])
+
+		## get sorted ENF scores list
+		sorted_ENF_scores = sorted(ls_ENF_scores, key=lambda x:x[1])
+
+		if(Is_sorted):
+			return sorted_ENF_scores
+		else:
+			return ls_ENF_scores
+
+	def getGroundtruthENF(self, ENF_vectors, ls_ENF_scores):
+		'''
+		calculate the ground truth ENF given ls_ENF_scores.
+		Args:
+			@ENF_vectors:	list fromat of ENF_vectors 			
+			@ls_ENF_scores: 	list fromat of ENF_scores		
+			@return: 		Ground truth ENF (list)
+		'''
+		
+		## get sorted ENF scores list 
+		sorted_ENF_scores = sorted(ls_ENF_scores, key=lambda x:x[1])
+
+		## get ground truth ENF vector list
+		G_ENF_vector = ENF_vectors[sorted_ENF_scores[0][0]]
+
+		## convert list to float array
+		np_ENF_vector=TypesUtil.list2np(G_ENF_vector[1])
+
+		## calculate ground truth ENF value 
+		G_ENF = np.average(np_ENF_vector)
+
+		## return results with index and sender information.
+		return [G_ENF_vector[0], G_ENF, G_ENF_vector[2]]
+		
+

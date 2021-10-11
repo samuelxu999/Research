@@ -197,7 +197,10 @@ def show_ENF(args):
 	print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
 
 def deepfake_detect(args):
+	## new a ENF_analyzer
 	myAnalyzer = ENF_analyzer()
+
+	## list chain information
 	myAnalyzer.print_chaininfo()
 	myAnalyzer.print_voteinfo()
 
@@ -209,39 +212,22 @@ def deepfake_detect(args):
 	else:
 		block_hash = myAnalyzer.chain_info['processed_head']['hash']
 	
+	## 1) get a block
 	json_block = myAnalyzer.getBlock(block_hash)
 
 	print('Verify block:{}'.format(block_hash))
 
-	ENF_id = 0
-	ENF_vectors = []
-	for tx in json_block['transactions']:
-		json_value = TypesUtil.string_to_json(tx['value'])
+	## 2) get ENF vectors from a block
+	ENF_vectors = myAnalyzer.getENF_vectors(json_block)
 
-		## get a swarm service node address
-		swarm_node = Swarm_RPC.get_service_address()
+	## 3) get ENF scores list
+	ls_ENF_score = myAnalyzer.getENF_scores(ENF_vectors, True)
 
-		## query raw ENF proof
-		enf_proof = Swarm_RPC.download_data(swarm_node, json_value['swarm_hash'])
-		#print(enf_proof)
+	print("Sorted ENF score is: {}".format(ls_ENF_score))
 
-		if(enf_proof['status'] == 200):
-			enf_data = TypesUtil.string_to_json(enf_proof['data'])
-			ENF_vectors.append([ENF_id, enf_data['enf']])
-			ENF_id+=1
-
-	## ******************* calculate ENF score for each node *****************
-	ls_ENF_score = []
-	for ENF_id in range(len(ENF_vectors)):
-		sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_vectors, ENF_id)
-		ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
-		ls_ENF_score.append([ENF_id, ENF_score])
-
-	sorted_ENF_score = sorted(ls_ENF_score, key=lambda x:x[1])
-
-	print("Sorted ENF score is: {}".format(sorted_ENF_score))
-
-	#print('Ground truth ENF is: {}'.format(json_block['transactions'][sorted_ENF_score[0][0]]))
+	## 4) get ground truth ENF for deepfake detection.
+	Groundtruth_ENF = myAnalyzer.getGroundtruthENF(ENF_vectors, ls_ENF_score)
+	print('Ground truth ENF is: {}'.format(Groundtruth_ENF))
 
 
 def define_and_get_arguments(args=sys.argv[1:]):
@@ -251,7 +237,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 						help="Execute test function: 0-function test, \
 													1-ENF_Process(), \
 													2-swarm_test(), \
-													3-show_ENF()")
+													3-show_ENF(), \
+													4-deepfake_detect()")
 
 	parser.add_argument("--op_status", type=int, default=0, help="test case type.")
 
