@@ -232,72 +232,28 @@ def deepfake_detect(args):
 	print('Ground truth ENF is: {}'.format(Groundtruth_ENF))
 
 def analyze_ENF(args):
+	## set ENF recording files
 	ENF_file_original = "./data/Original.csv"
 	ENF_file_manipulated = "./data/Manipulated.csv"
 
-	attack_point = [14400, 25200, 36000, 50400, 64800]
+	## set parameters
+	head_seek = args.head_seek
+	BFT_rate = args.bft_rate
 
-	# sample_head = attack_point[0]
-	sample_head = args.sample_head
+	## 1) get ENF vectors from ENF recording files
+	ENF_vectors = ENF_analyzer.loadENF_vectors(ENF_file_original, ENF_file_manipulated, 
+								args.sample_head, args.sample_length, head_seek,
+								args.sample_node, BFT_rate, args.random_sample, True)
 
-	sample_length = args.sample_length
-	head_skip = 5
+	## 2) get sorted ENF scores
+	ls_ENF_scores_sorted = ENF_analyzer.sorted_ENF_scores(ENF_vectors, True)
 
-	## get honest and BFT nodes
-	BFT_rate = 0.25
-	total_node = args.sample_node
 
-	bft_node = int(total_node*BFT_rate)
-	honest_node = total_node - bft_node
+	# ## plot ENF data:  honest .vs malicious
+	# fig_file = "ENF_fig"
+	# ls_legend = ["honest-1", "honest-2", "honest-3", "malicious"]
+	# PlotUtil.Plotline([ENF_vectors[0][1], ENF_vectors[1][1], ENF_vectors[2][1], ENF_vectors[-1][1]], legend_label=ls_legend, is_show=args.show_fig, is_savefig=args.save_fig, datafile=fig_file)
 
-	print('Honest: {}    BFT: {}'.format(honest_node, bft_node))
-
-	ENF_vectors = []
-	ENF_dataset = []
-
-	ENF_id = 0
-	honest_ENF_data = FileUtil.csv_read(ENF_file_original)
-	head_pos = sample_head
-	for ENF_id in range(honest_node):
-		## calculate head_pos for honest node
-		ls_ENF = TypesUtil.np2list( np.array(honest_ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32) )
-		ENF_vectors.append([ENF_id, ls_ENF])
-		ENF_dataset.append(ls_ENF)
-
-		## skip to next head_pos
-		if(args.random_sample):
-			head_pos = random.randint(head_pos,head_pos+head_skip)
-		else:
-			head_pos = head_pos + head_skip
-
-	bft_ENF_data = FileUtil.csv_read(ENF_file_manipulated)
-	head_pos = sample_head
-	for ENF_id in range(bft_node):
-		## calculate head_pos for bft node		
-		ls_ENF = TypesUtil.np2list( np.array(bft_ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32) )
-		ENF_vectors.append([ENF_id+honest_node, ls_ENF])
-		ENF_dataset.append(ls_ENF)
-
-		## skip to next head_pos
-		if(args.random_sample):
-			head_pos = random.randint(head_pos,head_pos+head_skip)
-		else:
-			head_pos = head_pos + head_skip
-
-	## plot ENF data:  honest .vs malicious
-	fig_file = "ENF_fig"
-	ls_legend = ["honest-1", "honest-2", "honest-3", "malicious"]
-	PlotUtil.Plotline([ENF_dataset[0], ENF_dataset[1], ENF_dataset[2], ENF_dataset[-1]], legend_label=ls_legend, is_show=args.show_fig, is_savefig=args.save_fig, datafile=fig_file)
-
-	## calculate ENF score for each node
-	ls_ENF_score = []
-	for ENF_id in range(total_node):
-		sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_vectors, ENF_id)
-		ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
-		ls_ENF_score.append([ENF_id, ENF_score])
-
-	# print("ENF score is: {}".format(ls_ENF_score))
-	print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run test.")
@@ -317,6 +273,10 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	parser.add_argument("--sample_head", type=int, default=0, help="Start point of ENF sample data for node.")
 
 	parser.add_argument("--sample_length", type=int, default=60, help="Length of ENF sample data for node.")
+
+	parser.add_argument("--head_seek", type=int, default=5, help="Head seek for head_position generation.")
+
+	parser.add_argument("--bft_rate", type=float, default=0.25, help="BFT nodes rate of the whole network.")
 
 	parser.add_argument("--random_sample", action="store_true", help="Random choose samples for ENF dataset.")
 

@@ -11,6 +11,7 @@ Created on Oct.10, 2021
 
 import os
 import logging
+import random
 import numpy as np
 from consensus.block import Block
 from consensus.ENF_consensus import ENFUtil
@@ -156,7 +157,7 @@ class ENF_analyzer(object):
 			@ls_ENF_scores: 	list fromat of ENF_scores		
 			@return: 		Ground truth ENF (list)
 		'''
-		
+
 		## get sorted ENF scores list 
 		sorted_ENF_scores = sorted(ls_ENF_scores, key=lambda x:x[1])
 
@@ -172,4 +173,102 @@ class ENF_analyzer(object):
 		## return results with index and sender information.
 		return [G_ENF_vector[0], G_ENF, G_ENF_vector[2]]
 		
+	@staticmethod
+	def loadENF_vectors(honest_file, bft_file, sample_head, 
+						sample_length, head_seek, sample_nodes, BFT_rate, random_sample, show_info=False):
+		'''
+		load ENF vectors (list) given honest and bft ENF recordings
+		Args:
+		input
+			@honest_file:		honest node ENF recording csv file 			
+			@bft_file: 			bft node ENF recording csv file		
+			@sample_head: 		head position of the sample data section 
+			@sample_length: 	data length of a ENF vector. 
+			@head_seek:			head seek that calculate head_pos for an ENF vector
+			@sample_nodes:		Total number of sample nodes.
+			@BFT_rate:			BFT node rate (%) of the whole committee.
+			@random_sample:		True: use random head_position of an ENF vector.
+		output
+			@ENF_vectors:		return ENF vectors (list)
+		'''
+		## load ENF data
+		honest_ENF_data = FileUtil.csv_read(honest_file)
+		bft_ENF_data = FileUtil.csv_read(bft_file)	
 
+		# get parameters
+		ENF_vectors_head = sample_head
+		ENF_length = sample_length
+		ENF_head_seek = head_seek
+
+		## get honest and BFT nodes
+		total_node = sample_nodes
+
+		bft_node = int(total_node*BFT_rate)
+		honest_node = total_node - bft_node
+
+		if(show_info):
+			logger.info('Honest: {}    BFT: {}'.format(honest_node, bft_node))
+
+		## define ENF_vectors to save selected ENF samples
+		ENF_vectors = []
+
+		## define ENF_id to index each node
+		ENF_id = 0	
+
+		## set head_pos as head of ENF_vectors.
+		head_pos = ENF_vectors_head
+		for ENF_id in range(honest_node):
+			## 1) generate an ENF vector given head_pos and ENF_length
+			ls_ENF = TypesUtil.np2list( np.array(honest_ENF_data[head_pos:(head_pos+ENF_length), 1], dtype=np.float32) )
+			
+			## 2) assign ls_ENF to ENF_id and append to ENF_vectors
+			ENF_vectors.append([ENF_id, ls_ENF])
+
+			## 3) calculate head_pos for next honest node
+			if(random_sample):
+				head_pos = random.randint(head_pos, head_pos+ENF_head_seek)
+			else:
+				head_pos = head_pos + ENF_head_seek
+
+		## reset head_pos as head of ENF_vectors.
+		head_pos = ENF_vectors_head
+		for ENF_id in range(bft_node):
+			## 1) generate an ENF vector given head_pos and ENF_length		
+			ls_ENF = TypesUtil.np2list( np.array(bft_ENF_data[head_pos:(head_pos+ENF_length), 1], dtype=np.float32) )
+			
+			## 2) assign ls_ENF to ENF_id and append to ENF_vectors
+			ENF_vectors.append([ENF_id+honest_node, ls_ENF])
+
+			## 3) calculate head_pos for next bft node
+			if(random_sample):
+				head_pos = random.randint(head_pos, head_pos+ENF_head_seek)
+			else:
+				head_pos = head_pos + ENF_head_seek
+
+		return ENF_vectors
+
+	@staticmethod
+	def sorted_ENF_scores(ENF_vectors, show_info=False):
+		'''
+		calculate ENF scores for all nodes and return sorted ENF_scores list
+		Args:
+		input
+			@ENF_vectors:			ENF vectors (list) for all nodes			
+		output
+			@ls_ENF_scores_sorted:		return sorted ENF scores (list)
+		'''
+
+		## calculate ENF score for each node
+		ls_ENF_score = []
+		for ENF_id in range(len(ENF_vectors)):
+			sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_vectors, ENF_id)
+			ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
+			ls_ENF_score.append([ENF_id, ENF_score])
+
+		ls_ENF_scores_sorted = sorted(ls_ENF_score, key=lambda x:x[1])
+
+		if(show_info):
+			logger.info("Sorted ENF score is: {}".format(ls_ENF_scores_sorted))
+
+		## return sorted ENF scores
+		return ls_ENF_scores_sorted
