@@ -401,31 +401,41 @@ class PlotUtil(object):
 			  is_savefig:	Save plot on local as *.png
 			  	datafile:	file name to save plot
 		'''
-		ls_color=['green', 'seagreen', 'darkorange', 'r', 'g', 'b', 'gray']
+		ls_color=['g', 'seagreen', 'darkorange', 'r', 'b', 'gray']
 		leg_label = []
+		## For each node to get ENF vector
 		for ENF_id in range(len(ENF_dataset)):
 			#generate x and y data
 			xdata = [];
 			ydata = [];
 			ls_dataset = ENF_dataset[ENF_id]
+			## For each value in ENF vector to asssign <x,y>
 			for i in range(0, len(ls_dataset)):
 				xdata.append(i)
-				ydata.append( float(ls_dataset[i][1]) )
+				ydata.append( float(ls_dataset[i]) )
 
-			line_list=[]
-			line_list.append(plt.plot(xdata, ydata, lw=2.0, color=ls_color[ENF_id]))
+			## plit line for ENF_id
+			plt.plot(xdata, ydata, lw=2.0, color=ls_color[ENF_id])
+
+			## add ENF_id for legend label
 			leg_label.append("ENF-{}".format(ENF_id))
 
+		## set x and y label text
 		plt.xlabel('Time slot', fontsize=font_size)
 		plt.ylabel('ENF (HZ)', fontsize=font_size) 
 		# plt.ylim(59.995, 60.005)
+
+		## plot legend given legend label 
 		if(legend_label == ''):
 			plt.legend(leg_label, loc='best', fontsize=font_size)
 		else:
 			plt.legend(legend_label, loc='best', fontsize=font_size)
 		
+		## show figure if is_show is enabled
 		if( is_show ):
 			plt.show()
+
+		## save figure if is_savefig is enabled
 		if( is_savefig ):
 			figname = os.path.splitext(datafile)[0] +'.png'
 			plt.savefig(figname)

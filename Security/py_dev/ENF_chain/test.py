@@ -175,9 +175,9 @@ def show_ENF(args):
 		ENF_data = FileUtil.csv_read(ENF_file)
 		# print("ENF date file:{}    shape: {}".format(ENF_file, ENF_data.shape))
 		if(ENF_id == nodes_size-1):
-			ls_ENF = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length)], dtype=np.float32)*5 )
+			ls_ENF = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32)*5 )
 		else:
-			ls_ENF = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length)], dtype=np.float32) )
+			ls_ENF = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32) )
 		ENF_dataset.append(ls_ENF)
 		ENF_samples.append( [ENF_id, ls_ENF] )
 		ENF_id+=1
@@ -224,11 +224,80 @@ def deepfake_detect(args):
 	ls_ENF_score = myAnalyzer.getENF_scores(ENF_vectors, True)
 
 	print("Sorted ENF score is: {}".format(ls_ENF_score))
+	#print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[2])))
+	
 
 	## 4) get ground truth ENF for deepfake detection.
 	Groundtruth_ENF = myAnalyzer.getGroundtruthENF(ENF_vectors, ls_ENF_score)
 	print('Ground truth ENF is: {}'.format(Groundtruth_ENF))
 
+def analyze_ENF(args):
+	ENF_file_original = "./data/Original.csv"
+	ENF_file_manipulated = "./data/Manipulated.csv"
+
+	attack_point = [14400, 25200, 36000, 50400, 64800]
+
+	# sample_head = attack_point[0]
+	sample_head = args.sample_head
+
+	sample_length = args.sample_length
+	head_skip = 5
+
+	## get honest and BFT nodes
+	BFT_rate = 0.25
+	total_node = args.sample_node
+
+	bft_node = int(total_node*BFT_rate)
+	honest_node = total_node - bft_node
+
+	print('Honest: {}    BFT: {}'.format(honest_node, bft_node))
+
+	ENF_vectors = []
+	ENF_dataset = []
+
+	ENF_id = 0
+	honest_ENF_data = FileUtil.csv_read(ENF_file_original)
+	head_pos = sample_head
+	for ENF_id in range(honest_node):
+		## calculate head_pos for honest node
+		ls_ENF = TypesUtil.np2list( np.array(honest_ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32) )
+		ENF_vectors.append([ENF_id, ls_ENF])
+		ENF_dataset.append(ls_ENF)
+
+		## skip to next head_pos
+		if(args.random_sample):
+			head_pos = random.randint(head_pos,head_pos+head_skip)
+		else:
+			head_pos = head_pos + head_skip
+
+	bft_ENF_data = FileUtil.csv_read(ENF_file_manipulated)
+	head_pos = sample_head
+	for ENF_id in range(bft_node):
+		## calculate head_pos for bft node		
+		ls_ENF = TypesUtil.np2list( np.array(bft_ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32) )
+		ENF_vectors.append([ENF_id+honest_node, ls_ENF])
+		ENF_dataset.append(ls_ENF)
+
+		## skip to next head_pos
+		if(args.random_sample):
+			head_pos = random.randint(head_pos,head_pos+head_skip)
+		else:
+			head_pos = head_pos + head_skip
+
+	## plot ENF data:  honest .vs malicious
+	fig_file = "ENF_fig"
+	ls_legend = ["honest-1", "honest-2", "honest-3", "malicious"]
+	PlotUtil.Plotline([ENF_dataset[0], ENF_dataset[1], ENF_dataset[2], ENF_dataset[-1]], legend_label=ls_legend, is_show=args.show_fig, is_savefig=args.save_fig, datafile=fig_file)
+
+	## calculate ENF score for each node
+	ls_ENF_score = []
+	for ENF_id in range(total_node):
+		sorted_ENF_sqr_dist=ENFUtil.sort_ENF_sqr_dist(ENF_vectors, ENF_id)
+		ENF_score = ENFUtil.ENF_score(sorted_ENF_sqr_dist)
+		ls_ENF_score.append([ENF_id, ENF_score])
+
+	# print("ENF score is: {}".format(ls_ENF_score))
+	print("Sorted ENF score is: {}".format(sorted(ls_ENF_score, key=lambda x:x[1])))
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run test.")
@@ -238,7 +307,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 													1-ENF_Process(), \
 													2-swarm_test(), \
 													3-show_ENF(), \
-													4-deepfake_detect()")
+													4-deepfake_detect(), \
+													5-analyze_ENF()")
 
 	parser.add_argument("--op_status", type=int, default=0, help="test case type.")
 
@@ -276,5 +346,7 @@ if __name__ == '__main__':
 		show_ENF(args)
 	elif(args.test_func==4):
 		deepfake_detect(args)
+	elif(args.test_func==5):
+		analyze_ENF(args)
 	else:
 		load_ENF(args)
