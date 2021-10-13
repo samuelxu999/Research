@@ -43,7 +43,7 @@ class ENFUtil(object):
 	@staticmethod
 	def sort_ENF_sqr_dist(ENF_samples, benchmark_node):
 		'''
-		Function: Calculate squire distance of two ENF singal
+		Function: Calculate sorted ENF squire distance of neighboring nodes. 
 		@arguments: 
 		(out) sorted_sqr_dist:   	return sorted ENF_sqr_dist of neighboring nodes
 		(in) ENF_samples:   		ENF samples of neighboring nodes
