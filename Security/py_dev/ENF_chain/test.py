@@ -237,17 +237,32 @@ def analyze_ENF(args):
 	ENF_file_manipulated = "./data/Manipulated.csv"
 
 	## set parameters
+	sample_head = args.sample_head
+	sample_length = args.sample_length
 	head_seek = args.head_seek
+	sample_node = args.sample_node
 	BFT_rate = args.bft_rate
+	random_sample = args.random_sample
+	show_info = args.show_info
+	test_round = 60
 
-	## 1) get ENF vectors from ENF recording files
-	ENF_vectors = ENF_analyzer.loadENF_vectors(ENF_file_original, ENF_file_manipulated, 
-								args.sample_head, args.sample_length, head_seek,
-								args.sample_node, BFT_rate, args.random_sample, True)
+	enf_scores = []
+	for test_run in range(test_round):
+		logger.info("Test run:{}    sample_head:{}".format( test_run+1, sample_head))
+		## 1) get ENF vectors from ENF recording files
+		ENF_vectors = ENF_analyzer.loadENF_vectors(ENF_file_original, ENF_file_manipulated, 
+									sample_head, sample_length, head_seek,
+									sample_node, BFT_rate, random_sample, show_info)
 
-	## 2) get sorted ENF scores
-	ls_ENF_scores_sorted = ENF_analyzer.sorted_ENF_scores(ENF_vectors, True)
+		## 2) get sorted ENF scores
+		ls_ENF_scores_sorted = ENF_analyzer.sorted_ENF_scores(ENF_vectors, show_info)
 
+		## get next sample_head
+		sample_head = sample_head + sample_length
+
+		enf_scores.append(sorted(ls_ENF_scores_sorted, key=lambda x:x[0]))
+
+	FileUtil.List_save('./test_results/enf_scores_{}_{}.log'.format(sample_node,BFT_rate), enf_scores)
 
 	# ## plot ENF data:  honest .vs malicious
 	# fig_file = "ENF_fig"
