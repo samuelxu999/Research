@@ -77,28 +77,28 @@
 		"ip": "128.226.88.119:8080",
 		"user": "samuel"
 	},
-	"Desk_pi_1": 
+	"Desk_pi_node_1": 
 	{
 		"address": "45961f1e9ac53a22afdc48e434e542077481a9c4",
-		"ip": "128.226.79.127:8080",
+		"ip": "128.226.79.68:8080",
 		"user": "pi"
 	},
-	"Desk_pi_2": 
+	"Desk_pi_node_2": 
 	{
 		"address": "57d1d44a711f1bd5761a78088510dbf9d84502c5",
-		"ip": "128.226.78.89:8080",
+		"ip": "128.226.78.244:8080",
 		"user": "pi"
 	},
-	"Desk_pi_plus_1": 
+	"Desk_pi_plus_Sam1": 
 	{
 		"address": "0372804d1fc92a000d5ac68623bf32d8255014a6",
 		"ip": "128.226.79.249:8080",
 		"user": "pi"
 	},
-	"Desk_pi_plus_2": 
+	"Desk_pi_plus_Sam2": 
 	{
 		"address": "79624546b854a4dcbde53260ab82b06b890337ae",
-		"ip": "128.226.88.144:8080",
+		"ip": "128.226.88.239:8080",
 		"user": "pi"
 	},
 	"R1_pi4_1": 
@@ -147,6 +147,30 @@
 	{
 		"address": "a87299f9c9e8aef6fdf5813148248a74a364944c",
 		"ip": "128.226.77.111:8080",
+		"user": "pi"
+	},
+	"R3_pi4_1": 
+	{
+		"address": "da1b1f5ae1892f630b9757a75dbee367e5b88eb6",
+		"ip": "128.226.79.13:8080",
+		"user": "pi"
+	},
+	"R3_pi4_2": 
+	{
+		"address": "82fbd483fb0cb5f6bbaa99bacaf402ac37c3eb51",
+		"ip": "128.226.79.225:8080",
+		"user": "pi"
+	},
+	"R3_pi4_3": 
+	{
+		"address": "b246e3d220110fb90de45bae13819bf2f8ef26d3",
+		"ip": "128.226.79.9:8080",
+		"user": "pi"
+	},
+	"R3_pi4_4": 
+	{
+		"address": "69eaf80f1d0300ea65a210d57baa7db35d6561f3",
+		"ip": "128.226.79.168:8080",
 		"user": "pi"
 	}
 }
