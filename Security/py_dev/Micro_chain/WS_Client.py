@@ -102,11 +102,10 @@ def Epoch_validator(target_address, op_status, tx_size, tx_count, phase_delay=BO
 
 	## S1: send test transactions
 	start_time=time.time()
-	for tps_round in range(tx_count):
-		if(op_status==1):
-				Microchain_client.send_transaction(target_address, tx_size, True)
-		else:
-			Microchain_client.launch_txs(tx_size)
+	if(op_status==1):
+			Microchain_client.send_transaction(target_address, tx_size, True)
+	else:
+		Microchain_client.launch_txs(tx_size, tx_count)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
@@ -461,11 +460,9 @@ if __name__ == "__main__":
 
 	elif(test_func == 2):
 		if(op_status == 1):
-			for tps_round in range(tx_count):
-				Microchain_client.send_transaction(target_address, tx_size, True)
+			Microchain_client.send_transaction(target_address, tx_size, True)
 		elif(op_status == 10):
-			for tps_round in range(tx_count):
-				Microchain_client.launch_txs(tx_size)
+			Microchain_client.launch_txs(tx_size, tx_count)
 		elif(op_status == 2):
 			Microchain_client.start_mining(target_address, True)
 		elif(op_status == 3):
