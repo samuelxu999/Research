@@ -119,18 +119,15 @@ class Microchain_RPC(object):
 				info_list.append(json_response)
 		return info_list
 
-	def launch_txs(self, tx_size, tx_count):
+	def launch_txs(self, tx_size):
 		## Instantiate mypeer_nodes using deepcopy of self.peer_nodes
 		mypeer_nodes = copy.deepcopy(self.peer_nodes)
-
-		## assign the main account address to a sender
-		sender = self.wallet.accounts[0]
 
 		# Create thread pool
 		threads_pool = []
 
-		## 1) for each p_thread to send tx 
-		for pid in range(tx_count):
+		## 1) for each account to send tx 
+		for sender in self.wallet_net.accounts:
 			## Create new threads for tx
 			p_thread = TxsThread( [sender, mypeer_nodes, tx_size] )
 
@@ -144,8 +141,8 @@ class Microchain_RPC(object):
 		for p_thread in threads_pool:
 			p_thread.join()
 
-		p_count = len(threads_pool)
-		logger.info('launch transactions: tx size {}    total count: {}'.format(tx_size, p_count))
+		tx_count = len(threads_pool)
+		logger.info('launch transactions: tx size {}    total count: {}'.format(tx_size, tx_count))
 
 	def send_transaction(self, target_address, tx_size=1, isBroadcast=False):
 		##----------------- build test transaction --------------------
