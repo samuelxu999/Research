@@ -67,7 +67,7 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 	json_account = mywallet.get_account(target_node['node_address'])
 	#print(json_account)
 
-	# ---------------- add and remove peer node --------------------
+	## ---------------- add and remove peer node --------------------
 	json_node = {}
 	if(json_account!=None):
 		json_node['address'] = json_account['address']
@@ -85,7 +85,7 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 		else:
 			Microchain_client.remove_node(list_address, json_node, True)
 
-	# display peering nodes
+	## display peering nodes
 	json_response=Microchain_client.get_nodes(target_address)
 	nodes = json_response['nodes']
 	logger.info('Peer nodes:')
@@ -93,27 +93,26 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 		logger.info(node)
 
 # ====================================== validator test ==================================
-def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME):
+def Epoch_validator(target_address, op_status, tx_size, tx_count, phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
 	'''
-	# Define ls_time_exec to save executing time to log
+	## Define ls_time_exec to save executing time to log
 	ls_time_exec=[]
 
-	#target_address = "128.226.77.51:8081"
-
-	# S1: send test transactions
+	## S1: send test transactions
 	start_time=time.time()
-	if(op_status==1):
-		Microchain_client.send_transaction(target_address, tx_size, True)
-	else:
-		Microchain_client.launch_txs(tx_size)
+	for tps_round in range(tx_count):
+		if(op_status==1):
+				Microchain_client.send_transaction(target_address, tx_size, True)
+		else:
+			Microchain_client.launch_txs(tx_size)
 	exec_time=time.time()-start_time
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 
 	time.sleep(phase_delay)
 
-	# S2: start mining 
+	## S2: start mining 
 	start_time=time.time()   
 	Microchain_client.start_mining(target_address, True)
 	exec_time=time.time()-start_time
@@ -121,7 +120,7 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 
 	time.sleep(phase_delay)
 
-	# S3: fix head of epoch 
+	## S3: fix head of epoch 
 	start_time=time.time()   
 	Microchain_client.check_head()
 	exec_time=time.time()-start_time
@@ -129,7 +128,7 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 
 	time.sleep(phase_delay)
 
-	# S4: voting block to finalize chain
+	## S4: voting block to finalize chain
 	start_time=time.time() 
 	Microchain_client.start_voting(target_address, True)
 	exec_time=time.time()-start_time
@@ -137,9 +136,9 @@ def Epoch_validator(target_address, op_status, tx_size, phase_delay=BOUNDED_TIME
 
 	logger.info("txs: {}    mining: {}    fix_head: {}    vote: {}\n".format(ls_time_exec[0],
 										ls_time_exec[1], ls_time_exec[2], ls_time_exec[3]))
-	# Prepare log messgae
+	## Prepare log messgae
 	str_time_exec=" ".join(ls_time_exec)
-	# Save to *.log file
+	## Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time.log', str_time_exec)
 
 # ====================================== Random share test ==================================
@@ -147,14 +146,14 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
 	'''
-	# Define ls_time_exec to save executing time to log
+	## Define ls_time_exec to save executing time to log
 	ls_time_exec=[]
 
-	# get peer node information
+	## get peer node information
 	peer_nodes = PeerNodes()
 	peer_nodes.load_ByAddress()
 
-	# 1) create shares
+	## 1) create shares
 	logger.info("1) Create shares")
 	start_time=time.time()
 	# for peer_node in list(peer_nodes.get_nodelist()):
@@ -166,7 +165,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 2) fetch shares
+	## 2) fetch shares
 	logger.info("2) Fetch shares")
 	start_time=time.time()
 	# for peer_node in list(peer_nodes.get_nodelist()):
@@ -178,7 +177,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 3) verify received shares
+	## 3) verify received shares
 	logger.info("3) Verify received shares")
 	start_time=time.time()
 	Microchain_client.verify_randshare(peer_nodes.get_nodelist(), True)
@@ -187,14 +186,14 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 4) retrive vote shares from peers and verify them. need --threaded
+	## 4) retrive vote shares from peers and verify them. need --threaded
 	logger.info("4) Retrive vote shares from peers and verify them")
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
 		json_node = TypesUtil.string_to_json(peer_node)
 		# cache_vote_shares(json_node['node_url'])
 		Microchain_client.vote_randshare(json_node['node_url'])
-	# calculate voted shares 
+	## calculate voted shares 
 	verify_vote = RandShare.verify_vote_shares()
 	logging.info("verify_vote: {}".format(verify_vote))
 	exec_time=time.time()-start_time
@@ -202,7 +201,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 5) retrive shares from peers for secret recover process
+	## 5) retrive shares from peers for secret recover process
 	logger.info("5) Retrive shares from peers for secret recovery process")
 	start_time=time.time()
 	for peer_node in list(peer_nodes.get_nodelist()):
@@ -213,7 +212,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 6) recover secret of each peer
+	## 6) recover secret of each peer
 	logger.info("6) Recover shared secret of each peer at local")
 	ls_secret=[]
 	start_time=time.time()
@@ -225,7 +224,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 
 	time.sleep(phase_delay)
 
-	# 7) calculate new random
+	## 7) calculate new random
 	logger.info("7) Calculate new random")
 	start_time=time.time()
 	Microchain_client.new_random(ls_secret)
@@ -233,35 +232,21 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	ls_time_exec.append(format(exec_time*1000, '.3f'))
 	
 
-	# Prepare log messgae
+	## Prepare log messgae
 	str_time_exec=" ".join(ls_time_exec)
 	logging.info("{}\n".format(str_time_exec))
-	# Save to *.log file
+	## Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time_randshare.log', str_time_exec)
 
-# def show_netInfo():
-# 	validator_info = Microchain_client.validator_getinfo("0.0.0.0:8080", True)
-# 	for validator in validator_info:
-# 		logger.info("node_id:    {}    committee_size: {}".format(validator['node_id'],
-# 														validator['committee_size']))
-		
-# 		logger.info("processed head:               {}     height: {}".format(validator['processed_head']['hash'],
-# 			                                                           validator['processed_head']['height']))
-# 		logger.info("highest justified checkpoint: {}     height: {}".format(validator['highest_justified_checkpoint']['hash'],
-# 			                                                           validator['highest_justified_checkpoint']['height']))
-# 		logger.info("highest finalized checkpoint: {}     height: {}".format(validator['highest_finalized_checkpoint']['hash'],
-#                                                            validator['highest_finalized_checkpoint']['height']))
-# 		logger.info("vote_count: {}\n".format(validator['vote_count']))
-
 def checkpoint_netInfo(target_address, isDisplay=False):
-	# get validators information in net.
+	## get validators information in net.
 	validator_info = Microchain_client.validator_getinfo(target_address, True)
 
 	fininalized_count = {}
 	justifized_count = {}
 	processed_count = {}
 
-	# Calculate all checkpoints count
+	## Calculate all checkpoints count
 	for validator in validator_info:
 		# Calculate finalized checkpoint count
 		if validator['highest_finalized_checkpoint']['hash'] not in fininalized_count:
@@ -284,7 +269,7 @@ def checkpoint_netInfo(target_address, isDisplay=False):
 		logger.info("Justified checkpoints: {}\n".format(justifized_count))
 		logger.info("Processed checkpoints: {}\n".format(processed_count))
 
-	# search finalized checkpoint with maximum count
+	## search finalized checkpoint with maximum count
 	checkpoint = ''
 	max_acount = 0
 	for _item, _value in fininalized_count.items():
@@ -296,7 +281,7 @@ def checkpoint_netInfo(target_address, isDisplay=False):
 		logger.info("Finalized checkpoint: {}    count: {}\n".format(finalized_checkpoint[0],
 															   finalized_checkpoint[1]))
 
-	# search finalized checkpoint with maximum count
+	## search finalized checkpoint with maximum count
 	checkpoint = ''
 	max_acount = 0
 	for _item, _value in justifized_count.items():
@@ -308,7 +293,7 @@ def checkpoint_netInfo(target_address, isDisplay=False):
 		logger.info("Justified checkpoint: {}    count: {}\n".format(justified_checkpoint[0],
 															   justified_checkpoint[1]))
 
-	# search finalized checkpoint with maximum count
+	## search finalized checkpoint with maximum count
 	checkpoint = ''
 	max_acount = 0
 	for _item, _value in processed_count.items():
@@ -347,7 +332,8 @@ def count_tx_size(target_address):
 	chain_data = json_response['chain']
 	chain_length = json_response['length']
 	logger.info('Chain length: {}'.format(chain_length))
-	for block in chain_data:
+	## get the latest unempty block
+	for block in reversed(chain_data):
 		if(block['transactions']!=[]): 
 			blk_str = TypesUtil.json_to_string(block)  
 			logger.info('Block size: {} Bytes'.format(len( blk_str.encode('utf-8') ))) 
@@ -359,7 +345,7 @@ def count_tx_size(target_address):
 			break
 
 def count_vote_size(target_address):
-	# get validators information from a validator.
+	## get validators information from a validator.
 	validator_info = Microchain_client.validator_getinfo(target_address, False)[0]
 	if(validator_info['vote_count']!={}):
 		hf_block = validator_info['highest_finalized_checkpoint']
@@ -400,6 +386,7 @@ def define_and_get_arguments(args=sys.argv[1:]):
 															3: randshare test")
 	parser.add_argument("--op_status", type=int, default=0, help="operational function mode")
 	parser.add_argument("--tx_size", type=int, default=128, help="Size of value in transaction.")
+	parser.add_argument("--tx_count", type=int, default=1, help="Transactions per second (TPS).")
 	parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
 	parser.add_argument("--wait_interval", type=int, default=1, help="break time between step.")
 	parser.add_argument("--target_address", type=str, default="0.0.0.0:8080", 
@@ -422,7 +409,8 @@ if __name__ == "__main__":
 
 	# set parameters
 	target_address = args.target_address
-	tx_size =args.tx_size
+	tx_size = args.tx_size
+	tx_count = args.tx_count
 	test_func = args.test_func
 	op_status = args.op_status
 	wait_interval = args.wait_interval
@@ -463,7 +451,7 @@ if __name__ == "__main__":
 	elif(test_func == 1):
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
-			Epoch_validator(target_address, op_status, tx_size, 5)
+			Epoch_validator(target_address, op_status, tx_size, tx_count, 5)
 			time.sleep(wait_interval)
 
 		# get checkpoint after execution
@@ -473,9 +461,11 @@ if __name__ == "__main__":
 
 	elif(test_func == 2):
 		if(op_status == 1):
-			Microchain_client.send_transaction(target_address, tx_size, True)
+			for tps_round in range(tx_count):
+				Microchain_client.send_transaction(target_address, tx_size, True)
 		elif(op_status == 10):
-			Microchain_client.launch_txs(tx_size)
+			for tps_round in range(tx_count):
+				Microchain_client.launch_txs(tx_size)
 		elif(op_status == 2):
 			Microchain_client.start_mining(target_address, True)
 		elif(op_status == 3):

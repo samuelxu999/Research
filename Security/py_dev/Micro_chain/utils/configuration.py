@@ -8,7 +8,7 @@ MINING_SENDER = "THE BLOCKCHAIN"	# default chain network address
 MINING_REWARD = 1					# default reward for mining a new block
 MINING_DIFFICULTY = 4				# PoW difficult level
 
-COMMIT_TRANS = 50					# Max transactions in one block
+COMMIT_TRANS = 2400					# Max transactions in one block
 
 TEST_STAKE_WEIGHT = 1				# unit PoS stake weight
 TEST_STAKE_SUM = 3					# Sum of PoS stakes
