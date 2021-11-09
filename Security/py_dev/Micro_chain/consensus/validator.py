@@ -530,6 +530,15 @@ class Validator():
 
 		return validator_info
 
+	def get_status(self):
+		'''
+		Get validator status for synchronization
+		'''
+		validator_status = {}
+		validator_status['consensus_run'] = self.runConsensus
+		# validator_status['consensus_status'] = self.statusConsensus
+
+		return validator_status
 
 	def valid_transaction(self, transaction, sender_pk, signature):
 		"""

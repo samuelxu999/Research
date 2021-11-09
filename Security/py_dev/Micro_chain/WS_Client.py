@@ -370,8 +370,8 @@ def validator_getStatus():
 	for node in ls_nodes:
 		json_node = TypesUtil.string_to_json(node)
 		node_status = json_status[json_node['address']]
-		if(node_status['consensus_status']!=4):
-			unconditional_nodes.append(node)
+		# if(node_status['consensus_status']!=4):
+		# 	unconditional_nodes.append(node)
 		logger.info("{}    status: {}".format(json_node['address'], node_status))
 
 	logger.info("Non-syn node: {}".format(unconditional_nodes))
