@@ -267,8 +267,13 @@ class Validator():
 					if(node not in ls_peer):
 						logger.info('Remove {} from consensus node list.'.format(node))
 						self.peer_nodes.remove_node(node)
-				# reload peer node
+				## reload peer node
 				self.peer_nodes.load_ByAddress()
+
+				## set total stake and number of validators
+				ls_nodes=list(self.peer_nodes.get_nodelist())
+				self.sum_stake = len(ls_nodes) 
+				self.committee_size = len(ls_nodes)
 			except:
 				logger.info('\n! Some error happen in peers_thread.\n')
 			finally:
@@ -293,15 +298,20 @@ class Validator():
 			# reset idle time as 0
 			idle_time = 0.0
 
-			# ============= Choose a message from buffer and process it ==================
-			msg_data = self.msg_buf[0]
-			if(msg_data[0]==1):
-				self.add_block(msg_data[1], msg_data[2])
-			
-			if(msg_data[0]==2):
-				VoteCheckPoint.add_voter_data(msg_data[1], msg_data[2])
-			
-			self.msg_buf.remove(msg_data)
+			try:
+				# ============= Choose a message from buffer and process it ==================
+				msg_data = self.msg_buf[0]
+				if(msg_data[0]==1):
+					self.add_block(msg_data[1], msg_data[2])
+				
+				if(msg_data[0]==2):
+					VoteCheckPoint.add_voter_data(msg_data[1], msg_data[2])
+				
+				self.msg_buf.remove(msg_data)
+			except:
+				logger.info('\n! Some error happen in process_msg.\n')
+			finally:
+				pass
 
 	def exec_consensus(self):
 		'''
@@ -321,43 +331,49 @@ class Validator():
 				pause_epoch=0
 				continue
 
-			# reset idle time as 0
-			idle_time = 0.0
+			try:
+				# reset idle time as 0
+				idle_time = 0.0
 
-			# ========================== Run consensus protocol ==========================
-			json_head=self.processed_head
-			logger.info("Consensus run at height: {}    status: {}".format(json_head['height'], 
-																		self.runConsensus))
-			# ------------S1: execute proof-of-work to mine new block--------------------
-			start_time=time.time()
-			new_block=self.mine_block()
-			exec_time=time.time()-start_time
-			FileUtil.save_testlog('test_results', 'exec_mining.log', format(exec_time*1000, '.3f'))
+				# ========================== Run consensus protocol ==========================
+				json_head=self.processed_head
+				logger.info("Consensus run at height: {}    status: {}".format(json_head['height'], 
+																			self.runConsensus))
+				# ------------S1: execute proof-of-work to mine new block--------------------
+				start_time=time.time()
+				new_block=self.mine_block()
+				exec_time=time.time()-start_time
+				FileUtil.save_testlog('test_results', 'exec_mining.log', format(exec_time*1000, '.3f'))
+				
+				# broadcast proposed block to peer nodes
+				if( (self.consensus==ConsensusType.PoW) or 
+					(not Block.isEmptyBlock(new_block)) ):
+					SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
+				time.sleep(self.phase_delay*1.5)
+
+				# ------------S2: fix head of current block generation epoch ----------------
+				self.fix_processed_head()
+				time.sleep(self.phase_delay)
+
+				# ------------S3: voting block to finalize chain ----------------------------
+				json_head= self.processed_head
+
+				# only vote if current height arrive multiple of EPOCH_SIZE
+				if( (json_head['height'] % self.block_epoch) == 0):
+					vote_data = self.vote_checkpoint(json_head)	
+					SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
+					pause_epoch+=1
+					time.sleep(self.phase_delay*3)
 			
-			# broadcast proposed block to peer nodes
-			if( (self.consensus==ConsensusType.PoW) or 
-				(not Block.isEmptyBlock(new_block)) ):
-				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), new_block, '/test/block/verify')
-			time.sleep(self.phase_delay*1.5)
+				# if pause_epoch arrives threshold. stop consensus for synchronization
+				if(pause_epoch==self.pause_epoch):
+					self.runConsensus=False
+					logger.info("Consensus run status: {}".format(self.runConsensus))
 
-			# ------------S2: fix head of current block generation epoch ----------------
-			self.fix_processed_head()
-			time.sleep(self.phase_delay)
-
-			# ------------S3: voting block to finalize chain ----------------------------
-			json_head= self.processed_head
-
-			# only vote if current height arrive multiple of EPOCH_SIZE
-			if( (json_head['height'] % self.block_epoch) == 0):
-				vote_data = self.vote_checkpoint(json_head)	
-				SrvAPI.broadcast_POST(self.peer_nodes.get_nodelist(), vote_data, '/test/vote/verify')
-				pause_epoch+=1
-				time.sleep(self.phase_delay*3)
-		
-			# if pause_epoch arrives threshold. stop consensus for synchronization
-			if(pause_epoch==self.pause_epoch):
-				self.runConsensus=False
-				logger.info("Consensus run status: {}".format(self.runConsensus))
+			except:
+				logger.info('\n! Some error happen in exec_consensus.\n')
+			finally:
+				pass
 
 
 	def print_config(self):
