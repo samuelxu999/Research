@@ -13,6 +13,7 @@ Created on Nov.2, 2017
 import requests
 import json
 import threading
+import queue
 
 from utils.utilities import TypesUtil
 
@@ -37,7 +38,24 @@ class ReqThread (threading.Thread):
         else:
             requests.get(self.argv[0], data=json.dumps({}), headers=self.argv[1])
 
-        # print ("Exiting ReqThread:{}".format(self.threadID))
+class QueryThread(threading.Thread):
+    '''
+    Threading class to query data from list of nodes
+    argv structure: [ ret_queue, str_node]
+    '''
+    def __init__(self, argv):
+        threading.Thread.__init__(self)
+        self.argv = argv
+
+    #The run() method is the entry point for a thread.
+    def run(self):
+        ## query data from a peer node
+        response = requests.get(self.argv[2], data=json.dumps({}), headers=self.argv[3])
+        json_response = response.json()
+        if(json_response!=''):
+            json_response['address']=self.argv[1]
+            ## save results into queue
+            self.argv[0].put(  json_response )
 
 class SrvAPI(object):
     '''
@@ -132,3 +150,45 @@ class SrvAPI(object):
             # The join() waits for all threads to terminate.
             for p_thread in threads_pool:
                     p_thread.join()
+
+    @staticmethod
+    def get_statusConsensus(peer_nodes):
+        '''
+        get consensus status given peer_nodes list
+        '''
+        ## Create queue to save results
+        ret_queue = queue.Queue()
+        # Create thread pool
+        threads_pool = []
+        ## Create a list to save consensus status from peer_nodes
+        json_status = {}
+        
+        headers = {'Content-Type' : 'application/json'}
+        ## 1) For each node and assign querying task to a QueryThread
+        for node in list(peer_nodes):
+            json_node = TypesUtil.string_to_json(node)
+            api_url = 'http://' + json_node['node_url'] + '/test/validator/status'
+            node_address = json_node['address']
+            ## Create new threads for tx
+            p_thread = QueryThread( [ret_queue, node_address, api_url, headers] )
+
+            ## append to threads pool
+            threads_pool.append(p_thread)
+
+            ## The start() method starts a thread by calling the run method.
+            p_thread.start()
+
+        # 2) The join() waits for all threads to terminate.
+        for p_thread in threads_pool:
+            p_thread.join()
+
+        # 3) get all results from queue
+        while not ret_queue.empty():
+            ## q_data is used to save json response from GET
+            q_data = ret_queue.get()
+            # json_status.append(q_data)
+            json_status[q_data['address']]={}
+            json_status[q_data['address']]['consensus_run']=q_data['consensus_run']
+            json_status[q_data['address']]['consensus_status']=q_data['consensus_status']
+
+        return json_status

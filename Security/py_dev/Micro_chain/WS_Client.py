@@ -483,6 +483,8 @@ if __name__ == "__main__":
 			count_vote_size(target_address)
 		elif(op_status == 9):
 			Microchain_client.run_consensus(target_address, True, True)
+		elif(op_status == 90):
+			validator_getStatus()
 		else:
 			json_checkpoints = checkpoint_netInfo(target_address, False)
 			for _item, _value in json_checkpoints.items():

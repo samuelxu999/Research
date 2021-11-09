@@ -89,6 +89,11 @@ def validator_info():
 	response = myblockchain.get_info()
 	return jsonify(response), 200
 
+@app.route('/test/validator/status', methods=['GET'])
+def validator_status():
+	response = myblockchain.get_status()
+	return jsonify(response), 200
+
 @app.route('/test/transaction/query', methods=['GET'])
 def query_transaction():
 	# parse data from request.data
