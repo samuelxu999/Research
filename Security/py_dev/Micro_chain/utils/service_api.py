@@ -189,6 +189,6 @@ class SrvAPI(object):
             # json_status.append(q_data)
             json_status[q_data['address']]={}
             json_status[q_data['address']]['consensus_run']=q_data['consensus_run']
-            json_status[q_data['address']]['consensus_status']=q_data['consensus_status']
+            # json_status[q_data['address']]['consensus_status']=q_data['consensus_status']
 
         return json_status
