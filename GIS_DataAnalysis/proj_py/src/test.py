@@ -10,6 +10,7 @@ Created on Oct.9, 2019
 '''
 import time, sys
 import argparse
+import logging
 from curve_validation import Curve_Validation
 from RF_Nepal import RF_Nepal
 from multi_processing import Multi_ProcessRF
@@ -98,7 +99,7 @@ def test_getSRvalues(data_dir):
 	row_start=870
 	row_end=871
 	col_start=0
-	col_end=2851
+	col_end=1
 
 	## 2) Get SR_BandValues by for each ls_datainfo
 	start_time=time.time()
@@ -131,6 +132,13 @@ def define_and_get_arguments(args=sys.argv[1:]):
     return args
 
 if __name__ == "__main__":
+	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
+	LOG_LEVEL = logging.INFO
+	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
+
+	PreData_logger = logging.getLogger("Pre_Data")
+	PreData_logger.setLevel(logging.INFO)
+
 	## define arguments for test app
 	args = define_and_get_arguments()
 
@@ -149,10 +157,9 @@ if __name__ == "__main__":
 	elif(args.test_func==7):
 		test_readArray(True)
 	elif(args.test_func==8):
-		## data_dir = "/media/external/Deng/142041/LC081420412013041501T1-SC20191127190639"
-		data_dir = "/media/external/viirs_all"
-		## data_dir = "/media/external/Deng/142041"
-		# data_dir = "../VIIRS_ntl"
+		# data_dir = "/media/external/Deng/142041/LC081420412013041501T1-SC20191127190639"
+		# data_dir = "/media/external/viirs_all"
+		data_dir = "/media/external/Deng/142041"
 
 		test_getSRvalues(data_dir)
 	else:

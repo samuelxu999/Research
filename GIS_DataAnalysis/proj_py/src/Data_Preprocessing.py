@@ -10,12 +10,14 @@ Created on Jan.20, 2020
 '''
 
 import math, os
+import logging
 from datetime import datetime
 import numpy as np
 import gdal
 # import ccd
-
 from utilities import FileUtil
+
+logger = logging.getLogger(__name__)
 
 
 def walkFiles(srcPath, ext=".tif"):
@@ -25,7 +27,7 @@ def walkFiles(srcPath, ext=".tif"):
 	@fileList: 		sorted list of files
 	'''
 	if not os.path.exists(srcPath):
-		print("not find path:{0}".format(srcPath))
+		logger.info("not find path:{0}".format(srcPath))
 		return None
 	if os.path.isfile(srcPath):
 		return None
@@ -95,20 +97,20 @@ def fetch_bandInfo(band):
 	Function: printout band information given a raster_band.
 	@band: 		raster_band = ds.GetRasterBand(1)
 	'''
-	print("Band Type={}".format(gdal.GetDataTypeName(band.DataType)))
+	logger.info("Band Type={}".format(gdal.GetDataTypeName(band.DataType)))
 
 	min_value = band.GetMinimum()
 	max_value = band.GetMaximum()
 	if( not min_value or not max_value ):
 	    (min_value,max_value) = band.ComputeRasterMinMax(True)
-	print("Min={:.3f}, Max={:.3f}".format(min_value,max_value))
-	print("Xsize={:d}, Ysize={:d}".format(band.XSize,band.YSize))
+	logger.info("Min={:.3f}, Max={:.3f}".format(min_value,max_value))
+	logger.info("Xsize={:d}, Ysize={:d}".format(band.XSize,band.YSize))
 
 	if( band.GetOverviewCount() > 0 ):
-	    print("Band has {} overviews".format(band.GetOverviewCount()))
+	    logger.info("Band has {} overviews".format(band.GetOverviewCount()))
 
 	if( band.GetRasterColorTable() ):
-	    print("Band has a color table with {} entries".format(band.GetRasterColorTable().GetCount()))
+	    logger.info("Band has a color table with {} entries".format(band.GetRasterColorTable().GetCount()))
 
 
 def get_bandinfo(raster_file):
@@ -155,8 +157,14 @@ class Pre_Data(object):
 			## get list files within datapath
 			list_files = datapath[1]
 
-			Julian_Day_Original = datapath[0].split('/')[-1]
-			Julian_Day = date_Conversion('20130415')
+			## extract Julian_Day_Original from folder name
+			folder_name = datapath[0].split('/')[-1]
+			Julian_Day_Original = folder_name.split('-')[-1][2:10]
+			# logger.info(Julian_Day_Original)
+			# Julian_Day = date_Conversion(Julian_Day_Original)
+
+			## use dummy data
+			Julian_Day = date_Conversion('20131021')
 			
 			## process each raster_file to get data infomation
 			for raster_file in list_files:
@@ -217,7 +225,7 @@ class Pre_Data(object):
 				ds = gdal.Open(raster_file)
 			
 			if ds is None:
-				print('Could not open {0}'.format(raster_file))
+				logger.info('Could not open {0}'.format(raster_file))
 			else:
 				## a) ---------- read band data ---------------
 				raster_band = ds.GetRasterBand(1)
