@@ -8,13 +8,15 @@ Created on Oct.9, 2019
 @TaskDescription: This module used for functions test.
 @Reference: 
 '''
-import time, sys
+import time, sys, os
 import argparse
 import logging
 from curve_validation import Curve_Validation
 from RF_Nepal import RF_Nepal
 from multi_processing import Multi_ProcessRF
 from Data_Preprocessing import Pre_Data
+from utilities import FileUtil
+import numpy as np
 
 def test_validation():
 	data_config= {}
@@ -81,34 +83,70 @@ def test_Multi_Process_RF():
 	Multi_ProcessRF.multi_processRF(data_config)
 
 
-def test_readArray(loadAlldata = False):
+def test_readArray(args):
 	## ----------------- test readArray performance -------------------- 
 	start_time=time.time()
 	raster_file = "../VIIRS_ntl/201401/SVDNB_npp_20140101-20140131_00N060E_vcmslcfg_v10_c2015006171539.avg_rade9h.tif" 
-	raster_array=Pre_Data.raster2array(raster_file, loadAlldata)
+	if(args.op_status==1):
+		raster_array=Pre_Data.raster2array(raster_file, True)
+	else:
+		raster_array=Pre_Data.raster2array(raster_file, False)
 	exec_time=time.time()-start_time
 	print("raster_array shape: {}".format(raster_array.shape))
 	print("Running time: {:.3f} s".format(exec_time))	
 
-def test_getSRvalues(data_dir):
-	## 1) for each file to get data information ['raster_file', [band, Band_Number, band_list], Julian_Day]
-	ls_datainfo=Pre_Data.get_datainfo(data_dir)
-	# print(ls_datainfo[0])
+def test_getSRvalues():
+	## ------------------------------ test configuration --------------------------------
+	## raw data sources
+	data_dir = "/media/external/Deng/142041/LC081420412013041501T1-SC20191127190639"
+	# data_dir = "/media/external/viirs_all"
+	# data_dir = "/media/external/Deng/142041"
 
-	## set data range
+	## csv data directory to save all SR_BandValues
+	csv_dir = "../csv_data/"
+
+	## set data range that is used to process a region of the map figure. 
 	row_start=870
 	row_end=871
 	col_start=0
 	col_end=1
 
+	## --------------------------- SR_BandValues process test ----------------------------
+	## 1) for each file to get data information ['raster_file', [band, Band_Number, band_list], Julian_Day]
+	ls_datainfo=Pre_Data.get_datainfo(data_dir)
+	# print(ls_datainfo[0])
+
 	## 2) Get SR_BandValues by for each ls_datainfo
 	start_time=time.time()
 	SR_BandValues = Pre_Data.get_SR_BandValues(ls_datainfo, row_start, row_end, col_start, col_end)
-	print("SR_BandValues shape:{}".format(SR_BandValues.shape))
+	print("Calculate SR_BandValues, shape:{}".format(SR_BandValues.shape))
 	# print(SR_BandValues.T[0][0].T)
 	# print(SR_BandValues.T[0])
 	exec_time=time.time()-start_time
 	print("Running time: {:.3f} s".format(exec_time))
+
+
+	## --------------------------- data save and read test ----------------------------
+	## a) set csv path to save SR_BandValues
+	csv_path = os.path.join(csv_dir, "Range_{}_{}_{}_{}.csv".format(row_start, row_end, col_start, col_end))
+	
+	## b) save SR_BandValues to csv file
+	start_time=time.time()
+	if(not os.path.exists(csv_dir)):
+				os.makedirs(csv_dir)	
+
+	FileUtil.data2csv(csv_path, SR_BandValues)
+	print("Save SR_BandValues to {}".format(csv_path))
+	exec_time=time.time()-start_time
+	print("Running time: {:.3f} s".format(exec_time))
+
+	## c) reload data from csv file
+	start_time=time.time()
+	np_SR_BandValues = FileUtil.csv2data(csv_path)
+	print("Reload {}    shape:{}".format(csv_path, np_SR_BandValues.shape))
+	exec_time=time.time()-start_time
+	print("Running time: {:.3f} s".format(exec_time))
+
 
 def define_and_get_arguments(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(
@@ -155,12 +193,8 @@ if __name__ == "__main__":
 	elif(args.test_func==6):
 		test_Load_predict()
 	elif(args.test_func==7):
-		test_readArray(True)
+		test_readArray(args)
 	elif(args.test_func==8):
-		# data_dir = "/media/external/Deng/142041/LC081420412013041501T1-SC20191127190639"
-		# data_dir = "/media/external/viirs_all"
-		data_dir = "/media/external/Deng/142041"
-
-		test_getSRvalues(data_dir)
+		test_getSRvalues()
 	else:
 		pass

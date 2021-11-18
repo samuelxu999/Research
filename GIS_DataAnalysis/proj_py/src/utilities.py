@@ -9,7 +9,7 @@ Created on Oct.9, 2019
 @Reference: 
 '''
 
-import glob, os
+import glob, os, sys
 import pandas as pd
 from openpyxl import load_workbook
 import matplotlib
@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 import numpy as np
 import csv
+
+csv.field_size_limit(sys.maxsize)
 
 '''
 FileUtil class for handling file read and write
@@ -131,10 +133,73 @@ class FileUtil(object):
 		(in) csv_file:   	csv file path
 		'''
 		ls_dataset = []
-		with open(csv_file, 'a') as csvFile:
+		with open(csv_file, 'w') as csvFile:
 			csv_writer = csv.writer(csvFile, delimiter=',')
 			for row in dataset:
 				csv_writer.writerow(row)
+
+	@staticmethod
+	def data2csv(csv_Path, np_dataset):
+		'''
+		Function: Write data to csv file
+		@arguments: 
+		(in) np_dataset:   	list matrix
+		(in) csv_Path:   	csv file path
+		'''
+		ls_dataset = TypesUtil.np2list(np_dataset)
+		pdData = pd.DataFrame(ls_dataset)
+		pdData.to_csv(csv_Path, index=None, header=None)
+
+	@staticmethod
+	def csv2data(csv_Path):
+		'''
+		Function: Read data from csv file
+		@arguments: 
+		(in) csv_Path:   	csv file path
+		(out) np_dataset:	return np data
+		'''
+		raw_dataset = []
+		with open(csv_Path, 'r') as csvFile:
+			csv_reader = csv.reader(csvFile, delimiter=',')
+			for row in csv_reader:
+				raw_dataset.append(row)
+	
+		## for each dimension to rebuild array.
+		ls_dataset = []
+		for d1_dataset in raw_dataset:
+			ls_d1 = []
+			for d2_dataset in d1_dataset:
+				ls_d2 = []
+				for row_data in d2_dataset.split("],"):
+					ls_row = row_data.replace("[", "").replace("]", "").replace(" ", "").split(",")
+					## append row array list to ls_d2
+					ls_d2.append(ls_row)
+				## append (row,col) array list to ls_d1 (data sheet)
+				ls_d1.append(ls_d2)
+			## append ls_d1 (data sheet) to ls_dataset.
+			ls_dataset.append(ls_d1)
+		## transfer ls_dataset to np array and return
+		np_dataset = TypesUtil.list2np(ls_dataset)
+		return np_dataset
+
+'''
+TypesUtil class for data type format transfer
+'''
+class TypesUtil(object):
+	# list dataset to numpy matrix
+	@staticmethod
+	def list2np(ls_data):
+		# transfer to np array and return
+		np_data = np.array(ls_data, dtype=np.float32)
+		return np_data
+
+	# numpy matrix to list dataset
+	@staticmethod
+	def np2list(np_data):
+		# transfer to list dataset and return
+		ls_data = np_data.tolist()
+		return ls_data
+
 '''
 DataUtil class for handling data preparation
 '''
