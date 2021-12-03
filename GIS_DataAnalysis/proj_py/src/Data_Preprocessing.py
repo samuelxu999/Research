@@ -136,6 +136,18 @@ def get_bandinfo(raster_file):
 
 	return [band, Band_Number, bandList]
 
+def get_dateinfo(raster_file):
+	'''
+	Function: get date information given a raster file.
+	@raster_file: 		raster file path
+	@return:			string_date
+	'''
+	file_name = raster_file.split('/')[-1]
+	file_noext = file_name.split('.')[0]
+	str_date = file_noext.split('_')[2].split('-')[0]
+
+	return str_date
+
 '''
 Pre-process data class
 '''
@@ -157,19 +169,26 @@ class Pre_Data(object):
 			## get list files within datapath
 			list_files = datapath[1]
 
-			## extract Julian_Day_Original from folder name
+			## i) extract Julian_Day_Original from folder name
 			folder_name = datapath[0].split('/')[-1]
-			Julian_Day_Original = folder_name.split('-')[-1][2:10]
+			Julian_Day_Original = folder_name.split('-')[-1][2:10]			
+
 			# logger.info(Julian_Day_Original)
 			# Julian_Day = date_Conversion(Julian_Day_Original)
 
 			## use dummy data
-			Julian_Day = date_Conversion('20131021')
+			# Julian_Day = date_Conversion('20131021')
 			
 			## process each raster_file to get data infomation
 			for raster_file in list_files:
 				band_info = get_bandinfo(raster_file)
 				data_item = []
+
+				## ii) extract Julian_Day_Original from file name
+				str_date = get_dateinfo(raster_file)
+				#Julian_Day = date_Conversion(str_date)
+				Julian_Day = str_date
+
 				## set data_item
 				data_item.append(raster_file)
 				data_item.append(band_info)
@@ -257,6 +276,68 @@ class Pre_Data(object):
 						## skip operation if Band_Number is not valid.
 						if(Band_Number>0):
 							SR_BandValues[i - row_start, j-col_start, date_index, Band_Number] = data_value
+
+			## increase date_index for next raster_file
+			date_index+=1
+		return SR_BandValues
+
+	@staticmethod
+	def get_SR_Values(ls_datainfo, row_start=0, row_end=0, col_start=0, col_end=0):
+		'''
+		Function: Construct SR_Values by for each data file in ls_datainfo.
+		@ls_datainfo: 		list data information by walking all files
+		@row_start: 		row start index of a data range
+		@row_end:			row end index of a data range
+		@col_start:			column start index of a data range
+		@col_end:			column end index of a data range
+		@SR_BandValues:		Save all extracted values and return
+		'''
+
+		## initial SR_BandValues to save results.
+		SR_BandValues = np.zeros((row_end-row_start,col_end-col_start, len(ls_datainfo), 2))
+
+		## initial date_index used to process data of a raster_file
+		date_index = 0
+		## for each data_info to get SR_BandValues
+		for data_info in ls_datainfo:
+			## extract key information
+			raster_file = data_info[0]
+			# band_info = data_info[1]
+			Julian_Day = data_info[2]
+
+			## check if raster_file is existed and can open correctly
+			if os.path.exists(raster_file):
+				## open raster_file
+				ds = gdal.Open(raster_file)
+			
+			if ds is None:
+				logger.info('Could not open {0}'.format(raster_file))
+			else:
+				## a) ---------- read band data ---------------
+				raster_band = ds.GetRasterBand(1)
+				## used for debug
+				if(date_index==0):
+					fetch_bandInfo(raster_band)
+
+				# Band_Number = band_info[1]
+				## get point values given region[row_start:row_end,col_start:col_end]
+				for i in range(row_start, row_end):
+					for j in range(col_start,col_end):
+						## add Julian_Day to the last dimension of SR_BandValues
+						SR_BandValues[i - row_start, j-col_start, date_index, 0] = Julian_Day
+
+						## b) ----------- read a point value -------------		 
+						raster_point = raster_band.ReadAsArray(j, i, 1, 1)
+
+						## post-process data before saving into SR_BandValues
+						if(raster_point):
+							data_value = raster_point[0][0]
+						else:
+							## ????????how to handle empty or invid raster_point?
+							data_value = 0
+
+						## set cell value for SR_BandValues.
+						SR_BandValues[i - row_start, j-col_start, date_index, 1] = data_value
 
 			## increase date_index for next raster_file
 			date_index+=1
