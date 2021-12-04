@@ -13,7 +13,7 @@ import argparse
 import logging
 from curve_validation import Curve_Validation
 from RF_Nepal import RF_Nepal
-from multi_processing import Multi_ProcessRF
+from multi_processing import Multi_ProcessRF, Multi_PreData
 from Data_Preprocessing import Pre_Data
 from utilities import FileUtil
 import numpy as np
@@ -82,6 +82,18 @@ def test_Multi_Process_RF():
 
 	Multi_ProcessRF.multi_processRF(data_config)
 
+def test_Multi_getSRvalues(args):
+	# ----------------- Prepare data config -----------------------
+	data_config= {}
+	data_config['dataset'] = "../NNP_avg_rade9h"
+
+	region_param = args.region.split('_')
+	data_config['row_range'] = [int(region_param[0]), int(region_param[1])]
+	data_config['col_range'] = [int(region_param[2]), int(region_param[3])]
+	data_config['data_type'] = args.op_status
+
+	Multi_PreData.multi_getSRvalues(data_config)
+
 
 def test_readArray(args):
 	## ----------------- test readArray performance -------------------- 
@@ -118,7 +130,7 @@ def test_getSRvalues(args):
 	## --------------------------- SR_BandValues process test ----------------------------
 	## 1) for each file to get data information ['raster_file', [band, Band_Number, band_list], Julian_Day]
 	ls_datainfo=Pre_Data.get_datainfo(data_dir)
-	print(ls_datainfo[0])
+	# print(ls_datainfo[0])
 
 	## 2) Get SR_BandValues by for each ls_datainfo
 	start_time=time.time()
@@ -188,13 +200,14 @@ def define_and_get_arguments(args=sys.argv[1:]):
                         5-test_Merge_predict, \
                         6-test_Load_predict, \
                         7-test_readArray, \
-                        8-test_getSRvalues")
+                        8-test_getSRvalues, \
+                        8-test_Multi_getSRvalues")
 
     parser.add_argument("--op_status", type=int, default=0, 
                         help="Execute test based on condition.")
     
     parser.add_argument("--region", type=str, default="0_1_0_1", 
-                        help="Region of rtf: r0_r1_c0_c1.")
+                        help="Region of rtf: row-start_row-end_column-start_column-end.")
 
     args = parser.parse_args(args=args)
     return args
@@ -226,5 +239,7 @@ if __name__ == "__main__":
 		test_readArray(args)
 	elif(args.test_func==8):
 		test_getSRvalues(args)
+	elif(args.test_func==9):
+		test_Multi_getSRvalues(args)
 	else:
 		pass
