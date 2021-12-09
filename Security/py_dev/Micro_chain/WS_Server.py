@@ -162,35 +162,44 @@ def commit_transaction():
 #GET req
 @app.route('/test/transaction/verify', methods=['POST'])
 def verify_transaction():
-	# parse data from request.data
+	## 1) parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
-	#transaction_data = TypesUtil.string_to_json(req_data)
-	transaction_data=json.loads(req_data)
+
+	## 2) load req_data to transaction_json(json)
+	transaction_json=json.loads(req_data)
 	
-	if(transaction_data=='{}'):
+	## 3) check if transaction_json is empty.
+	if(transaction_json=='{}'):
 		abort(401, {'error': 'No transaction data'})
 	
+	## 4) calculate tx verify time.
 	start_time=time.time()
-	verify_data = myblockchain.on_receive(transaction_data, 0)
+	verify_data = myblockchain.on_receive(transaction_json, 0)
 	exec_time=time.time()-start_time
 	FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
+
+	if(verify_data==True):
+		## 5) forward unseen tx to peer nodes.
+		SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), transaction_json, '/test/transaction/verify')
 	
 	return jsonify({'verify_transaction': verify_data}), 201
 
 #GET req
 @app.route('/test/transaction/broadcast', methods=['POST'])
 def broadcast_transaction():
-	# parse data from request.data
+	## 1) parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
-	#transaction_data = TypesUtil.string_to_json(req_data)
-	transaction_data=json.loads(req_data)
+	
+	## 2) load req_data to transaction_json(json)
+	transaction_json=json.loads(req_data)
 
-	if(transaction_data=='{}'):
+	## 3) check if transaction_json is empty.
+	if(transaction_json=='{}'):
 		abort(401, {'error': 'No transaction data'})
 
-	# broadcast transaction to peer nodes
+	## 4) broadcast transaction_json to peer nodes
 	#myblockchain.peer_nodes.load_ByAddress()
-	SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), transaction_data, '/test/transaction/verify')
+	SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), transaction_json, '/test/transaction/verify')
 
 	return jsonify({'broadcast_transaction': 'Succeed!'}), 201
 
@@ -556,6 +565,15 @@ if __name__ == '__main__':
 	elif(args.test_func==2):
 		static_node()
 	else:
+		## ---------------------- Instantiate the Wallet if no account existed -----------------
+		mywallet = Wallet()
+
+		## load accounts
+		mywallet.load_accounts()
+
+		if(len(mywallet.accounts)==0): 
+			mywallet.create_account('samuelxu999')
+
 		## ------------------------ Instantiate the Validator ----------------------------------
 		myblockchain = Validator(port=args.port, 
 								bootstrapnode=args.bootstrapnode,
@@ -568,18 +586,18 @@ if __name__ == '__main__':
 
 		myblockchain.print_config()
 
-		# # -------------------------- Instantiate RandShare -------------------------------------
+		## -------------------------- Instantiate RandShare -------------------------------------
 		myrandshare = RandShare()
 		# json_sharesInfo=RandShare.load_sharesInfo()
 		# # display random shares
 		# disp_randomshare(json_sharesInfo)
 		randshare_daemon = RundShare_Daemon()
 
-		# ## ------------------------ Instantiate p2p server as thread ------------------------------
+		## ------------------------ Instantiate p2p server as thread ------------------------------
 		base_account = myblockchain.wallet.accounts[0]
 		my_p2p = Kademlia_Server(rpc_port=args.rpc_port, bootstrapnode=args.bootstrapnode,
 								freq_loop=[args.save_state, args.refresh_neighbors], 
-								node_id=base_account['address'])
+								node_id=base_account['address'], ksize=20, alpha=3)
 		
 		## bind my_p2p.run() to a thread.daemon
 		p2p_thread = threading.Thread(target=my_p2p.run, args=(args.firstnode,))
