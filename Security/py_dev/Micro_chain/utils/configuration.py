@@ -20,7 +20,8 @@ CHAIN_INFO = "chain_info.json"		# chain information file name (.json)
 VOTER_DATA = "voter_db"				# local voter database file name
 
 NODE_DATA_DIR = "nodedata"			# local node database dir
-NODE_DATABASE = "node_db"			# local node database file name
+PEERS_DATABASE = "peers_db"			# local peer node database file name
+VERIFY_DATABASE = "nodes_db"			# local verified node database file name
 NODE_TABLE = "Node_table"			# node data table name
 NODE_STATICS = "static_nodes"		# statics node data file name
 

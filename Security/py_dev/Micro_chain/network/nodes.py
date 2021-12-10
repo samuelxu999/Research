@@ -19,13 +19,13 @@ from utils.utilities import FileUtil, TypesUtil
 from utils.db_adapter import DataManager
 from utils.configuration import *
 
-class PeerNodes:
+class Nodes:
 
-	def __init__(self):
+	def __init__(self, db_file):
 
 		#self.nodes = set()
 		self.nodes = []
-		self.node_db = DataManager(NODE_DATA_DIR, NODE_DATABASE)
+		self.node_db = DataManager(NODE_DATA_DIR, db_file)
 		self.node_db.create_table(NODE_TABLE)
 
 	def register_node(self, address, public_key, node_url):

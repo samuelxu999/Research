@@ -27,7 +27,7 @@ from merklelib import MerkleTree, jsonify as merkle_jsonify
 from utils.utilities import FileUtil, TypesUtil, FuncUtil
 from network.wallet import Wallet
 from consensus.transaction import Transaction
-from network.nodes import PeerNodes
+from network.nodes import Nodes
 from consensus.block import Block
 from consensus.vote import VoteCheckPoint
 from utils.db_adapter import DataManager
@@ -47,6 +47,7 @@ class Validator():
 	self.consensus: 					consensus algorithm
 	self.wallet: 						wallet account management
 	self.peer_nodes: 					peer nodes management 
+	self.verify_nodes: 					verify nodes management 
 
 	self.transactions: 					local transaction pool
 	self.chain: 						local chain data buffer
@@ -81,8 +82,12 @@ class Validator():
 		self.wallet.load_accounts()
 
 		# Instantiate the PeerNodes
-		self.peer_nodes = PeerNodes()
+		self.peer_nodes = Nodes(db_file = PEERS_DATABASE)
 		self.peer_nodes.load_ByAddress()
+
+		# Instantiate the verified Nodes
+		self.verify_nodes = Nodes(db_file = VERIFY_DATABASE)
+		self.verify_nodes.load_ByAddress()
 
 		# New database manager to manage chain data
 		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
@@ -239,6 +244,9 @@ class Validator():
 					json_host['public_key'] = host_account['public_key']
 					json_host['node_url'] = host_address
 
+					## send host node information to bootstrapnode to keep alive.
+					self.RPC_client.add_verifynode(bootstrapnode_address, json_host)
+
 					ls_nodes = []
 					peer_nodes = copy.deepcopy(self.peer_nodes.nodes)
 					for node in peer_nodes:
@@ -266,7 +274,7 @@ class Validator():
 				for node in ls_nodes: 
 					if(node not in ls_peer):
 						logger.info('Remove {} from consensus node list.'.format(node))
-						self.peer_nodes.remove_node(node)
+						self.peer_nodes.remove_peernode(node)
 				## reload peer node
 				self.peer_nodes.load_ByAddress()
 
@@ -435,22 +443,53 @@ class Validator():
 
 	def get_node(self, node_address):
 		'''
-		Buffer operation: select a node from peer_nodes buffer given node address
+		Check node: select a node from peer_nodes and verify buffer given node address
 		'''
-		ls_nodes=list(self.peer_nodes.get_nodelist())
+
+		## 1) search target node in peer nodes
+		ls_peernodes=list(self.peer_nodes.get_nodelist())
 
 		# refresh sum_stake and committee_size as peer nodes change
 		# set sum_stake is peer nodes count
-		self.sum_stake = len(ls_nodes)
+		self.sum_stake = len(ls_peernodes)
 		# set committee size as peer nodes count 
-		self.committee_size = len(ls_nodes)
+		self.committee_size = len(ls_peernodes)
 
 		json_node = None
-		for node in ls_nodes:
-			json_node = TypesUtil.string_to_json(node)
-			if(json_node['address']==node_address):
-				break				
+
+		for node in ls_peernodes:
+			tmp_node = TypesUtil.string_to_json(node)
+			if(tmp_node['address']==node_address):
+				json_node = tmp_node
+				break	
+		## return found node
+		if(json_node != None):			
+			return json_node
+
+		## 2) search target node in verify nodes
+		ls_verifynodes=list(self.verify_nodes.get_nodelist())
+
+		for node in ls_verifynodes:
+			tmp_node = TypesUtil.string_to_json(node)
+			if(tmp_node['address']==node_address):
+				json_node = tmp_node
+				break	
+		## return found node
+		if(json_node != None):			
+			return json_node
+
+		## 3) query node from bootstrap server
+		bootstrapnode_address = self.bootstrapnode.split(':')[0]+":80"+ self.bootstrapnode.split(':')[1][3:] 
+		json_node=self.RPC_client.check_verifynode(bootstrapnode_address, node_address)['node']
+
+		if(json_node!='{}'):
+			## add node to local verifynode.
+			self.verify_nodes.register_node(json_node['address'], json_node['public_key'], json_node['node_url'])
+			self.verify_nodes.load_ByAddress()
+
 		return json_node
+
+
 
 	def valid_round(self, node_address):
 		'''
@@ -557,6 +596,7 @@ class Validator():
 
 		## get node data from self.peer_nodes buffer
 		sender_node=self.get_node(json_transaction['sender_address'])
+		logger.info(sender_node)
 
 		## ====================== verify transaction ==========================
 		## 1) check if a tx comes from the authorized node, like committee members.

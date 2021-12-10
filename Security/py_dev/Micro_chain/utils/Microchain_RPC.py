@@ -90,9 +90,13 @@ class Microchain_RPC(object):
 		self.wallet_net = Wallet(keystore_net)
 		self.wallet_net.load_accounts()
 
-		## Instantiate the PeerNodes and load all nodes information
-		self.peer_nodes = PeerNodes()
+		## Instantiate the Peer Nodes management adapter
+		self.peer_nodes = Nodes(db_file = PEERS_DATABASE)
 		self.peer_nodes.load_ByAddress()
+
+		# Instantiate the verified Nodes management adapter
+		self.verify_nodes = Nodes(db_file = VERIFY_DATABASE)
+		self.verify_nodes.load_ByAddress()
 
 	# =========================== client side REST API ==================================
 	def run_consensus(self, target_address, exec_consensus, isBroadcast=False):
@@ -233,30 +237,64 @@ class Microchain_RPC(object):
 
 		return info_peers
 
-	def get_nodes(self, target_address):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/nodes/get')
+	def get_peernodes(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/peernodes/get')
 		return json_response
 
-	def add_node(self, target_address, json_node, isBroadcast=False):
+	def add_peernodes(self, target_address, json_node, isBroadcast=False):
 		if(not isBroadcast):
-			json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/add', json_node)
+			json_response=SrvAPI.POST('http://'+target_address+'/test/peernodes/add', json_node)
 			logger.info(json_response)
 		else:
 			for target_node in target_address:
 				try:
-					SrvAPI.POST('http://'+target_node+'/test/nodes/add', json_node)
+					SrvAPI.POST('http://'+target_node+'/test/peernodes/add', json_node)
 				except:
 					logger.info("access {} failed.".format(target_node))
 					pass
 
-	def remove_node(self, target_address, json_node, isBroadcast=False):
+	def remove_peernode(self, target_address, json_node, isBroadcast=False):
 		if(not isBroadcast):
-			json_response=SrvAPI.POST('http://'+target_address+'/test/nodes/remove', json_node)
+			json_response=SrvAPI.POST('http://'+target_address+'/test/peernodes/remove', json_node)
 			logger.info(json_response)
 		else:
 			for target_node in target_address:
 				try:
-					SrvAPI.POST('http://'+target_node+'/test/nodes/remove', json_node)
+					SrvAPI.POST('http://'+target_node+'/test/peernodes/remove', json_node)
+				except:
+					logger.info("access {} failed.".format(target_node))
+					pass
+
+	def get_verifynodes(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/verifynodes/get')
+		return json_response
+
+	def check_verifynode(self, target_address, node_address):
+		json_data = {}
+		json_data['address'] = node_address
+		json_response=SrvAPI.GET('http://'+target_address+'/test/verifynodes/check', json_data)
+		return json_response
+
+	def add_verifynode(self, target_address, json_node, isBroadcast=False):
+		if(not isBroadcast):
+			json_response=SrvAPI.POST('http://'+target_address+'/test/verifynodes/add', json_node)
+			logger.info(json_response)
+		else:
+			for target_node in target_address:
+				try:
+					SrvAPI.POST('http://'+target_node+'/test/verifynodes/add', json_node)
+				except:
+					logger.info("access {} failed.".format(target_node))
+					pass
+
+	def remove_verifynode(self, target_address, json_node, isBroadcast=False):
+		if(not isBroadcast):
+			json_response=SrvAPI.POST('http://'+target_address+'/test/verifynodes/remove', json_node)
+			logger.info(json_response)
+		else:
+			for target_node in target_address:
+				try:
+					SrvAPI.POST('http://'+target_node+'/test/verifynodes/remove', json_node)
 				except:
 					logger.info("access {} failed.".format(target_node))
 					pass

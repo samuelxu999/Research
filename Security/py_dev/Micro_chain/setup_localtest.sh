@@ -26,7 +26,7 @@ do
 	rm -rf local_test$i/chaindata/*
 	rm -rf local_test$i/randomdata/*
 	rm -rf local_test$i/test_results/*
-	rm -f local_test$i/nodedata/peer_nodes
+	rm -f local_test$i/nodedata/*
 
 done
 
@@ -34,5 +34,5 @@ done
 rm -rf ./chaindata/*
 rm -rf ./randomdata/*
 rm -rf ./test_results/*
-rm -f ./nodedata/peer_nodes
+rm -f ./nodedata/*
 touch ./WS_Server.py

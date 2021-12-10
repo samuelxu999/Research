@@ -33,8 +33,9 @@ class RundShare_Daemon(object):
 		# Instantiate the Wallet
 		self.wallet = Wallet()
 		self.wallet.load_accounts()
-		# Instantiate the PeerNodes
-		self.peer_nodes = PeerNodes()
+		
+		## Instantiate the Peer Nodes management adapter
+		self.peer_nodes = Nodes(db_file = PEERS_DATABASE)
 		self.peer_nodes.load_ByAddress()
 		
 		self.randomshare_cmd = 0
@@ -119,21 +120,22 @@ class RundShare_Daemon(object):
 
 class RandShare(object):
 	def __init__(self):
-		# Instantiate the Wallet
+		## Instantiate the Wallet
 		self.wallet = Wallet()
 		self.wallet.load_accounts()
-		# Instantiate the PeerNodes
-		self.peer_nodes = PeerNodes()
+
+		## Instantiate the Peer Nodes management adapter
+		self.peer_nodes = Nodes(db_file = PEERS_DATABASE)
 		self.peer_nodes.load_ByAddress()
 
-		#get account data
+		## get account data
 		account_data = self.wallet.accounts[0]
 		self.key_numbers={}
-		# get key_numbers from saved account_data
+		## get key_numbers from saved account_data
 		load_public_key_bytes = TypesUtil.hex_to_string(account_data['public_key'])
 		load_publick_key=Crypto_RSA.load_public_key(load_public_key_bytes)
 
-		# genereate key pairs numbers
+		## genereate key pairs numbers
 		public_numbers = load_publick_key.public_numbers()
 
 		# add public numbers
@@ -141,11 +143,11 @@ class RandShare(object):
 		self.e=public_numbers.e
 		self.key_size=load_publick_key.key_size
 
-		# poly parameter size should be no more than key_size/2
+		## poly parameter size should be no more than key_size/2
 		self.poly_max = pow(2, (self.key_size/2) )-1
 		self.s = PVSS.randnt(self.poly_max)
 
-		#set <n, t> for shares
+		## set <n, t> for shares
 		nodes = self.peer_nodes.get_nodelist()
 		self.n = len(nodes)
 		self.t = math.ceil(2*self.n/3)

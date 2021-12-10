@@ -275,15 +275,15 @@ def account_info():
 	response = {'info': json_info}
 	return jsonify(response), 200
 
-@app.route('/test/nodes/get', methods=['GET'])
-def get_nodes():
+@app.route('/test/peernodes/get', methods=['GET'])
+def get_peernodes():
 	myblockchain.peer_nodes.load_ByAddress()
 	nodes = myblockchain.peer_nodes.nodes
 	response = {'nodes': nodes}
 	return jsonify(response), 200
 
-@app.route('/test/nodes/add', methods=['POST'])
-def add_node():
+@app.route('/test/peernodes/add', methods=['POST'])
+def add_peernode():
 	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
 	json_node=json.loads(req_data)
@@ -296,8 +296,8 @@ def add_node():
 	myrandshare.peer_nodes.load_ByAddress()
 	return jsonify({'add peer node': json_node['address']}), 201
 
-@app.route('/test/nodes/remove', methods=['POST'])
-def remove_node():
+@app.route('/test/peernodes/remove', methods=['POST'])
+def remove_peernode():
 	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
 	json_node=json.loads(req_data)
@@ -309,6 +309,58 @@ def remove_node():
 	myblockchain.peer_nodes.load_ByAddress()
 	myrandshare.peer_nodes.load_ByAddress()
 	return jsonify({'remove peer node': json_node['address']}), 201
+
+@app.route('/test/verifynodes/get', methods=['GET'])
+def get_verifynodes():
+	myblockchain.verify_nodes.load_ByAddress()
+	nodes = myblockchain.verify_nodes.nodes
+	response = {'nodes': nodes}
+	return jsonify(response), 200
+
+@app.route('/test/verifynodes/check', methods=['GET'])
+def check_verifynodes():
+	## 1) parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	json_data=json.loads(req_data)
+	node_address = json_data['address']
+
+	## 2) search target node in verify nodes
+	ls_verifynodes=list(myblockchain.verify_nodes.get_nodelist())
+	json_node = {}
+	for node in ls_verifynodes:
+		tmp_node = TypesUtil.string_to_json(node)
+		if(tmp_node['address']==node_address):
+			json_node = tmp_node
+			break
+
+	response = {'node': json_node}
+	return jsonify(response), 200
+
+@app.route('/test/verifynodes/add', methods=['POST'])
+def add_verifynode():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	json_node=json.loads(req_data)
+
+	if(json_node=='{}'):
+		abort(401, {'error': 'No node data'})
+
+	myblockchain.verify_nodes.register_node(json_node['address'], json_node['public_key'], json_node['node_url'])
+	myblockchain.verify_nodes.load_ByAddress()
+	return jsonify({'add verify node': json_node['address']}), 201
+
+@app.route('/test/verifynodes/remove', methods=['POST'])
+def remove_verifynode():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+	json_node=json.loads(req_data)
+	
+	if(json_node=='{}'):
+		abort(401, {'error': 'No node data'})
+		
+	myblockchain.verify_nodes.remove_node(json_node['address'])
+	myblockchain.verify_nodes.load_ByAddress()
+	return jsonify({'remove verify node': json_node['address']}), 201
 
 @app.route('/test/block/verify', methods=['POST'])
 def verify_block():

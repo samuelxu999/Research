@@ -86,7 +86,7 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 			Microchain_client.remove_node(list_address, json_node, True)
 
 	## display peering nodes
-	json_response=Microchain_client.get_nodes(target_address)
+	json_response=Microchain_client.get_peernodes(target_address)
 	nodes = json_response['nodes']
 	logger.info('Peer nodes:')
 	for node in nodes:
@@ -441,11 +441,24 @@ if __name__ == "__main__":
 			for future in done:
 				logger.info(future.result())
 			loop.close()
+		elif(op_status == 5):
+			# display peering nodes
+			json_response=Microchain_client.get_peernodes(target_address)
+			nodes = json_response['nodes']
+			logger.info('Peer nodes:')
+			for node in nodes:
+				logger.info(node)
+		elif(op_status == 6):
+			# list check node result
+			json_response=Microchain_client.check_verifynode(target_address, '5af1d2232756fdff405682ec6f1b785f645cf351')
+			node = json_response['node']
+			logger.info('Check nodes:')
+			logger.info(node)
 		else:
 			# display peering nodes
-			json_response=Microchain_client.get_nodes(target_address)
+			json_response=Microchain_client.get_verifynodes(target_address)
 			nodes = json_response['nodes']
-			logger.info('Consensus nodes:')
+			logger.info('Verify nodes:')
 			for node in nodes:
 				logger.info(node)
 	elif(test_func == 1):
@@ -462,7 +475,7 @@ if __name__ == "__main__":
 	elif(test_func == 2):
 		if(op_status == 1):
 			for tps_round in range(tx_count):
-				Microchain_client.send_transaction(target_address, tx_size, True)
+				Microchain_client.send_transaction(target_address, tx_size, False)
 		elif(op_status == 10):
 			for tps_round in range(tx_count):
 				Microchain_client.launch_txs(tx_size)
