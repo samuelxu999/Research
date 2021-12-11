@@ -87,7 +87,6 @@ class Validator():
 
 		# Instantiate the verified Nodes
 		self.verify_nodes = Nodes(db_file = VERIFY_DATABASE)
-		self.verify_nodes.load_ByAddress()
 
 		# New database manager to manage chain data
 		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
@@ -443,7 +442,7 @@ class Validator():
 
 	def get_node(self, node_address):
 		'''
-		Check node: select a node from peer_nodes and verify buffer given node address
+		Check node: select a node from node buffers given node address
 		'''
 
 		## 1) search target node in peer nodes
@@ -467,6 +466,7 @@ class Validator():
 			return json_node
 
 		## 2) search target node in verify nodes
+		self.verify_nodes.load_ByAddress(node_address)
 		ls_verifynodes=list(self.verify_nodes.get_nodelist())
 
 		for node in ls_verifynodes:
@@ -485,7 +485,6 @@ class Validator():
 		if(json_node!='{}'):
 			## add node to local verifynode.
 			self.verify_nodes.register_node(json_node['address'], json_node['public_key'], json_node['node_url'])
-			self.verify_nodes.load_ByAddress()
 
 		return json_node
 
