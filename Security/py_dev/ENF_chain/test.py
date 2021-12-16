@@ -39,13 +39,13 @@ def load_ENF(args):
 	sample_length = args.sample_length
 	ENF_dataset = []
 	## get sample data for node 0
-	ls_ENF1 = TypesUtil.np2list(ENF_data[head_pos:(head_pos+sample_length)])
+	ls_ENF1 = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32) )
 	ENF_dataset.append(ls_ENF1)
 
 	head_pos = args.sample_head + sample_length
 	## get sample data for node 1
-	ls_ENF2 = TypesUtil.np2list(ENF_data[head_pos:(head_pos+sample_length)])
-	#ENF_dataset.append(ls_ENF2)
+	ls_ENF2 = TypesUtil.np2list( np.array(ENF_data[head_pos:(head_pos+sample_length), 1], dtype=np.float32) )
+	ENF_dataset.append(ls_ENF2)
 
 	fig_file = "ENF_figure"
 	PlotUtil.Plotline(ENF_dataset, is_show=args.show_fig, is_savefig=args.save_fig, datafile=fig_file)
