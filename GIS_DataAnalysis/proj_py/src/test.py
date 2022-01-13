@@ -11,12 +11,15 @@ Created on Oct.9, 2019
 import time, sys, os
 import argparse
 import logging
+import numpy as np
+
 from curve_validation import Curve_Validation
 from RF_Nepal import RF_Nepal
 from multi_processing import Multi_ProcessRF, Multi_PreData
 from Data_Preprocessing import Pre_Data
 from utilities import FileUtil
-import numpy as np
+from TS_fit import TS_Fit
+
 
 def test_validation():
 	data_config= {}
@@ -185,32 +188,74 @@ def test_getSRvalues(args):
 		exec_time=time.time()-start_time
 		print("Running time: {:.3f} s".format(exec_time))
 
+def test_TS_fit(args):
+	## ------------------------------ test configuration --------------------------------
+	## raw data sources
+	# data_dir = "/media/external/Deng/142041/LC081420412013041501T1-SC20191127190639"
+	# data_dir = "/media/external/viirs_all"
+	# data_dir = "/media/external/Deng/142041"
+	data_dir = "../NNP_avg_rade9h"
+
+	## csv data directory to save all SR_BandValues
+	csv_dir = "../csv_data/"
+	## csv data directory to save all SR_BandValues
+	npy_dir = "../npy_data/"
+
+	## set data range that is used to process a region of the map figure. 
+	region_param = args.region.split('_')
+	row_start= int(region_param[0])
+	row_end = int(region_param[1])
+	col_start = int(region_param[2])
+	col_end = int(region_param[3])
+
+	start_time=time.time()
+	## 1) for each file to get data information ['raster_file', [band, Band_Number, band_list], Julian_Day]
+	ls_datainfo=Pre_Data.get_datainfo(data_dir)
+	# print(ls_datainfo[0])
+
+	## 2) Get SR_BandValues by for each ls_datainfo
+	SR_BandValues = Pre_Data.get_SR_Values(ls_datainfo, row_start, row_end, col_start, col_end)
+
+	## 3) Use TS_fit.norm_data() to normalize SR_BandValues
+	norm_values = TS_Fit.norm_data(SR_BandValues, norm_type=args.op_status, isDebug=args.debug)
+	print("Normalized SR_BandValues hape:{}".format(norm_values.shape))
+	# print(norm_values)
+
+	TS_Fit.least_square_cos(norm_values, isDebug=args.debug)
+
+	exec_time=time.time()-start_time
+	print("Running time: {:.3f} s".format(exec_time))
+
 
 def define_and_get_arguments(args=sys.argv[1:]):
-    parser = argparse.ArgumentParser(
-        description="Run test evaulation app."
-    )
-    parser.add_argument("--test_func", type=int, default=0, 
-                        help="Execute test operation: \
-                        0-function test, \
-                        1-test_validation, \
-                        2-test_create_train_table, \
-                        3-test_RF_predict, \
-                        4-test_Multi_Process_RF, \
-                        5-test_Merge_predict, \
-                        6-test_Load_predict, \
-                        7-test_readArray, \
-                        8-test_getSRvalues, \
-                        8-test_Multi_getSRvalues")
+	parser = argparse.ArgumentParser(
+	    description="Run test evaulation app."
+	)
+	parser.add_argument("--test_func", type=int, default=0, 
+	                    help="Execute test operation: \
+	                    0-function test, \
+	                    1-test_validation, \
+	                    2-test_create_train_table, \
+	                    3-test_RF_predict, \
+	                    4-test_Multi_Process_RF, \
+	                    5-test_Merge_predict, \
+	                    6-test_Load_predict, \
+	                    7-test_readArray, \
+	                    8-test_getSRvalues, \
+	                    9-test_Multi_getSRvalues, \
+	                    10-test_TS_fit")
 
-    parser.add_argument("--op_status", type=int, default=0, 
-                        help="Execute test based on condition.")
-    
-    parser.add_argument("--region", type=str, default="0_1_0_1", 
-                        help="Region of rtf: row-start_row-end_column-start_column-end.")
+	parser.add_argument("--debug", action="store_true", 
+						help="if set, show debug log.")
 
-    args = parser.parse_args(args=args)
-    return args
+	parser.add_argument("--op_status", type=int, default=0, 
+	                    help="Execute test based on condition.")
+
+	parser.add_argument("--region", type=str, default="0_1_0_1", 
+	                    help="Region of rtf: row-start_row-end_column-start_column-end.")
+
+	args = parser.parse_args(args=args)
+	return args
 
 if __name__ == "__main__":
 	FORMAT = "%(asctime)s %(levelname)s | %(message)s"
@@ -241,5 +286,7 @@ if __name__ == "__main__":
 		test_getSRvalues(args)
 	elif(args.test_func==9):
 		test_Multi_getSRvalues(args)
+	elif(args.test_func==10):
+		test_TS_fit(args)
 	else:
 		pass
