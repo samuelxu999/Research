@@ -45,13 +45,15 @@ class TS_Fit(object):
 		## initial norm_SR_Values (row, column, datetime) to save results.
 		norm_SR_Values = np.zeros(SR_Values.shape)
 
+		## save time serial
+		ls_datatime=[]
+
 		if(norm_type==1):
 			## Annually normalization
 			year_label = []
 			year_id=0
 			start_year_id = 0
 			end_year_id = 0
-			ls_datatime=[]
 
 			## for each datetime to calcuate year range
 			for year_values in SR_Datetime:
@@ -104,6 +106,11 @@ class TS_Fit(object):
 			if(isDebug):
 				logger.info(year_label)
 		else:
+			## for each datetime to calcuate year range
+			for year_values in SR_Datetime:
+				## append current datetime to ls_datatime
+				ls_datatime.append(str(year_values[0][0])[:8])
+
 			## No normalization
 			norm_SR_Values = SR_Values
 
