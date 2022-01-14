@@ -13,6 +13,7 @@ import math, os
 import logging
 import numpy as np
 from Data_Preprocessing import Pre_Data
+from fit_validation import FitValidation
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,12 @@ class TS_Fit(object):
 			year_id=0
 			start_year_id = 0
 			end_year_id = 0
+			ls_datatime=[]
 
 			## for each datetime to calcuate year range
 			for year_values in SR_Datetime:
+				## append current datetime to ls_datatime
+				ls_datatime.append(str(year_values[0][0])[:8])
 				current_year = str(year_values[0][0])[:4]
 				## Not found in year_label, current_year falls into another year range.
 				if(current_year not in year_label):
@@ -103,16 +107,43 @@ class TS_Fit(object):
 			## No normalization
 			norm_SR_Values = SR_Values
 
-		return norm_SR_Values
+		return norm_SR_Values, ls_datatime
 
 	@staticmethod
-	def least_square_cos(norm_SR_Values, isDebug=False):
+	def fit_model(norm_SR_Values, ls_datetime, fit_param, isDebug=False):
 		'''
-		Function: Least square model fit.
+		Function: Use normized SR values to fit a model.
 		@norm_SR_Values:	Input normalized SR_value matrix.
+		@ls_datetime:		Datetime list to rebuild time point of x axis.
+		@fit_param:			parameter for fit model (json).
 		@isDebug:			Enable debug option to print log.
 		@fit_data:			return fix results
 		'''
-		## create serial int array x
-		x = np.arange(1, norm_SR_Values.shape[2]+1, 1, dtype=int)
+		## create time serial
+		time_serial = np.array(ls_datetime)
+
+		## for each cell to fit model based on TS
+		row_start = fit_param['region_param'][0]
+		col_start = fit_param['region_param'][1]
+
+		for i in range(norm_SR_Values.shape[0]):
+			for j in range(norm_SR_Values.shape[1]):
+				## 1) prepare dataset for fit model
+				pre_dataset = []
+				for k in range(norm_SR_Values.shape[2]):
+					# pre_dataset.append([time_serial[k], norm_SR_Values[i][j][k]])
+					pre_dataset.append([k, norm_SR_Values[i][j][k], time_serial[k]])
+
+				## 2) set fit_figure path
+				fig_path = fit_param['output_dir'] + "plot_fit_{}_{}".format(row_start+i, col_start+j)
+
+				## 3) call fit model function
+				logger.info(FitValidation.ts_curvefit(pre_dataset, fit_param['fit_type'], 
+														is_optimized=fit_param['is_optimized'],
+														showfig=fit_param['showfig'],
+														savefig=fit_param['savefig'], 
+														fig_file=fig_path))
+
+
+
 		

@@ -21,11 +21,12 @@ from utilities import FileUtil
 from TS_fit import TS_Fit
 
 
-def test_validation():
+def test_validation(args):
 	data_config= {}
 	data_config['dataset'] = "../dataset/"
 	data_config['datatype'] = "*.xlsx"
 	data_config['test_dir'] = "../test_results/"
+	data_config['batch_test'] = args.op_status
 	
 	Curve_Validation.test_validation(data_config)
 
@@ -217,11 +218,21 @@ def test_TS_fit(args):
 	SR_BandValues = Pre_Data.get_SR_Values(ls_datainfo, row_start, row_end, col_start, col_end)
 
 	## 3) Use TS_fit.norm_data() to normalize SR_BandValues
-	norm_values = TS_Fit.norm_data(SR_BandValues, norm_type=args.op_status, isDebug=args.debug)
+	norm_values, ls_datetime = TS_Fit.norm_data(SR_BandValues, norm_type=args.op_status, isDebug=args.debug)
 	print("Normalized SR_BandValues hape:{}".format(norm_values.shape))
 	# print(norm_values)
+	# print(ls_datetime)
 
-	TS_Fit.least_square_cos(norm_values, isDebug=args.debug)
+	## 4) Apply TS_fit_model to analyze data
+	json_param = {}
+	json_param['output_dir'] = '../test_results/'
+	json_param['region_param'] = [row_start, col_start]
+	json_param['fit_type'] = 'polynom'
+	json_param['is_optimized'] = True
+	json_param['showfig'] = False
+	json_param['savefig'] = True
+
+	TS_Fit.fit_model(norm_values, ls_datetime, fit_param=json_param, isDebug=args.debug)
 
 	exec_time=time.time()-start_time
 	print("Running time: {:.3f} s".format(exec_time))
@@ -262,14 +273,14 @@ if __name__ == "__main__":
 	LOG_LEVEL = logging.INFO
 	logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
-	PreData_logger = logging.getLogger("Pre_Data")
-	PreData_logger.setLevel(logging.INFO)
+	# PreData_logger = logging.getLogger("Pre_Data")
+	# PreData_logger.setLevel(logging.INFO)
 
 	## define arguments for test app
 	args = define_and_get_arguments()
 
 	if(args.test_func==1):
-		test_validation()
+		test_validation(args)
 	elif(args.test_func==2):
 		test_create_train_table()
 	elif(args.test_func==3):

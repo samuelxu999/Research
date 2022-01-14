@@ -271,7 +271,15 @@ class PlotUtil(object):
 		if( is_show ):
 			plt.show()
 		if( is_savefig ):
+			## set ext for figure
 			figname = os.path.splitext(datafile)[0] +'.png'
+
+			## check if parent directory is existed.
+			png_dir = os.path.dirname(figname)
+			if( (png_dir!='') and (not os.path.exists(png_dir)) ):
+				os.makedirs(png_dir)
+			
+			## save figure to disk.
 			fig.savefig(figname)
 		plt.close()
 
@@ -301,7 +309,15 @@ class PlotUtil(object):
 		if( is_show ):
 			plt.show()
 		if( is_savefig ):
+			## set ext for figure
 			figname = os.path.splitext(datafile)[0] +'.png'
+
+			## check if parent directory is existed.
+			png_dir = os.path.dirname(figname)
+			if( (png_dir!='') and (not os.path.exists(png_dir)) ):
+				os.makedirs(png_dir)
+			
+			## save figure to disk.
 			fig.savefig(figname)
 		plt.close()
 
@@ -332,7 +348,15 @@ class PlotUtil(object):
 		if( is_show ):
 			plt.show()
 		if( is_savefig ):
+			## set ext for figure
 			figname = os.path.splitext(datafile)[0] +'.png'
+
+			## check if parent directory is existed.
+			png_dir = os.path.dirname(figname)
+			if( (png_dir!='') and (not os.path.exists(png_dir)) ):
+				os.makedirs(png_dir)
+			
+			## save figure to disk.
 			fig.savefig(figname)
 		plt.close()
 

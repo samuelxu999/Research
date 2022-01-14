@@ -22,13 +22,13 @@ Train data class
 class Curve_Validation(object):
 	@staticmethod
 	def test_validation(dataset_config):
-		# Get data file list
+		## Get data file list
 		ls_files = FileUtil.list_files(dataset_config['dataset'], dataset_config['datatype'])
 
-		batch_test = False
+		## set batch_test flag.
+		batch_test = dataset_config['batch_test']
 
-
-		if(not batch_test):
+		if(batch_test==0):
 			#==================== single test ==========================
 			test_file = ls_files[3]
 			print(test_file)
