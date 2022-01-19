@@ -269,9 +269,9 @@ class Pre_Data(object):
 							## ????????how to handle empty or invid raster_point?
 							data_value = 0
 
-						## perform QA_Conversion
-						if( (Band_Number == len(band_info[2])) and (data_value > 0) ):
-							data_value = QA_Conversion(data_value)
+						# ## perform QA_Conversion
+						# if( (Band_Number == len(band_info[2])) and (data_value > 0) ):
+						# 	data_value = QA_Conversion(data_value)
 
 						## skip operation if Band_Number is not valid.
 						if(Band_Number>0):
@@ -327,7 +327,7 @@ class Pre_Data(object):
 						SR_BandValues[i - row_start, j-col_start, date_index, 0] = Julian_Day
 
 						## b) ----------- read a point value -------------		 
-						raster_point = raster_band.ReadAsArray(j, i, 1, 1)
+						raster_point = raster_band.ReadAsArray(i, j, 1, 1)
 
 						## post-process data before saving into SR_BandValues
 						if(raster_point):
