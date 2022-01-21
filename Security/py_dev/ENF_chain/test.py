@@ -11,6 +11,10 @@ from consensus.ENF_consensus import ENFUtil
 from consensus.ENF_analyze import ENF_analyzer
 from utils.Swarm_RPC import Swarm_RPC
 
+## use tkagg to remotely display plot
+# import matplotlib
+# matplotlib.use('tkagg')
+
 logger = logging.getLogger(__name__)
 
 # tx commit timeout.
