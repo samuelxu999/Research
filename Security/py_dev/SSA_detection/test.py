@@ -49,27 +49,31 @@ def ssa_test(args):
 	ts_vector = load_data()
 	print(ts_vector.shape)
 
-	## initialize SSA object
-	my_ssa = SingularSpectrumAnalysis(win_len=40, n_eofs=5, test_lag=20, hankel_order=40)
-
 	## inject noisy data
 	ts_vector[50:51]=0.1
-	ts_vector[150:155]=0.3
+	ts_vector[150:151]=0.8
+	ts_vector[151:152]=0.7
+	ts_vector[152:153]=0.6
+	ts_vector[153:154]=0.5
+	ts_vector[154:155]=0.4
 	ts_vector[450:451]=0.15	
 
 	## inject fakedata
 	ts_vector[300:315]=0.1
+
+	## pre) initialize SSA object
+	cpd_ssa = SingularSpectrumAnalysis(lag_length=40, n_eofs=5, test_lag=20, hankel_order=40)
 	
-	## apply SSA to get score (D)
-	score = my_ssa.score_ssa(ts_vector)
+	## 1) apply SSA to get Euclidean distances D
+	D = cpd_ssa.Dn_Edist(ts_vector)
 
-	## get normalized sum of squired distances.
-	S = my_ssa.Sn_ssa(score)
+	## 2) get normalized sum of squired distances S.
+	S = cpd_ssa.Sn_norm(D)
 
-	## calculate CUSUM statistics W
-	W,h = my_ssa.Wn_CUSUM(S)
+	## 3) calculate CUSUM statistics W
+	W, h = cpd_ssa.Wn_CUSUM(S)
 
-	## plot ts data and scores
+	## 4) plot ts data and scores
 	PlotUtil.plot_data_and_score(ts_vector,W,h)
 
 def define_and_get_arguments(args=sys.argv[1:]):
