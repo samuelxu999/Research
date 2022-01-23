@@ -50,7 +50,7 @@ def ssa_test(args):
 	print(ts_vector.shape)
 
 	## initialize SSA object
-	my_ssa = SingularSpectrumAnalysis(40, n_eofs=5)
+	my_ssa = SingularSpectrumAnalysis(win_len=40, n_eofs=5, test_lag=20, hankel_order=40)
 
 	## inject noisy data
 	ts_vector[50:51]=0.1
