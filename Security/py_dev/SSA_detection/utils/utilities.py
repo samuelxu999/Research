@@ -115,13 +115,15 @@ class PlotUtil(object):
 		f,ax = plt.subplots(2, 1, figsize=(20, 10))
 		## plot raw data
 		ax[0].plot(raw_data, lw=1.0, color='b')
-		ax[0].set_title("ENF coef")
+		ax[0].set_ylabel('ENF coef score')
+		ax[0].set_title("ENF coef data")
 
 		## plot score and h
 		h = np.zeros_like(score)
 		h[:] = threshold
 		ax[1].plot(score,lw=1.0, color='g')
-		ax[1].plot(h,lw=1.0, color='r')
+		ax[1].plot(h,lw=1.0, color='r', linestyle='dashed')
+		ax[1].set_ylabel('CUSUM W')
 		ax[1].set_title("CUSUM-type W")
 		plt.show()
 		plt.close()

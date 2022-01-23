@@ -133,7 +133,7 @@ class SingularSpectrumAnalysis():
 			
 			## get score id
 			score_id = tid + self.test_lag + self.win_len + self.hankel_order -1
-			# score[score_id-1] = _score_svd(hankel_base, hankel_test, self.n_eofs)
+			# score[score_id] = _score_svd(hankel_base, hankel_test, self.n_eofs)
 			score[score_id] = _Edist_svd(hankel_base, hankel_test, self.n_eofs)
 		return score
 
@@ -163,8 +163,8 @@ class SingularSpectrumAnalysis():
 			## calculate mu of D
 			# mu_D = np.mean(ssa_score[tid-1:tid+self.win_len+self.hankel_order-1])
 			mu_start = self.win_len + self.test_lag + self.hankel_order 
-			mu_end = self.win_len + self.test_lag + self.hankel_order *2
-			mu_D = np.sum(ssa_score[mu_start:mu_end])/(self.hankel_order)
+			mu_end = mu_start + Q
+			mu_D = np.sum(ssa_score[mu_start:mu_end])/Q
 			# print(mu_D)
 
 			## the sum of squired distances is normalized to the number of elements in the test matrix  
