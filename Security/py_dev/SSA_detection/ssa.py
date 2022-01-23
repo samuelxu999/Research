@@ -10,6 +10,7 @@ Created on Dec.17, 2021
 '''
 
 import logging
+import math
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
@@ -19,28 +20,51 @@ logger = logging.getLogger(__name__)
 def _create_hankel(ts_vect, win_length, hankel_order, start_id):
 	'''Create Hankel matrix.
 	input
-		ts_vect : 		full time series vector
-		win_length:		window length of Hankel matrix
-		hankel_order : 	order of Hankel matrix
-		start_id : 		start index of ts_vect
+		ts_vect : 			full time series vector
+		win_length:			window length of Hankel matrix
+		hankel_order : 		order of Hankel matrix
+		start_id : 			start index of ts_vect
 	returns
-		X:				2d array shape (win_len, hankel_order)
+		hankel_X:			hankel matrix, 2d array shape (win_len, hankel_order)
 	'''
 	end_id = start_id + hankel_order
-	X = np.empty((win_length, hankel_order))
+	hankel_X = np.empty((win_length, hankel_order))
 	for i in range(hankel_order):
-	    X[:, i] = ts_vect[(start_id + i):(start_id + i + win_length)]
-	return X
+	    hankel_X[:, i] = ts_vect[(start_id + i):(start_id + i + win_length)]
+	return hankel_X
 
-def _spd_svd(hankel_base, hankel_test, n_eofs):
+def _score_svd(hankel_base, hankel_test, n_eofs):
 	'''
-	Run svd algorithm for single point detection
+	Run singular spectrum analysis algorithm for change point detection (cpd)
 	'''
+	## apply svd to decompose hankel_base
 	U_base, _, _ = np.linalg.svd(hankel_base, full_matrices=False)
+
+	## apply svd to decompose hankel_test
 	U_test, _, _ = np.linalg.svd(hankel_test, full_matrices=False)
+
+	## perform the svd of lag-covariance matrix R=X*X.T 
+	## given a particular group I including sorted n_eofs eigenvectors.
+	## s is a list of scores that indicate the largest eigenvalue
 	_, s, _ = np.linalg.svd(U_test[:, :n_eofs].T @
 	    U_base[:, :n_eofs], full_matrices=False)
+
+	## return the largest one as score.
 	return 1 - s[0]
+
+def _Edist_svd(hankel_base, hankel_test, n_eofs):
+	'''
+	Run svd to get Euclidean distances of hankel_base and hankel_test
+	'''
+	## apply svd to decompose hankel_base
+	U_base, _, _ = np.linalg.svd(hankel_base, full_matrices=False)
+
+	## calculate Euclidean distance between test matrix and space matrix
+	Euc_dist = np.linalg.norm(hankel_test.T @ hankel_test - 
+		hankel_test.T @ U_base[:, :n_eofs] @ U_base[:, :n_eofs].T @ hankel_test)
+
+	## return the lEuclidean distance.
+	return Euc_dist
 
 
 class SingularSpectrumAnalysis():
@@ -56,7 +80,7 @@ class SingularSpectrumAnalysis():
 		hankel_order : int
 	        Hankel matrix length (K or Q). This also specify number of columns of Hankel matrix.  
 		test_lag : int
-	        interval between base matrix and test matrix (l).      
+	        interval between base matrix and test matrix (p).      
 		'''
 		self.win_len = win_len
 		self.n_eofs = n_eofs
@@ -64,6 +88,10 @@ class SingularSpectrumAnalysis():
 		self.test_lag = test_lag
 
 	def score_ssa(self, ts_vect):
+		'''
+		ts_vect : list
+			time serial vector that used to build scores between base matrix and test matrix.
+		'''
 		if self.hankel_order is None:
 			# rule of thumb
 			self.hankel_order = self.win_len
@@ -89,24 +117,93 @@ class SingularSpectrumAnalysis():
 		end_p = ts_size - self.win_len - self.hankel_order - self.test_lag + 1
 
 		for tid in range(1, end_p):
-			# logger.info(tid + self.win_len + self.hankel_order + self.test_lag )
-
-			# get Hankel matrix
-			base_id = tid
-			X_base = _create_hankel(ts_scaled, 
+			## get base Hankel matrix
+			base_id = tid -1
+			hankel_base = _create_hankel(ts_scaled, 
 									self.win_len, 
 									self.hankel_order,
 									base_id)
 
-			test_id = tid + self.test_lag
-			X_test = _create_hankel(ts_scaled, 
+			## get test Hankel matrix
+			test_id = tid + self.test_lag -1
+			hankel_test = _create_hankel(ts_scaled, 
 									self.win_len,
 									self.hankel_order,
 									test_id)
 			
-			score_id = tid + self.test_lag + self.hankel_order
-			score[score_id-1] = _spd_svd(X_base, X_test, self.n_eofs)
+			## get score id
+			score_id = tid + self.test_lag + self.win_len + self.hankel_order -1
+			# score[score_id-1] = _score_svd(hankel_base, hankel_test, self.n_eofs)
+			score[score_id] = _Edist_svd(hankel_base, hankel_test, self.n_eofs)
 		return score
+
+	def Sn_ssa(self, ssa_score):
+		'''
+		S : (list)
+			Calculate list of normalized sum of squired distances S.
+		'''
+		## S is used to save the normalized sum of squired Euclidean distances Dn
+		S = np.zeros_like(ssa_score)
+
+		ts_size = ssa_score.size
+
+		end_p = ts_size - self.win_len - self.hankel_order - self.test_lag + 1
+
+		M = self.win_len
+		Q = self.hankel_order
+
+		for tid in range(1, end_p):
+			## set start and end id of D
+			start_id = tid + self.test_lag + self.hankel_order-1
+			end_id = tid + self.win_len + self.test_lag + self.hankel_order-1
+
+			## set start id of D
+			S_id = tid + self.test_lag + self.win_len + self.hankel_order-1
+
+			## calculate mu of D
+			# mu_D = np.mean(ssa_score[tid-1:tid+self.win_len+self.hankel_order-1])
+			mu_start = self.win_len + self.test_lag + self.hankel_order 
+			mu_end = self.win_len + self.test_lag + self.hankel_order *2
+			mu_D = np.sum(ssa_score[mu_start:mu_end])/(self.hankel_order)
+			# print(mu_D)
+
+			## the sum of squired distances is normalized to the number of elements in the test matrix  
+			norm_D = np.sum(ssa_score[start_id:end_id])/(M*Q)
+
+			## calculate normalized sum of squired distances S
+			if(mu_D!=0):
+				Sn = norm_D/mu_D
+			else:
+				Sn = norm_D
+
+			S[S_id] = Sn
+
+		return S
+
+	def Wn_CUSUM(self, ssa_Sn):
+		'''
+		W : (list)
+			Calculate CUSUM W of ssa_Sn.
+		'''
+		## W is used to save the cumulative sum of S 
+		W = np.zeros_like(ssa_Sn)
+
+		ts_size = ssa_Sn.size
+		M = self.win_len
+		Q = self.hankel_order
+
+		## calculate CUSUM W
+		W[0] = ssa_Sn[0]
+		for tid in range(1, ts_size):
+				temp_W = (W[tid-1] + ssa_Sn[tid]-ssa_Sn[tid-1]-1/(3*M*Q))
+				W[tid] = max(0, temp_W)
+		
+		## calculate decision threshold
+		# t_alpha = 1.6973	## alpha = 0.05, n=30
+		t_alpha = 1.6839	## alpha = 0.05, n=40
+		h = (2*t_alpha/(M*Q)) * math.sqrt((Q/3)*(3*M*Q-Q*Q+1))
+
+		return W, h
 
 	@staticmethod
 	def create_hankel(ts_vect, win_length, hankel_order, start_id):
@@ -130,10 +227,4 @@ class SingularSpectrumAnalysis():
 		_, sigma, _ = np.linalg.svd(hankel_matrix, full_matrices=False)
 		return sigma[:n_eofs] 
 
-
-	# @staticmethod
-	# def reconstruct(hankel_matrix, n_eofs):
-	# 	U_vect, sigma, V_vect = np.linalg.svd(hankel_matrix, full_matrices=False)
-	# 	vect_restruct = (U_vect[:,0:n_eofs]).dot(np.diag(sigma[0:n_eofs])).dot(V_vect[0:n_eofs,:])
-	# 	return vect_restruct
 

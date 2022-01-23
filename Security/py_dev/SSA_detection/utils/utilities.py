@@ -91,7 +91,7 @@ class PlotUtil(object):
 
 		## set x and y label text
 		plt.xlabel('Time slot', fontsize=font_size)
-		plt.ylabel('ENF (HZ)', fontsize=font_size) 
+		plt.ylabel('ENF coef', fontsize=font_size) 
 		# plt.ylim(59.995, 60.005)
 
 		## plot legend given legend label 
@@ -111,8 +111,17 @@ class PlotUtil(object):
 		plt.close()
 
 	@staticmethod
-	def plot_data_and_score(raw_data, score):
+	def plot_data_and_score(raw_data, score, threshold):
 		f,ax = plt.subplots(2, 1, figsize=(20, 10))
-		ax[0].plot(raw_data); ax[0].set_title("raw data")
-		ax[1].plot(score,"r"); ax[1].set_title("score")
+		## plot raw data
+		ax[0].plot(raw_data, lw=1.0, color='b')
+		ax[0].set_title("ENF coef")
+
+		## plot score and h
+		h = np.zeros_like(score)
+		h[:] = threshold
+		ax[1].plot(score,lw=1.0, color='g')
+		ax[1].plot(h,lw=1.0, color='r')
+		ax[1].set_title("CUSUM-type W")
 		plt.show()
+		plt.close()

@@ -1,4 +1,13 @@
-#This is used to unit function test.
+'''
+========================
+test.py
+========================
+Created on Dec.17, 2021
+@author: Xu Ronghua
+@Email:  rxu22@binghamton.edu
+@TaskDescription: This is used to unit function test and demo.
+@Reference: 
+'''
 
 import sys
 import time
@@ -8,6 +17,9 @@ import argparse
 from utils.utilities import FileUtil, TypesUtil, PlotUtil
 from ssa import SingularSpectrumAnalysis
 
+## use tkagg to remotely display plot
+# import matplotlib
+# matplotlib.use('tkagg')
 
 logger = logging.getLogger(__name__)
 
@@ -33,39 +45,39 @@ def load_data():
 	 
 
 def ssa_test(args):
+	## load time series data
 	ts_vector = load_data()
-
 	print(ts_vector.shape)
 
-	my_ssa = SingularSpectrumAnalysis(30, n_eofs=5)
-	# X = SingularSpectrumAnalysis.create_hankel(ts_vector, 60, 30, 0)
-	# print(X.shape)
+	## initialize SSA object
+	my_ssa = SingularSpectrumAnalysis(40, n_eofs=5)
 
-	# sigma = SingularSpectrumAnalysis.sigma_svd(X, 5)
-	# print(sigma)
-
-	# x_reconstruct = SingularSpectrumAnalysis.reconstruct(X, 5)
-	# print(x_reconstruct.shape)
-
-	## inject noise
+	## inject noisy data
 	ts_vector[50:51]=0.1
-	ts_vector[150:151]=0.3
-	ts_vector[250:251]=0.2
+	ts_vector[150:155]=0.3
+	ts_vector[450:451]=0.15	
 
 	## inject fakedata
-	ts_vector[400:435]=0.25
-
+	ts_vector[300:315]=0.1
+	
+	## apply SSA to get score (D)
 	score = my_ssa.score_ssa(ts_vector)
-	# print(score)
 
-	PlotUtil.plot_data_and_score(ts_vector,score)
+	## get normalized sum of squired distances.
+	S = my_ssa.Sn_ssa(score)
+
+	## calculate CUSUM statistics W
+	W,h = my_ssa.Wn_CUSUM(S)
+
+	## plot ts data and scores
+	PlotUtil.plot_data_and_score(ts_vector,W,h)
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run test.")
 
 	parser.add_argument("--test_func", type=int, default=0, 
-						help="Execute test function: 0-function test, \
-													1-analyze_data()")
+						help="Execute test function: 0-show_data(), \
+													1-ssa_test()")
 
 	parser.add_argument("--show_fig", action="store_true", help="Show plot figure model.")
 
