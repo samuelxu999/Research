@@ -47,25 +47,37 @@ def load_data():
 def ssa_test(args):
 	## load time series data
 	ts_vector = load_data()
-	print(ts_vector.shape)
+	# print(ts_vector.shape)
 
-	## inject noisy data
-	ts_vector[50:51]=0.1
-	ts_vector[150:151]=0.8
-	ts_vector[151:152]=0.7
-	ts_vector[152:153]=0.6
-	ts_vector[153:154]=0.5
-	ts_vector[154:155]=0.4
-	ts_vector[450:451]=0.15	
+	## noisy tolerant 
+	if(args.op_status==1):
+		## inject noisy data
+		ts_vector[150:151]=0.1
+		ts_vector[200:201]=0.8
+		ts_vector[201:202]=0.7
+		ts_vector[202:203]=0.6
+		ts_vector[203:204]=0.5
+		ts_vector[204:205]=0.4
+		ts_vector[350:352]=0.2
+		ts_vector[450:451]=0.15	
+	## attack detect
+	elif(args.op_status==2):
+		## inject noisy data
+		ts_vector[150:151]=0.1
+		ts_vector[450:451]=0.15	
 
-	## inject fakedata
-	ts_vector[300:315]=0.1
+		## inject fakedata
+		ts_vector[200:225]=0.3
+		ts_vector[300:315]=0.1		
+	## normal data
+	else:
+		pass
 
 	## pre) initialize SSA object
 	cpd_ssa = SingularSpectrumAnalysis(lag_length=40, n_eofs=5, test_lag=20, hankel_order=40)
 	
 	## 1) apply SSA to get Euclidean distances D
-	D = cpd_ssa.Dn_Edist(ts_vector)
+	D = cpd_ssa.Dn_Edist(ts_vector, scaled=True)
 
 	## 2) get normalized sum of squired distances S.
 	S = cpd_ssa.Sn_norm(D)
@@ -82,6 +94,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	parser.add_argument("--test_func", type=int, default=0, 
 						help="Execute test function: 0-show_data(), \
 													1-ssa_test()")
+
+	parser.add_argument("--op_status", type=int, default=0, help="test case type.")
 
 	parser.add_argument("--show_fig", action="store_true", help="Show plot figure model.")
 

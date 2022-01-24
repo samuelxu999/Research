@@ -137,21 +137,21 @@ class SingularSpectrumAnalysis():
 		Q = self.hankel_order
 		p = self.test_lag
 
-		end_p = ts_size - M - Q - p + 1
+		end_point = ts_size - M - Q - p + 1
 
-		for tid in range(1, end_p):
+		for tid in range(1, end_point):
 			## get base Hankel matrix
 			base_id = tid -1
 			hankel_base = _create_hankel(ts_scaled, M, Q, base_id)
 
 			## get test Hankel matrix
-			test_id = tid + self.test_lag -1
+			test_id = tid + p -1
 			hankel_test = _create_hankel(ts_scaled, M, Q, test_id)
 			
-			## get Dn id
-			score_id = tid + M + Q + p -1
-			# Dn[score_id] = _score_svd(hankel_base, hankel_test, self.n_eofs)
-			Dn[score_id] = _Edist_svd(hankel_base, hankel_test, self.n_eofs)
+			## Set start id of Di
+			D_id = tid -1
+			# Dn[D_id] = _score_svd(hankel_base, hankel_test, self.n_eofs)
+			Dn[D_id] = _Edist_svd(hankel_base, hankel_test, self.n_eofs)
 		return Dn
 
 	def Sn_norm(self, Dn):
@@ -172,29 +172,28 @@ class SingularSpectrumAnalysis():
 
 		end_p = ts_size - M - Q - p + 1
 
+		## ------ calculate mu of Dn ????? ----------
+		# mu_D = np.mean(Dn[:end_p])/(M*Q)
+		## we use fixed mu_D to tolerant noisy
+		mu_D = (M)/(M*Q)
+
 		for tid in range(1, end_p):
 			## set start and end id of Dn
-			start_id = tid + p + Q -1
-			end_id = tid + M + p + Q-1
-
-			## set start id of Dn
-			S_id = tid + M + Q + p -1
-
-			## calculate mu of Dn
-			# mu_D = np.mean(Dn[tid-1:tid+self.lag_length+self.hankel_order-1])
-			mu_start = M + Q + p 
-			mu_end = mu_start + Q
-			mu_D = np.sum(Dn[mu_start:mu_end])/Q
-			# print(mu_D)
+			start_id = tid -1
+			end_id = start_id + Q 
 
 			## the sum of squired distances is normalized to the number of elements in the test matrix  
-			norm_D = np.sum(Dn[start_id:end_id])/(M*Q)
+			# norm_D = np.mean(Dn[start_id:end_id])/(M*Q)
+			norm_D = Dn[start_id]/(M*Q)
 
 			## calculate normalized sum of squired distances Si
-			if(mu_D!=0):
+			if(mu_D>0.0):
 				Si = norm_D/mu_D
 			else:
 				Si = norm_D
+
+			## set start id of Si
+			S_id = tid -1
 
 			Sn[S_id] = Si
 
@@ -214,6 +213,7 @@ class SingularSpectrumAnalysis():
 		ts_size = Sn.size
 		M = self.lag_length
 		Q = self.hankel_order
+		p = self.test_lag
 
 		## calculate CUSUM W
 		W[0] = Sn[0]
@@ -226,7 +226,12 @@ class SingularSpectrumAnalysis():
 		t_alpha = 1.6839	## alpha = 0.05, n=40
 		h = (2*t_alpha/(M*Q)) * math.sqrt((Q/3)*(3*M*Q-Q*Q+1))
 
-		return W, h
+		## shift points of W left to align the change points
+		shift_pos = M + Q + p
+		shift_W = np.zeros_like(W)
+		shift_W[shift_pos:]=W[:ts_size-shift_pos]
+
+		return shift_W, h
 
 	@staticmethod
 	def create_hankel(ts_vect, lag_length, hankel_order, start_id):
