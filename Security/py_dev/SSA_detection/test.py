@@ -68,7 +68,7 @@ def ssa_test(args):
 
 		## inject fakedata
 		ts_vector[200:225]=0.3
-		ts_vector[300:315]=0.1		
+		ts_vector[300:310]=0.1		
 	## normal data
 	else:
 		pass

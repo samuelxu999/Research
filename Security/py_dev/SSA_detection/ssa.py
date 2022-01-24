@@ -69,9 +69,11 @@ def _Edist_svd(hankel_base, hankel_test, n_eofs):
 	## apply svd to decompose hankel_base, then use U_base to represent l-subspace
 	U_base, _, _ = np.linalg.svd(hankel_base, full_matrices=False)
 
-	## calculate Euclidean distance between test matrix and l-subspace matrix
+	## a) calculate Euclidean distance between test matrix and l-subspace matrix
 	Euc_dist = np.linalg.norm(hankel_test.T @ hankel_test - 
 		hankel_test.T @ U_base[:, :n_eofs] @ U_base[:, :n_eofs].T @ hankel_test)
+
+	# Euc_dist = np.linalg.norm(hankel_test)**2 - np.linalg.norm(U_base[:, :n_eofs].T @ hankel_test)**2
 
 	## return the Euclidean distance.
 	return Euc_dist
@@ -175,7 +177,7 @@ class SingularSpectrumAnalysis():
 		## ------ calculate mu of Dn ????? ----------
 		# mu_D = np.mean(Dn[:end_p])/(M*Q)
 		## we use fixed mu_D to tolerant noisy
-		mu_D = (M)/(M*Q)
+		mu_D = (M+p)/(M*Q)
 
 		for tid in range(1, end_p):
 			## set start and end id of Dn
