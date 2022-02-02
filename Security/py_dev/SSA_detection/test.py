@@ -73,18 +73,13 @@ def ssa_test(args):
 	else:
 		pass
 
-	## use a section of ts_vector to performe ssa
-	test_section = ts_vector
-	# test_section = ts_vector[:280]
-	# test_section = ts_vector[230:]
-
 	## start to count exe time
 	start_time=time.time()
 	## pre) initialize SSA object
 	cpd_ssa = SingularSpectrumAnalysis(lag_length=40, n_eofs=5, test_lag=20, hankel_order=40)
 	
 	## 1) apply SSA to get Euclidean distances D
-	D = cpd_ssa.Dn_Edist(test_section, scaled=True)
+	D = cpd_ssa.Dn_Edist(ts_vector, scaled=True)
 
 	## 2) get normalized sum of squired distances S.
 	S = cpd_ssa.Sn_norm(D)
@@ -97,7 +92,68 @@ def ssa_test(args):
 	print("SSA test running time: {:.3f} s".format(exec_time))
 
 	## 4) plot ts data and scores
-	PlotUtil.plot_data_and_score(test_section,W,h)
+	PlotUtil.plot_data_and_score(ts_vector, W, h, args.show_fig)
+
+def ssa_performance(args):
+	## load time series data
+	ts_vector = load_data()
+
+	## use a section of ts_vector to performe ssa
+	test_section = ts_vector[:300]
+
+	## inject noisy data
+	test_section[150:151]=0.1
+
+	## inject fakedata
+	test_section[200:225]=0.3
+
+	ls_dataset = []	
+
+	for x in range(args.test_round):
+		logger.info("Test run:{}".format(x+1))
+
+		ls_time = []
+
+		## pre) initialize SSA object
+		cpd_ssa = SingularSpectrumAnalysis(lag_length=40, n_eofs=5, test_lag=20, hankel_order=40)
+
+		## start to count exe time
+		start_time=time.time()	
+		## 1) apply SSA to get Euclidean distances D
+		start_stage=time.time()
+		D = cpd_ssa.Dn_Edist(test_section, scaled=True)
+		exec_time=time.time()-start_stage
+		ls_time.append(format(exec_time*1000, '.3f'))
+
+		start_stage=time.time()
+		## 2) get normalized sum of squired distances S.
+		S = cpd_ssa.Sn_norm(D)
+		exec_time=time.time()-start_stage
+		ls_time.append(format(exec_time*1000, '.3f'))
+
+		start_stage=time.time()
+		## 3) calculate CUSUM statistics W
+		W, h = cpd_ssa.Wn_CUSUM(S)
+		exec_time=time.time()-start_stage
+		ls_time.append(format(exec_time*1000, '.3f'))
+
+		## get exe time
+		exec_time=time.time()-start_time
+		ls_time.append(format(exec_time*1000, '.3f'))
+
+		ls_dataset.append(ls_time)
+
+		time.sleep(args.wait_interval)
+
+	## save log to local
+	if(args.save_log):
+		FileUtil.save_csv('test_results', 'exec_ssa_time', ls_dataset)		
+	else:
+		logger.info("SSA test running time (ms): {}\n".format(ls_time))
+
+	## 4) plot ts data and scores
+	if(args.show_fig):
+		PlotUtil.plot_data_and_score(test_section, W, h, True)
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run test.")
@@ -116,6 +172,10 @@ def define_and_get_arguments(args=sys.argv[1:]):
 
 	parser.add_argument("--save_log", action="store_true", help="Save test logs on local disk.")
 
+	parser.add_argument("--test_round", type=int, default=1, help="test evaluation round")
+
+	parser.add_argument("--wait_interval", type=int, default=1, help="break time between test round.")
+
 	args = parser.parse_args(args=args)
 	return args
 
@@ -132,6 +192,6 @@ if __name__ == '__main__':
 	if(args.test_func==1):
 		ssa_test(args)
 	elif(args.test_func==2):
-		pass
+		ssa_performance(args)
 	else:
 		show_data(args)

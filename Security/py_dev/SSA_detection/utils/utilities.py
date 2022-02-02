@@ -10,9 +10,11 @@ Created on Dec.17, 2021
 '''
 
 from datetime import datetime, timedelta
+import os
 import json
 import numpy as np
 import pickle
+import csv
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -34,6 +36,32 @@ class FileUtil(object):
 		## convert to np array
 		np_data = np.array(_data[0],dtype=np.float32)
 		return np_data
+
+	@staticmethod
+	def save_csv(test_dir, log_file, ls_dataset):
+		'''
+		Function: Write array to csv file
+		@arguments: 
+		(in) test_dir:   	test result directory to save csv file
+		(in) log_file:   	log file name
+		(in) ls_dataset:   	list format of dataset
+		'''
+		## check if test_dir is availble
+		if(not os.path.exists(test_dir)):
+			os.makedirs(test_dir)
+
+		## set log file path
+		csv_file = test_dir + '/' + log_file + '.csv'
+
+		## convert ls_dataset to np matrix
+		np_data = np.array(ls_dataset, dtype=np.float32)
+
+		## for each row to write csv file
+		with open(csv_file, 'w') as csv_handle:
+			csv_writer = csv.writer(csv_handle, delimiter=',')
+			for row in np_data:
+				csv_writer.writerow(row)
+		
 			
 
 '''
@@ -111,7 +139,7 @@ class PlotUtil(object):
 		plt.close()
 
 	@staticmethod
-	def plot_data_and_score(raw_data, score, threshold):
+	def plot_data_and_score(raw_data, score, threshold, is_show=False):
 		f,ax = plt.subplots(2, 1, figsize=(20, 10))
 		## plot raw data
 		ax[0].plot(raw_data, lw=1.0, color='b')
@@ -125,5 +153,10 @@ class PlotUtil(object):
 		ax[1].plot(h,lw=1.0, color='r', linestyle='dashed')
 		ax[1].set_ylabel('CUSUM W')
 		ax[1].set_title("CUSUM-type W")
-		plt.show()
+		
+		## show figure if is_show is enabled
+		if( is_show ):
+			plt.show()
+
+		## close plot
 		plt.close()
