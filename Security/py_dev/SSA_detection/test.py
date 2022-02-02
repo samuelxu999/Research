@@ -68,16 +68,23 @@ def ssa_test(args):
 
 		## inject fakedata
 		ts_vector[200:225]=0.3
-		ts_vector[300:310]=0.1		
+		ts_vector[330:340]=0.1		
 	## normal data
 	else:
 		pass
 
+	## use a section of ts_vector to performe ssa
+	test_section = ts_vector
+	# test_section = ts_vector[:280]
+	# test_section = ts_vector[230:]
+
+	## start to count exe time
+	start_time=time.time()
 	## pre) initialize SSA object
 	cpd_ssa = SingularSpectrumAnalysis(lag_length=40, n_eofs=5, test_lag=20, hankel_order=40)
 	
 	## 1) apply SSA to get Euclidean distances D
-	D = cpd_ssa.Dn_Edist(ts_vector, scaled=True)
+	D = cpd_ssa.Dn_Edist(test_section, scaled=True)
 
 	## 2) get normalized sum of squired distances S.
 	S = cpd_ssa.Sn_norm(D)
@@ -85,8 +92,12 @@ def ssa_test(args):
 	## 3) calculate CUSUM statistics W
 	W, h = cpd_ssa.Wn_CUSUM(S)
 
+	## get exe time
+	exec_time=time.time()-start_time
+	print("SSA test running time: {:.3f} s".format(exec_time))
+
 	## 4) plot ts data and scores
-	PlotUtil.plot_data_and_score(ts_vector,W,h)
+	PlotUtil.plot_data_and_score(test_section,W,h)
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run test.")
