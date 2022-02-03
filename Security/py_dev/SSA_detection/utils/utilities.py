@@ -61,6 +61,40 @@ class FileUtil(object):
 			csv_writer = csv.writer(csv_handle, delimiter=',')
 			for row in np_data:
 				csv_writer.writerow(row)
+
+	@staticmethod
+	def read_csv(csv_file):
+		'''
+		Function: Read data from csv file
+		@arguments: 
+		(out) np_dataset:   	return np.array(float32) object
+		(in) csv_file:   		csv file path
+		'''
+		ls_dataset = []
+		with open(csv_file, 'r') as csvFile:
+			csv_reader = csv.reader(csvFile, delimiter=',')
+			for row in csv_reader:
+				ls_dataset.append(row)
+		# transfer to np array and return
+		np_dataset = np.array(ls_dataset, dtype=np.float32)
+		return np_dataset
+
+	@staticmethod
+	def read_top_log(csv_file):
+		'''
+		Function: Read top log data from csv file
+		@arguments: 
+		(out) np_dataset:   	return np.array(float32) object
+		(in) csv_file:   		csv file path
+		'''
+		ls_dataset = []
+		with open(csv_file, 'r') as csvFile:
+			csv_reader = csv.reader(csvFile, delimiter=' ')
+			for row in csv_reader:
+				ls_dataset.append(row)
+		# transfer to np array and return
+		np_dataset = np.array(ls_dataset)
+		return np_dataset
 		
 			
 
