@@ -120,14 +120,19 @@ class TS_Fit(object):
 	def fit_model(norm_SR_Values, ls_datetime, fit_param, isDebug=False):
 		'''
 		Function: Use normized SR values to fit a model.
-		@norm_SR_Values:	Input normalized SR_value matrix.
-		@ls_datetime:		Datetime list to rebuild time point of x axis.
-		@fit_param:			parameter for fit model (json).
-		@isDebug:			Enable debug option to print log.
-		@fit_data:			return fix results
+		input
+			@norm_SR_Values:	Input normalized SR_value matrix.
+			@ls_datetime:		Datetime list to rebuild time point of x axis.
+			@fit_param:			parameter for fit model (json).
+			@isDebug:			Enable debug option to print log.
+		output:
+			ret_RMSE:			return array of fit results - record[row, col, RMSE]
 		'''
 		## create time serial
 		time_serial = np.array(ls_datetime)
+
+		## initialize ret_RMSE
+		ret_RMSE = []
 
 		## for each cell to fit model based on TS
 		row_start = fit_param['region_param'][0]
@@ -135,6 +140,8 @@ class TS_Fit(object):
 
 		for i in range(norm_SR_Values.shape[0]):
 			for j in range(norm_SR_Values.shape[1]):
+				row_id = row_start+i
+				col_id = col_start+j
 				## 1) prepare dataset for fit model
 				pre_dataset = []
 				for k in range(norm_SR_Values.shape[2]):
@@ -142,15 +149,20 @@ class TS_Fit(object):
 					pre_dataset.append([k, norm_SR_Values[i][j][k], time_serial[k]])
 
 				## 2) set fit_figure path
-				fig_path = fit_param['output_dir'] + "plot_fit_{}_{}".format(row_start+i, col_start+j)
+				fig_path = fit_param['output_dir'] + "plot_fit_{}_{}".format(row_id, col_id)
 
 				## 3) call fit model function
-				logger.info(FitValidation.ts_curvefit(pre_dataset, fit_param['fit_type'], 
+				RMSE_fit = FitValidation.ts_curvefit(pre_dataset, fit_param['fit_type'], 
 														is_optimized=fit_param['is_optimized'],
 														showfig=fit_param['showfig'],
 														savefig=fit_param['savefig'], 
-														fig_file=fig_path))
+														fig_file=fig_path)
+				if(RMSE_fit<1.0):
+					ret_RMSE.append([row_id, col_id, RMSE_fit])
 
+				if(isDebug):
+					logger.info('row:{}\t column:{}\t Fit function:{}\t RMSE:{}'.format(row_id, col_id, fit_param['fit_type'], RMSE_fit))
 
+		return ret_RMSE
 
 		

@@ -20,6 +20,9 @@ from Data_Preprocessing import Pre_Data
 from utilities import FileUtil
 from TS_fit import TS_Fit
 
+## use tkagg to remotely display plot
+#import matplotlib
+#matplotlib.use('tkagg')
 
 def test_validation(args):
 	data_config= {}
@@ -224,15 +227,21 @@ def test_TS_fit(args):
 	# print(ls_datetime)
 
 	## 4) Apply TS_fit_model to analyze data
+	fit_function = ['sigmoid','gussain', 'polynom']
 	json_param = {}
-	json_param['output_dir'] = '../test_results/'
+	json_param['output_dir'] = '../test_results/{}/'.format(fit_function[args.fit_func])
 	json_param['region_param'] = [row_start, col_start]
-	json_param['fit_type'] = 'polynom'
+	json_param['fit_type'] = fit_function[args.fit_func]
 	json_param['is_optimized'] = True
-	json_param['showfig'] = False
-	json_param['savefig'] = True
+	json_param['showfig'] = args.show_fig
+	json_param['savefig'] = args.save_fig
 
-	TS_Fit.fit_model(norm_values, ls_datetime, fit_param=json_param, isDebug=args.debug)
+	## Get RMSE results from TS_fit_model.
+	ret_RMSE = TS_Fit.fit_model(norm_values, ls_datetime, fit_param=json_param, isDebug=args.debug)
+
+	## save log as csv file
+	csv_log = '../test_results/{}_{}.csv'.format(fit_function[args.fit_func],args.region)
+	FileUtil.csv_write(csv_log,ret_RMSE)
 
 	exec_time=time.time()-start_time
 	print("Running time: {:.3f} s".format(exec_time))
@@ -264,6 +273,16 @@ def define_and_get_arguments(args=sys.argv[1:]):
 
 	parser.add_argument("--region", type=str, default="0_1_0_1", 
 	                    help="Region of rtf: row-start_row-end_column-start_column-end.")
+
+	parser.add_argument("--fit_func", type=int, default=0, 
+	                    help="Fit function: \
+	                    		0-sigmoid, \
+	                    		1-gussain, \
+	                    		2-polynom.")
+
+	parser.add_argument("--show_fig", action="store_true", help="Show plot figure on screen.")
+
+	parser.add_argument("--save_fig", action="store_true", help="Save plot figure on local disk.")
 
 	args = parser.parse_args(args=args)
 	return args
