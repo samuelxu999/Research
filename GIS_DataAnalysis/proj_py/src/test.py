@@ -15,7 +15,7 @@ import numpy as np
 
 from curve_validation import Curve_Validation
 from RF_Nepal import RF_Nepal
-from multi_processing import Multi_ProcessRF, Multi_PreData
+from multi_processing import Multi_ProcessRF, Multi_PreData, Multi_fit
 from Data_Preprocessing import Pre_Data
 from utilities import FileUtil
 from TS_fit import TS_Fit
@@ -200,11 +200,6 @@ def test_TS_fit(args):
 	# data_dir = "/media/external/Deng/142041"
 	data_dir = "../NNP_avg_rade9h"
 
-	## csv data directory to save all SR_BandValues
-	csv_dir = "../csv_data/"
-	## csv data directory to save all SR_BandValues
-	npy_dir = "../npy_data/"
-
 	## set data range that is used to process a region of the map figure. 
 	region_param = args.region.split('_')
 	row_start= int(region_param[0])
@@ -246,6 +241,24 @@ def test_TS_fit(args):
 	exec_time=time.time()-start_time
 	print("Running time: {:.3f} s".format(exec_time))
 
+def test_milti_TS_fit(args):
+	# ----------------- Prepare data config -----------------------
+	param_config= {}	
+	param_config['data_dir'] = "../NNP_avg_rade9h"
+	param_config['result_dir'] = "../test_results"
+
+	param_config['region'] = args.region
+
+	fit_function = ['sigmoid','gussain', 'polynom']
+	param_config['fit_func'] = fit_function[args.fit_func]
+	param_config['optimized'] = True
+	param_config['norm_type'] = args.op_status
+	param_config['showfig'] = args.show_fig
+	param_config['savefig'] = args.save_fig
+	param_config['isdebug'] = args.debug
+
+	## call multi ts fit function
+	Multi_fit.TS_fit(param_config)
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
@@ -263,7 +276,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 	                    7-test_readArray, \
 	                    8-test_getSRvalues, \
 	                    9-test_Multi_getSRvalues, \
-	                    10-test_TS_fit")
+	                    10-test_TS_fit, \
+	                    11-test_milti_TS_fit")
 
 	parser.add_argument("--debug", action="store_true", 
 						help="if set, show debug log.")
@@ -318,5 +332,7 @@ if __name__ == "__main__":
 		test_Multi_getSRvalues(args)
 	elif(args.test_func==10):
 		test_TS_fit(args)
+	elif(args.test_func==11):
+		test_milti_TS_fit(args)
 	else:
 		pass

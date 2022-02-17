@@ -13,8 +13,10 @@ import time, math, sys, os
 import logging
 import multiprocessing
 import numpy as np
+import copy
 from RF_Nepal import RF_Nepal
 from Data_Preprocessing import Pre_Data
+from TS_fit import TS_Fit
 from utilities import FileUtil
 
 logger = logging.getLogger(__name__)
@@ -83,6 +85,48 @@ def getSRvalues(data_config):
 		exec_time=time.time()-start_time
 		logger.info("Reload {}, shape:{}, Running time: {:.3f} s".format(npy_path, np_SR_BandValues.shape, exec_time))
 
+def ts_fit(param_config):
+	## parse parameters
+	data_dir = param_config['data_dir']
+	result_dir = param_config['result_dir']
+
+	## set data range that is used to process a region of the map figure. 
+	region_param = param_config['region'].split('_')
+	row_start= int(region_param[0])
+	row_end = int(region_param[1])
+	col_start = int(region_param[2])
+	col_end = int(region_param[3])
+
+	## set fit parameter.
+	fit_function = param_config['fit_func']
+	json_param = {}
+	json_param['output_dir'] = '{}/{}/'.format(result_dir, fit_function)
+	json_param['region_param'] = [row_start, col_start]
+	json_param['fit_type'] = fit_function
+	json_param['is_optimized'] = param_config['optimized']
+	json_param['showfig'] = param_config['showfig']
+	json_param['savefig'] = param_config['savefig']
+
+	## 1) for each file to get data information ['raster_file', [band, Band_Number, band_list], Julian_Day]
+	ls_datainfo=Pre_Data.get_datainfo(data_dir)
+
+	## 2) Get SR_BandValues by for each ls_datainfo
+	SR_BandValues = Pre_Data.get_SR_Values(ls_datainfo, row_start, row_end, col_start, col_end)
+	logger.info("Get SR_BandValues, row:{}-{}, column:{}-{}, shape:{}".format(row_start, row_end, col_start, col_end, 
+																				SR_BandValues.shape))
+	## 3) Use TS_fit.norm_data() to normalize SR_BandValues
+	logger.info("Apply TS_fit: {}\t region: {}".format(fit_function, param_config['region']))
+	norm_values, ls_datetime = TS_Fit.norm_data(SR_BandValues, norm_type=param_config['norm_type'], 
+															isDebug=param_config['isdebug'])
+
+	## 4) Apply TS_fit_model to analyze data, Get RMSE results from TS_fit_model.
+	ret_RMSE = TS_Fit.fit_model(norm_values, ls_datetime, fit_param=json_param, 
+															isDebug=param_config['isdebug'])
+
+	## 5) save log as csv file
+	csv_log = '{}/{}_{}.csv'.format(result_dir, fit_function, param_config['region'])
+	FileUtil.csv_write(csv_log,ret_RMSE)
+
 
 '''
 Multiprocess task class
@@ -130,7 +174,7 @@ class Multi_ProcessRF(object):
 		for process in processes:
 			process.join()
 
-		logger.info('That took {} seconds'.format(time.time() - starttime))
+		logger.info('Task took {} seconds'.format(time.time() - starttime))
 
 '''
 Multiprocess task class
@@ -167,4 +211,39 @@ class Multi_PreData(object):
 		for process in processes:
 			process.join()
 
-		logger.info('That took {} seconds'.format(time.time() - starttime))
+		logger.info('Task took {} seconds'.format(time.time() - starttime))
+
+'''
+Multiprocess task class to handle fit model
+'''
+class Multi_fit(object):
+	@staticmethod
+	def TS_fit(param_config):
+		## ----------------- Set run_range, process step is 1 row  -----------------------
+		region_param = param_config['region'].split('_')
+		run_range = int(region_param[1])-int(region_param[0])
+
+		## ----------------- evalualte time cost -----------------------
+		starttime = time.time()
+
+		## new processes pool
+		processes = []		
+
+		# ----------------- Start multiprocessing tasks -----------------------
+		for run_index in range(0, run_range):
+			## make a copy of param_config
+			_param_config = copy.deepcopy(param_config)
+			row_id = int(region_param[0])+run_index
+			## set process_region that are used to feed each process 
+			_param_config['region'] = "{}_{}_{}_{}".format(row_id,
+				row_id+1, int(region_param[2]), int(region_param[3]))
+			
+			# logger.info(data_config)
+			p = multiprocessing.Process(target=ts_fit, args=(_param_config,))
+			processes.append(p)
+			p.start()
+
+		for process in processes:
+			process.join()
+
+		logger.info('Task took {} seconds'.format(time.time() - starttime))
