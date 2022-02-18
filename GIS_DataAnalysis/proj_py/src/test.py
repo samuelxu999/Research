@@ -12,6 +12,7 @@ import time, sys, os
 import argparse
 import logging
 import numpy as np
+import math
 
 from curve_validation import Curve_Validation
 from RF_Nepal import RF_Nepal
@@ -242,13 +243,12 @@ def test_TS_fit(args):
 	print("Running time: {:.3f} s".format(exec_time))
 
 def test_milti_TS_fit(args):
-	# ----------------- Prepare data config -----------------------
+	# ----------------- Prepare param_config -----------------------
 	param_config= {}	
 	param_config['data_dir'] = "../NNP_avg_rade9h"
 	param_config['result_dir'] = "../test_results"
 
-	param_config['region'] = args.region
-
+	## set ts_fit parameters
 	fit_function = ['sigmoid','gussain', 'polynom']
 	param_config['fit_func'] = fit_function[args.fit_func]
 	param_config['optimized'] = True
@@ -257,8 +257,37 @@ def test_milti_TS_fit(args):
 	param_config['savefig'] = args.save_fig
 	param_config['isdebug'] = args.debug
 
-	## call multi ts fit function
-	Multi_fit.TS_fit(param_config)
+	## set multi_threading task parameters
+	region_param = args.region.split('_')
+	row_step = args.row_step
+	row_range = int(region_param[1])-int(region_param[0])
+
+	task_size = math.floor(row_range/row_step)
+	remainder = row_range % row_step
+
+	ls_region = []
+	for task_id in range(0, task_size):
+		row_start = int(region_param[0]) + task_id * row_step
+		row_end = row_start + row_step
+		tmp_region="{}_{}_{}_{}".format(row_start, row_end, 
+													int(region_param[2]), int(region_param[3]))
+
+		ls_region.append(tmp_region)
+	
+	if(remainder!=0):
+		row_start = int(region_param[0]) + task_size * row_step
+		row_end = row_start + remainder
+		tmp_region="{}_{}_{}_{}".format(row_start, row_end, 
+													int(region_param[2]), int(region_param[3]))
+
+		ls_region.append(tmp_region)
+
+	## for each region to process task
+	for tk_region in ls_region:
+		param_config['region'] = tk_region
+
+		## call multi ts fit function
+		Multi_fit.TS_fit(param_config)
 
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(
@@ -287,6 +316,9 @@ def define_and_get_arguments(args=sys.argv[1:]):
 
 	parser.add_argument("--region", type=str, default="0_1_0_1", 
 	                    help="Region of rtf: row-start_row-end_column-start_column-end.")
+
+	parser.add_argument("--row_step", type=int, default=1, 
+	                    help="Row size of a multi_fit task.")
 
 	parser.add_argument("--fit_func", type=int, default=0, 
 	                    help="Fit function: \
