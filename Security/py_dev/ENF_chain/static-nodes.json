@@ -65,17 +65,17 @@
 		"ip": "128.226.78.148:8180",
 		"user": "pi"
 	},
-	"R2_tk_top": 
+	"R2_pi4_top": 
 	{
 		"address": "7ed71fff4fd025d48d84968278595e099bde5a15",
-		"ip": "128.226.78.138:8180",
-		"user": "samuel"
+		"ip": "128.226.79.17:8180",
+		"user": "pi"
 	},
-	"R2_tk_bottom": 
+	"R2_pi4_bottom": 
 	{
 		"address": "d17d5060ddeb2297909f5e89a0e0b1a07b4369fa",
-		"ip": "128.226.77.49:8180",
-		"user": "samuel"
+		"ip": "128.226.76.173:8180",
+		"user": "pi"
 	},
 	"Desk_pi_node_1": 
 	{
