@@ -3,3 +3,4 @@ cryptography==3.3.2
 pycrypto==2.6.1
 merklelib==1.0
 umsgpack
+gmpy2==2.1.2
