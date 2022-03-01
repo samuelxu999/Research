@@ -9,7 +9,7 @@
 ##=============== Add requirements for python libs============================
 You can directly install all:	python3.X -m pip install -r requirements.txt
 Or update step by step:
-[Flask]			python3.X -m pip install flask==1.0.2
+[Flask]			python3.X -m pip install flask==1.1.2
 [cryptography]	python3.X -m pip install cryptography==3.3.2
 [pycrypto]		python3.X -m pip install pycrypto==2.6.1
 [merklelib]		python3.X -m pip install merklelib==1.0
