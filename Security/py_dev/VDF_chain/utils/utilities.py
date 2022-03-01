@@ -14,6 +14,9 @@ import hashlib
 import json
 import pickle
 import glob, os, fnmatch
+import gmpy2
+from gmpy2 import mpz
+from merklelib import MerkleTree, jsonify as merkle_jsonify
 
 '''
 FileUtil class for handling file data
@@ -245,59 +248,74 @@ class DatetimeUtil(object):
 TypesUtil class for data type format transfer
 '''
 class TypesUtil(object):
-	#integer to hex
+	## mpz int to hex
+	@staticmethod
+	def mpz(mpz_str):
+		return mpz(mpz_str)
+
+	## mpz int to hex
+	@staticmethod
+	def mpz_to_hex(mpz_num):
+		return hex(mpz_num)
+
+	## hex to mpz int
+	@staticmethod
+	def hex_to_mpz(hex_data):
+		return mpz(hex_data, 16)
+
+	## integer to hex
 	@staticmethod
 	def int_to_hex(int_data):
 		return hex(int_data)
 		
-	#hex to integer
+	## hex to integer
 	@staticmethod
 	def hex_to_int(hex_data):
 		return int(hex_data, 16)
 		
-	#string to hex
+	## string to hex
 	@staticmethod
 	def string_to_hex(str_data):
 		hex_data=str_data.hex()
 		return hex_data
 		
-	#hex to string
+	## hex to string
 	@staticmethod
 	def hex_to_string(hex_data):
 		str_data=bytes.fromhex(hex_data)
 		return str_data
 		
-	#string to bytes
+	## string to bytes
 	@staticmethod
 	def string_to_bytes(str_data):
 		bytes_data=str_data.encode(encoding='UTF-8')
 		return bytes_data
 		
-	#bytes to string
+	## bytes to string
 	@staticmethod
 	def bytes_to_string(byte_data):
 		str_data=byte_data.decode(encoding='UTF-8')
 		return str_data
 		
-	#string to json
+	## string to json
 	@staticmethod
 	def string_to_json(json_str):
 		json_data = json.loads(json_str)
 		return json_data
 		
-	#json to string
+	## json to string
 	@staticmethod
 	def json_to_string(json_data):
 		json_str = json.dumps(json_data)
 		return json_str
 
-	#json list to string
+	## json list to string
 	@staticmethod
 	def jsonlist_to_string(json_list):
 		list_str="|".join(TypesUtil.json_to_string(e) for e in json_list)
 		return list_str
 
-	#string to json list
+	## string to json list
 	@staticmethod
 	def string_to_jsonlist(str_data):
 		list_data=str_data.split('|')
@@ -306,7 +324,7 @@ class TypesUtil(object):
 			json_list.append(TypesUtil.string_to_json(data))
 		return json_list
 
-	# get hashed json data
+	## get hashed json data
 	@staticmethod
 	def hash_json(json_block, hash_type='sha256'):
 		"""
@@ -326,12 +344,27 @@ class TypesUtil(object):
 FuncUtil class to support utils functions
 '''
 class FuncUtil(object):
-	# sha 256 hash func
+	## sha 256 hash func
 	@staticmethod
 	def hashfunc_sha256(data_value):
 		return hashlib.sha256(data_value).hexdigest()
 
-	# sha1 hash func
+	## sha1 hash func
 	@staticmethod
 	def hashfunc_sha1(data_value):
 		return hashlib.sha1(data_value).hexdigest()
+
+	## get merkle tree root hash given order transactions
+	@staticmethod
+	def merkle_root(dict_transactions):
+		## build a Merkle tree of dict_transactions 
+		tx_HMT = MerkleTree(dict_transactions, FuncUtil.hashfunc_sha256)
+
+		## calculate merkle tree root hash
+		if(len(tx_HMT)==0):
+			merkle_root_hash = 0
+		else:
+			tree_struct=merkle_jsonify(tx_HMT)
+			json_tree = TypesUtil.string_to_json(tree_struct)
+			merkle_root_hash = json_tree['name']
+		return merkle_root_hash

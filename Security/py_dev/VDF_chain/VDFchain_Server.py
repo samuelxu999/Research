@@ -592,6 +592,11 @@ def define_and_get_arguments(args=sys.argv[1:]):
 							help="frequency for save_state_regularly.")
 	parser.add_argument('--refresh_neighbors', default=600, type=int, 
 							help="frequency for refresh_neighbors_regularly.")
+	parser.add_argument("--lam", type=int, default=256, help="lambda in VDF.")
+
+	parser.add_argument("--k", type=int, default=128, help="k in VDF.")
+
+	parser.add_argument("--tau", type=int, default=20, help="t in in VDF.")
 	args = parser.parse_args()
 
 	return args
@@ -629,6 +634,7 @@ if __name__ == '__main__':
 		## ------------------------ Instantiate the Validator ----------------------------------
 		myblockchain = Validator(port=args.port, 
 								bootstrapnode=args.bootstrapnode,
+								vdf_args=[int(args.lam), int(args.k), int(args.tau)],
 								consensus=ConsensusType.PoS, 
 								block_epoch=args.blockepoch,
 								pause_epoch=args.pauseepoch,

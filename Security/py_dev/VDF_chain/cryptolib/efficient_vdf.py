@@ -99,7 +99,7 @@ class E_VDF(object):
 		next_mpz_prime = gmpy2.next_prime(hash_mpz_prime)
 		return next_mpz_prime
 
-	def set_up(self, _lambda, _k,):
+	def set_up(self, _lambda, _k):
 		'''
 		VDF setup procedure to configurate parameters
 		@Input
@@ -109,6 +109,11 @@ class E_VDF(object):
 		## set security parameters
 		self._lambda = _lambda
 		self._k = _k
+
+	def generate_N(self):
+		'''
+		Create big prime N
+		'''
 
 		## create big prime N
 		self.p = E_VDF.generate_prime(self.r_state, int(self._lambda/2))

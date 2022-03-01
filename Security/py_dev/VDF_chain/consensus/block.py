@@ -10,9 +10,6 @@ Created on June.18, 2019
 '''
 
 from collections import OrderedDict
-
-from merklelib import MerkleTree, jsonify as merkle_jsonify
-
 from utils.utilities import TypesUtil, FuncUtil
 from cryptolib.crypto_rsa import Crypto_RSA
 from utils.configuration import *
@@ -28,14 +25,16 @@ class Block(object):
 	    nonce: 			nonce proof to meet difficult level.
 	"""
 
-	def __init__(self, parent=None, transactions=[], nonce = 0):
+	def __init__(self, parent=None, merkle_root=0, transactions=[], nonce = 0, vdf_pi=0, vdf_l=0):
 		"""A block contains the following arguments:
 
-		self.hash: hash of the block
-		self.height: height of the block (genesis = 0)
-		self.previous_hash: hash of the parent block
-		self.transactions: transactions list
-		self.merkle_root: hash of merkle tree root.
+		self.hash: 				hash of the block
+		self.height: 			height of the block (genesis = 0)
+		self.previous_hash: 	hash of the parent block
+		self.transactions: 		transactions list
+		self.merkle_root: 		hash of merkle tree root.
+		self.vdf_pi:			VDF proof-pi
+		self.vdf_l:				VDF proof-l
 		"""
 		# If we are genesis block, set initial values
 		if not parent:
@@ -45,31 +44,21 @@ class Block(object):
 			self.height = parent.height+1
 			self.previous_hash = parent.hash
 		
+		self.merkle_root = merkle_root
 		self.transactions = transactions
 		self.nonce = nonce
-
-		# convert to a order-dict transactions list
-		dict_transactions = Transaction.json_to_dict(self.transactions)
-		
-		# build a Merkle tree for that dict_transactions
-		tx_HMT = MerkleTree(dict_transactions, FuncUtil.hashfunc_sha256)
-
-		# calculate merkle tree root hash
-		if(len(tx_HMT)==0):
-			self.merkle_root = 0
-		else:
-			tree_struct=merkle_jsonify(tx_HMT)
-			json_tree = TypesUtil.string_to_json(tree_struct)
-			self.merkle_root = json_tree['name']
+		self.vdf_pi = vdf_pi
+		self.vdf_l = vdf_l
 
 		block = {'height': self.height,
-			'previous_hash': self.previous_hash,
-			'transactions': self.transactions,
-			'merkle_root': self.merkle_root,
-			'nonce': self.nonce}
+				'previous_hash': self.previous_hash,
+				'transactions': self.transactions,
+				'merkle_root': self.merkle_root,
+				'nonce': self.nonce,
+				'vdf_pi': self.vdf_pi,
+				'vdf_l': self.vdf_l}
 		# calculate hash of block 
 		self.hash = TypesUtil.hash_json(block)
-		return
 
 	def to_dict(self):
 		"""
@@ -82,6 +71,8 @@ class Block(object):
 		order_dict['transactions'] = self.transactions
 		order_dict['merkle_root'] = self.merkle_root
 		order_dict['nonce'] = self.nonce
+		order_dict['vdf_pi'] = self.vdf_pi
+		order_dict['vdf_l'] = self.vdf_l
 		return order_dict
     
 	def to_json(self):
@@ -93,7 +84,9 @@ class Block(object):
 				'previous_hash': self.previous_hash,
 				'transactions': self.transactions,
 				'merkle_root': self.merkle_root,
-				'nonce': self.nonce }
+				'nonce': self.nonce,
+				'vdf_pi': self.vdf_pi,
+				'vdf_l': self.vdf_l }
 
 	def print_data(self):
 		print('Block information:')
@@ -103,6 +96,8 @@ class Block(object):
 		print('    transactions:',self.transactions)
 		print('    merkle_root:',self.merkle_root)
 		print('    nonce:',self.nonce)
+		print('    vdf_pi:',self.vdf_pi)
+		print('    vdf_l:',self.vdf_l)
 
 	def sign(self, sender_private_key, sk_pw):
 		'''
@@ -152,6 +147,8 @@ class Block(object):
 		block.transactions = block_json['transactions']
 		block.merkle_root = block_json['merkle_root']
 		block.nonce = block_json['nonce']
+		block.vdf_pi = block_json['vdf_pi']
+		block.vdf_l = block_json['vdf_l']
 		return block
 
 	@staticmethod

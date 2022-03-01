@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 import copy
 
-from merklelib import MerkleTree, jsonify as merkle_jsonify
+# from merklelib import MerkleTree, jsonify as merkle_jsonify
 
 from utils.utilities import FileUtil, TypesUtil, FuncUtil
 from network.wallet import Wallet
@@ -35,6 +35,7 @@ from consensus.consensus import *
 from utils.configuration import *
 from utils.service_api import SrvAPI
 from utils.VDFchain_RPC import VDFchain_RPC
+from cryptolib.efficient_vdf import E_VDF
 
 logger = logging.getLogger(__name__)
 
@@ -70,56 +71,62 @@ class Validator():
 	--------------------------------------------------------------------------------------------------------------
 	''' 
 
-	def __init__(self, 	port, bootstrapnode,
+	def __init__(self, 	port, bootstrapnode, vdf_args,
 						consensus=ConsensusType.PoW, 
 						block_epoch=EPOCH_SIZE, 
 						pause_epoch=1, 
 						phase_delay=BOUNDED_TIME,
 						frequency_peers=600):
 
-		# Instantiate the Wallet
+		## Instantiate the Wallet
 		self.wallet = Wallet()
 		self.wallet.load_accounts()
 
-		# Instantiate the PeerNodes
+		## Instantiate the PeerNodes
 		self.peer_nodes = Nodes(db_file = PEERS_DATABASE)
 		self.peer_nodes.load_ByAddress()
 
-		# Instantiate the verified Nodes
+		## Instantiate the verified Nodes
 		self.verify_nodes = Nodes(db_file = VERIFY_DATABASE)
 
-		# New database manager to manage chain data
+		## New database manager to manage chain data
 		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
 		self.chain_db.create_table(CHAIN_TABLE)
+
+		## initialize E_VDF instance eVDF
+		self.eVDF=E_VDF()
+		self.eVDF.set_up(vdf_args[0], vdf_args[1])
+		self.eVDF_tau = vdf_args[2]
+		self.eVDF_N = '75528983975910776470764348619251040571593249501198899765419094793777496071873'
 
 		#Create genesis block
 		genesis_block = Block()
 		json_data = genesis_block.to_json()
 
-		# no local chain data, generate a new validator information
+		## no local chain data, generate a new validator information
 		if( self.chain_db.select_block(CHAIN_TABLE)==[] ):
 			#add genesis_block as 2-finalized
 			self.add_block(json_data, 2)
 		
-		# new chain buffer
+		## new chain buffer
 		self.chain = []
 
-		# new transaction pool
+		## new transaction pool
 		self.transactions = []                            
 
-		# votes pool Map {sender -> vote_db object}
+		## votes pool Map {sender -> vote_db object}
 		self.votes = {}
 
 		#choose consensus algorithm
 		self.consensus = consensus
 
-		#-------------- load chain info ---------------
+		## -------------- load chain info ---------------
 		chain_info = self.load_chainInfo()
 		if(chain_info == None):
 			#Generate random number to be used as node_id
 			self.node_id = str(uuid4()).replace('-', '')
 
-			# initialize pending data buffer
+			## initialize pending data buffer
 			self.block_dependencies = {}
 			self.vote_dependencies = {}
 			self.processed_head = json_data
@@ -140,16 +147,16 @@ class Validator():
 			#self.votes = chain_info['votes']
 			self.vote_count = chain_info['vote_count']
 		
-		# point current head to processed_head
+		## point current head to processed_head
 		self.current_head = self.processed_head
 
-		# set total stake and number of validators
+		## set total stake and number of validators
 		ls_nodes=list(self.peer_nodes.get_nodelist())
-		# set sum_stake is peer nodes count
+		## set sum_stake is peer nodes count
 		self.sum_stake = len(ls_nodes)
-		# set committee_size as peer nodes count 
+		## set committee_size as peer nodes count 
 		self.committee_size = len(ls_nodes)
-		# set block_epoch given args
+		## set block_epoch given args
 		self.block_epoch = block_epoch;
 
 		''' 
@@ -157,13 +164,13 @@ class Validator():
 		The process_msg() method will be started and it will run in the background
 		until the application exits.
 		'''
-		# new buffer list to process received message by on_receive().
+		## new buffer list to process received message by on_receive().
 		self.msg_buf = []
-		# define a thread to handle received messages by executing process_msg()
+		## define a thread to handle received messages by executing process_msg()
 		self.rev_thread = threading.Thread(target=self.process_msg, args=())
-		# Set as daemon thread
+		## Set as daemon thread
 		self.rev_thread.daemon = True
-		# Start the daemonized method execution
+		## Start the daemonized method execution
 		self.rev_thread.start()   
 
 		''' 
@@ -171,20 +178,20 @@ class Validator():
 		The exec_consensus() method will be started and it will run in the background
 		until the application exits.
 		'''
-		# the flag used to trigger consensus protocol execution.
+		## the flag used to trigger consensus protocol execution.
 		self.runConsensus = False
-		# set pause threshold for check synchronization
+		## set pause threshold for check synchronization
 		self.pause_epoch = pause_epoch
-		# set delay time between operations in consensus protocol.
+		## set delay time between operations in consensus protocol.
 		self.phase_delay = phase_delay
-		# define a thread to handle received messages by executing process_msg()
+		## define a thread to handle received messages by executing process_msg()
 		self.consensus_thread = threading.Thread(target=self.exec_consensus, args=())
-		# Set as daemon thread
+		## Set as daemon thread
 		self.consensus_thread.daemon = True
-		# Start the daemonized method execution
+		## Start the daemonized method execution
 		self.consensus_thread.start()
 
-		# ------------------------ Instantiate the VDFchain_RPC ----------------------------------
+		## ------------------------ Instantiate the VDFchain_RPC ----------------------------------
 		self.RPC_client = VDFchain_RPC(keystore="keystore", 
 											keystore_net="keystore_net")   
 		self.frequency_peers = frequency_peers
@@ -406,6 +413,7 @@ class Validator():
 		logger.info("    uuid:                         {}".format(self.node_id))
 		logger.info("    main chain blocks:            {}".format(self.processed_head['height']+1))
 		logger.info("    consensus:                    {}".format( self.consensus.name) )
+		logger.info("    vdf parameters:               lamda-{} k-{} tau-{}".format( self.eVDF._lambda, self.eVDF._k, self.eVDF_tau) )
 		logger.info("    block proposal epoch:         {}".format( self.block_epoch) )
 		logger.info("    pause epoch size:             {}".format( self.pause_epoch) )
 		logger.info("    current head:                 {}    height: {}".format(self.current_head['hash'],
@@ -488,11 +496,10 @@ class Validator():
 
 		return json_node
 
-
-
 	def valid_round(self, node_address):
 		'''
-		Verify round operation: check if a node is valid given current block height
+		This function support round robin block generation given sorted node address.
+		Verify round operation: check if a node is valid given current block height.
 		'''
 		if(node_address==None):
 			return False
@@ -620,13 +627,19 @@ class Validator():
 		Args:
 			@ json_block: return mined block
 		"""
-		# remove committed transactions in head block
+		## set head as last block and used for new block proposal process
+		last_block = self.processed_head
+	
+		## Convert json last_block to Block object
+		parent_block = Block.json_to_block(last_block)
+
+		## ------------- remove committed transactions in head block -------------
 		head_block = self.current_head
 		for transaction in head_block['transactions']:
 			if(transaction in self.transactions):
 				self.transactions.remove(transaction)
 
-		# commit transactions based on COMMIT_TRANS
+		## choose commit transactions based on COMMIT_TRANS
 		commit_transactions = []
 		if( len(self.transactions)<=COMMIT_TRANS ):
 			commit_transactions = copy.copy(self.transactions)
@@ -634,42 +647,47 @@ class Validator():
 		else:
 			commit_transactions = copy.copy(self.transactions[:COMMIT_TRANS])
 
-		# set head as last block and used for new block proposal process
-		last_block = self.processed_head
+		## convert to a order-dict transactions list
+		dict_transactions = Transaction.json_to_dict(commit_transactions)
 
-		block_data = {'height': last_block['height'],
-					'previous_hash': last_block['previous_hash'],
-					'transactions': last_block['transactions'],
-					'merkle_root': last_block['merkle_root'],
-					'nonce': last_block['nonce']}
+		## a) ---------- calculate merkle tree root hash of dict_transactions ------
+		merkle_root = FuncUtil.merkle_root(dict_transactions)
 
-		parent_block = Block.json_to_block(last_block)
+		## b) ----------- evaluate vdf proof pair (pi,l) ---------------------------
+		int_tau_exp = 2**self.eVDF_tau
+		mpz_N = TypesUtil.mpz(self.eVDF_N)
+		x=merkle_root+self.node_id
+		proof_pair = self.eVDF.evaluate_proof(x, int_tau_exp, mpz_N)
+		hex_proof_pair=[TypesUtil.mpz_to_hex(proof_pair[0]), TypesUtil.mpz_to_hex(proof_pair[1])]
 
-		# execute mining task given consensus algorithm
+		## c) --------- execute mining task given consensus algorithm ---------------
 		if(self.consensus==ConsensusType.PoW):
 			# mining new nonce
-			nonce = POW.proof_of_work(block_data, commit_transactions)
-			new_block = Block(parent_block, commit_transactions, nonce)
+			nonce = POW.proof_of_work(last_block['hash'], merkle_root)
+			new_block = Block(parent_block, merkle_root, commit_transactions, nonce,
+								hex_proof_pair[0], hex_proof_pair[1])
 		elif(self.consensus==ConsensusType.PoS):
 			## get host address
 			host_account = None
 			if(self.wallet.accounts!=0):
 				host_account = self.wallet.accounts[0]
-			# propose new block: 1) given PoS algorithm or 2) valid round
-			if( (POS.proof_of_stake(block_data, commit_transactions, self.node_id, 
+			## propose new block given condition: 1) PoS algorithm or 2) valid round
+			if( (POS.proof_of_stake(last_block['hash'], merkle_root, self.node_id, 
 									TEST_STAKE_WEIGHT, self.sum_stake )!=0) or
 									(self.valid_round(host_account['address'])==True) ):
-				new_block = Block(parent_block, commit_transactions, self.node_id)	
+				## a) generate candidate block with transactions
+				new_block = Block(parent_block, merkle_root, commit_transactions, self.node_id,
+									hex_proof_pair[0], hex_proof_pair[1])	
 			else:
-				# generate empty block without transactions
+				## b) generate empty block without transactions
 				new_block = Block(parent_block)	
 		else:
-			# generate empty block without transactions
+			## unknown consensus algorithm, generate empty block without transactions
 			new_block = Block(parent_block)				
 
 		json_block = new_block.to_json()
 
-		# add sender address and signature
+		## d) ---------- add sender address and signature --------------------------
 		if(self.wallet.accounts!=0):
 			sender = self.wallet.accounts[0]
 			sign_data = new_block.sign(sender['private_key'], 'samuelxu999')
@@ -690,16 +708,16 @@ class Validator():
 		"""
 		current_block = new_block
 
-		# get node data from self.peer_nodes buffer
+		## get node data from self.peer_nodes buffer
 		sender_node = self.get_node(current_block['sender_address'])
 
-		# ======================1: verify block signature ==========================
+		## ======================1: verify block signature ==========================
 		if(sender_node==None):
 			# unknown sender, drop block
 			logger.info("Invalid sender: {}".format(current_block['sender_address']))
 			return False
 
-		# rebuild block object given json data
+		## rebuild block object given json data
 		obj_block = Block.json_to_block(current_block)
 		# if check signature failed, drop block
 		if( not obj_block.verify(sender_node['public_key'], 
@@ -707,38 +725,43 @@ class Validator():
 			logger.info("Invalid signature from sender: {}".format(current_block['sender_address']))
 			return
 
-		#=========2: Check that the Proof of Work is correct given current block data =========
+		## =========2: Check that the Proof of Work is correct given current block data =========
 		# a) reject block with empty transactions
 		if(current_block['transactions']==[]):
 			logger.info("Invalid block with empty txs from sender: {}".format(current_block['sender_address']))
 			return False
 
-		# b) verify if transactions list has the same merkel root hash as in block['merkle_root']
+		## b) verify if transactions list has the same merkel root hash as in block['merkle_root']
 		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
 
-		# # build a Merkle tree for that list
-		tx_HMT = MerkleTree(dict_transactions, FuncUtil.hashfunc_sha256)
+		## ---------- calculate merkle tree root hash of dict_transactions ------
+		merkle_root = FuncUtil.merkle_root(dict_transactions)
 
-		# calculate merkle tree root hash
-		if(len(tx_HMT)==0):
-			merkle_root = 0
-		else:
-			tree_struct=merkle_jsonify(tx_HMT)
-			json_tree = TypesUtil.string_to_json(tree_struct)
-			merkle_root = json_tree['name']
-
+		## verify if merkle_root is the same as block data
 		if(merkle_root!=current_block['merkle_root']):
 			logger.info("Transactions merkel tree root verify fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
 			return False
 
-		# c) execute valid proof task given consensus algorithm
+		## c) ----------- verify vdf proof pair (pi,l) ---------------------------
+		int_tau_exp = 2**self.eVDF_tau
+		mpz_N = TypesUtil.mpz(self.eVDF_N)
+		x=merkle_root+current_block['nonce']
+
+		## convert hex proof pairs to mpz_proof_pair
+		mpz_proof_pair=[TypesUtil.hex_to_mpz(current_block['vdf_pi']), TypesUtil.hex_to_mpz(current_block['vdf_l'])]
+
+		if(not self.eVDF.verify_proof(x, int_tau_exp, mpz_N, mpz_proof_pair)):
+			logger.info("VDF proof pair verify fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
+			return False
+
+		## d) execute valid proof task given consensus algorithm
 		if(self.consensus==ConsensusType.PoW):
-			if( not POW.valid_proof(current_block['merkle_root'], current_block['previous_hash'], current_block['nonce']) ):
+			if( not POW.valid_proof(current_block['previous_hash'], current_block['merkle_root'], current_block['nonce']) ):
 				logger.info("PoW verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
 				return False
 		elif(self.consensus==ConsensusType.PoS):
 			## check if a valid PoS proof
-			if( not POS.valid_proof(current_block['merkle_root'], current_block['previous_hash'], current_block['nonce'], 
+			if( not POS.valid_proof(current_block['previous_hash'], current_block['merkle_root'], current_block['nonce'], 
 									TEST_STAKE_WEIGHT, self.sum_stake) ):
 				logger.info("PoS verify proof fail. Block: {}  sender: {}".format(current_block['hash'],current_block['sender_address']))
 				## If not a valid PoS proof, then check if sender has a valid round proof
@@ -1085,10 +1108,10 @@ class Validator():
 		if self.is_ancestor(self.highest_justified_checkpoint, head_block):
 			if(self.consensus==ConsensusType.PoS):
 				# get proof value used for choose current_head
-				new_proof=POS.get_proof(new_block['merkle_root'], 
-								new_block['previous_hash'], new_block['nonce'],self.sum_stake)
-				head_proof=POS.get_proof(head_block['merkle_root'], 
-								head_block['previous_hash'], head_block['nonce'],self.sum_stake)
+				new_proof=POS.get_proof(new_block['previous_hash'], new_block['merkle_root'], 
+										new_block['nonce'], self.sum_stake)
+				head_proof=POS.get_proof(head_block['previous_hash'], head_block['merkle_root'], 
+										head_block['nonce'], self.sum_stake)
 				# head is genesis block or new_block have smaller proof value than current head
 				logger.info( "new block sender:  {}".format(new_block['sender_address']))
 				logger.info( "head proof:        {} -- new proof:        {}".format(head_proof, new_proof) )
