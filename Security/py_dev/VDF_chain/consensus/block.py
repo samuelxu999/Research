@@ -13,6 +13,7 @@ from collections import OrderedDict
 from utils.utilities import TypesUtil, FuncUtil
 from cryptolib.crypto_rsa import Crypto_RSA
 from utils.configuration import *
+from consensus.transaction import Transaction
 
 class Block(object):
 	"""One node (roundrobin) adds a new block to the blockchain every
