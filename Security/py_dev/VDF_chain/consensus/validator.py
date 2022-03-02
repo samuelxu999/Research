@@ -22,8 +22,6 @@ from urllib.parse import urlparse
 from uuid import uuid4
 import copy
 
-# from merklelib import MerkleTree, jsonify as merkle_jsonify
-
 from utils.utilities import FileUtil, TypesUtil, FuncUtil
 from network.wallet import Wallet
 from consensus.transaction import Transaction
