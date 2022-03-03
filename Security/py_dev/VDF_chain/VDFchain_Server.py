@@ -99,23 +99,9 @@ def query_transaction():
 	# parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
 
-	tx_json=json.loads(req_data)
+	tx_hash=json.loads(req_data)
 
-	if(tx_json=='{}'):
-		abort(401, {'error': 'No transaction data'})
-
-	tx_valid = True
-	# logger.info( "tx_data: {}".format(tx_json))
-	tx_value = TypesUtil.json_to_string(tx_json)
-
-	# -------------- duplicate tx_data in block, discard it ------------------
-	response = {}
-	myblockchain.load_chain()
-	for block in myblockchain.chain:
-		for tx in block['transactions']:
-			if(tx_value==tx['value']):
-				response = tx['value']
-				break
+	response = myblockchain.get_tx(tx_hash)
 
 	return jsonify(response), 200
 
@@ -361,6 +347,17 @@ def remove_verifynode():
 	myblockchain.verify_nodes.remove_node(json_node['address'])
 	myblockchain.verify_nodes.load_ByAddress()
 	return jsonify({'remove verify node': json_node['address']}), 201
+
+@app.route('/test/block/query', methods=['GET'])
+def query_block():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+
+	block_hash=json.loads(req_data)
+
+	response = myblockchain.get_block(block_hash)
+
+	return jsonify(response), 200
 
 @app.route('/test/block/verify', methods=['POST'])
 def verify_block():

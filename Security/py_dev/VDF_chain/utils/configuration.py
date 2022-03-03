@@ -14,8 +14,13 @@ TEST_STAKE_WEIGHT = 1				# unit PoS stake weight
 TEST_STAKE_SUM = 3					# Sum of PoS stakes
 
 CHAIN_DATA_DIR = 'chaindata'		# local chain database dir
+
+TX_DATA = "tx_db"		# local chain database file name
+TX_TABLE = "TX_table"			# chain data table name
+
 BLOCKCHAIN_DATA = "chain_db"		# local chain database file name
 CHAIN_TABLE = "Block_table"			# chain data table name
+
 CHAIN_INFO = "chain_info.json"		# chain information file name (.json)
 VOTER_DATA = "voter_db"				# local voter database file name
 

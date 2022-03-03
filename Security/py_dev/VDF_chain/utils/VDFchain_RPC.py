@@ -52,14 +52,8 @@ class TxsThread(threading.Thread):
 
 		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, hex_value)
 
-		# sign transaction
+		## sign transaction
 		sign_data = mytransaction.sign('samuelxu999')
-
-		# verify transaction
-		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
-		                                        mytransaction.recipient_address,
-		                                        mytransaction.time_stamp,
-		                                        mytransaction.value)
 
 		## --------------------- send transaction --------------------------------------
 		transaction_json = mytransaction.to_json()
@@ -162,15 +156,11 @@ class VDFchain_RPC(object):
 
 		mytransaction = Transaction(sender_address, sender_private_key, recipient_address, time_stamp, hex_value)
 
-		# sign transaction
+		## sign transaction
 		sign_data = mytransaction.sign('samuelxu999')
 
-		# verify transaction
-		dict_transaction = Transaction.get_dict(mytransaction.sender_address, 
-												mytransaction.recipient_address,
-												mytransaction.time_stamp,
-												mytransaction.value)
-		#send transaction
+
+		## --------------------- send transaction ----------------
 		transaction_json = mytransaction.to_json()
 		transaction_json['signature']=TypesUtil.string_to_hex(sign_data)
 		# print(transaction_json)
@@ -187,8 +177,12 @@ class VDFchain_RPC(object):
 		transactions = json_response['transactions']		
 		return transactions
 
-	def query_transaction(self, target_address, tx_json):
-		json_response=SrvAPI.GET('http://'+target_address+'/test/transaction/query', tx_json)
+	def query_transaction(self, target_address, tx_hash):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/transaction/query', tx_hash)
+		return json_response
+
+	def query_block(self, target_address, block_hash):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/block/query', block_hash)
 		return json_response
 
 	def start_mining(self, target_address, isBroadcast=False):

@@ -95,6 +95,10 @@ class Validator():
 		self.chain_db = DataManager(CHAIN_DATA_DIR, BLOCKCHAIN_DATA)
 		self.chain_db.create_table(CHAIN_TABLE)
 
+		## New database manager to manage tx data
+		self.tx_db = DataManager(CHAIN_DATA_DIR, TX_DATA)
+		self.tx_db.create_tx_table(TX_TABLE)
+
 		## initialize E_VDF instance eVDF
 		self.eVDF=E_VDF()
 		self.eVDF.set_up(vdf_args[0], vdf_args[1])
@@ -426,7 +430,35 @@ class Validator():
 																				self.highest_justified_checkpoint['height']) )
 		logger.info("    highest finalized checkpoint: {}    height: {}".format(self.highest_finalized_checkpoint['hash'],
 																				self.highest_finalized_checkpoint['height']) )
+	
+	def add_tx(self, json_tx):
+		'''
+		Database operation: add verified tx to local ledger database
+		'''
+		# if tx not existed, add tx to database
+		if( self.tx_db.select_tx(TX_TABLE, json_tx['hash'])==[] ):
+			self.tx_db.insert_tx(TX_TABLE,	json_tx['hash'], 
+								TypesUtil.json_to_string(json_tx))
 
+	def commit_tx(self, tx_hash, block_hash):
+		'''
+		Database operation: update block hash to fix tx data on ledger.
+		'''
+		self.tx_db.update_tx(TX_TABLE, tx_hash, block_hash)
+
+	def get_tx(self, tx_hash):
+		'''
+		Database operation: select a tx as json given tx_hash
+		'''
+		ret_tx = []
+		if(tx_hash==''):
+			ret_tx = self.tx_db.select_tx(TX_TABLE)
+		else:
+			list_tx = self.tx_db.select_tx(TX_TABLE, tx_hash)
+			if(len(list_tx)!=0):
+				ret_tx = TypesUtil.string_to_json(list_tx[0][2])
+
+		return ret_tx
 
 	def add_block(self, json_block, status=0):
 		'''
@@ -595,10 +627,12 @@ class Validator():
 			@ return: True or False
 		"""
 		## ====================== rebuild transaction ==========================
-		dict_transaction = Transaction.get_dict(json_transaction['sender_address'], 
+		dict_transaction = Transaction.get_dict(json_transaction['hash'],
+												json_transaction['sender_address'], 
 												json_transaction['recipient_address'],
 												json_transaction['time_stamp'],
 												json_transaction['value'])
+		
 		## get signature (string) from transaction_json
 		sign_str = TypesUtil.hex_to_string(json_transaction['signature'])
 
@@ -637,9 +671,12 @@ class Validator():
 
 		## ------------- remove committed transactions in head block -------------
 		head_block = self.current_head
-		for transaction in head_block['transactions']:
-			if(transaction in self.transactions):
-				self.transactions.remove(transaction)
+		pending_tx = []
+		for transaction in self.transactions:
+			if(transaction['hash'] not in head_block['transactions']):
+				pending_tx.append(transaction)
+				# self.transactions.remove(transaction)
+		self.transactions = copy.copy(pending_tx)
 
 		## choose commit transactions based on COMMIT_TRANS
 		commit_transactions = []
@@ -649,11 +686,13 @@ class Validator():
 		else:
 			commit_transactions = copy.copy(self.transactions[:COMMIT_TRANS])
 
-		## convert to a order-dict transactions list
-		dict_transactions = Transaction.json_to_dict(commit_transactions)
+		## only save tx_hash to block['transactions']
+		ls_tx_hash = []
+		for tx in commit_transactions:
+			ls_tx_hash.append(tx['hash'])
 
-		## a) ---------- calculate merkle tree root hash of dict_transactions ------
-		merkle_root = FuncUtil.merkle_root(dict_transactions)
+		## a) ---------- calculate merkle tree root hash of ls_tx_hash ------
+		merkle_root = FuncUtil.merkle_root(ls_tx_hash)
 
 		## b) ----------- evaluate vdf proof pair (pi,l) ---------------------------
 		int_tau_exp = 2**self.eVDF_tau
@@ -666,7 +705,7 @@ class Validator():
 		if(self.consensus==ConsensusType.PoW):
 			# mining new nonce
 			nonce = POW.proof_of_work(last_block['hash'], merkle_root)
-			new_block = Block(parent_block, merkle_root, commit_transactions, nonce,
+			new_block = Block(parent_block, merkle_root, ls_tx_hash, nonce,
 								hex_proof_pair[0], hex_proof_pair[1])
 		elif(self.consensus==ConsensusType.PoS):
 			## get host address
@@ -678,7 +717,7 @@ class Validator():
 									TEST_STAKE_WEIGHT, self.sum_stake )!=0) or
 									(self.valid_round(host_account['address'])==True) ):
 				## a) generate candidate block with transactions
-				new_block = Block(parent_block, merkle_root, commit_transactions, self.node_id,
+				new_block = Block(parent_block, merkle_root, ls_tx_hash, self.node_id,
 									hex_proof_pair[0], hex_proof_pair[1])	
 			else:
 				## b) generate empty block without transactions
@@ -734,10 +773,10 @@ class Validator():
 			return False
 
 		## b) verify if transactions list has the same merkel root hash as in block['merkle_root']
-		dict_transactions = Transaction.json_to_dict(current_block['transactions'])
+		ls_tx_hash = current_block['transactions']
 
 		## ---------- calculate merkle tree root hash of dict_transactions ------
-		merkle_root = FuncUtil.merkle_root(dict_transactions)
+		merkle_root = FuncUtil.merkle_root(ls_tx_hash)
 
 		## verify if merkle_root is the same as block data
 		if(merkle_root!=current_block['merkle_root']):
@@ -811,10 +850,13 @@ class Validator():
 			@ verify_result: True or False
 		'''
 		verify_result = True
-		for transaction_data in transactions:
-			#print(transaction_data)
-			# ====================== rebuild transaction ==========================
-			dict_transaction = Transaction.get_dict(transaction_data['sender_address'], 
+		for tx_hash in transactions:
+			## for each tx_hash to get json transaction data
+			transaction_data = self.get_tx(tx_hash)
+			
+			# ====================== rebuild order dict transaction ==========================
+			dict_transaction = Transaction.get_dict(transaction_data['hash'],
+												transaction_data['sender_address'], 
 			                                    transaction_data['recipient_address'],
 			                                    transaction_data['time_stamp'],
 			                                    transaction_data['value'])
@@ -915,6 +957,10 @@ class Validator():
 		'''
 		## ====================== verify transaction ==========================
 		verify_result = self.valid_transaction(json_tran)
+
+		## add valid tx to local database
+		if(verify_result):
+			self.add_tx(json_tran)
 
 		return verify_result
 
@@ -1174,9 +1220,13 @@ class Validator():
 			self.processed_head = self.current_head
 
 			# 3) remove committed transactions in head block
-			for transaction in self.processed_head['transactions']:
-				if(transaction in self.transactions):
-					self.transactions.remove(transaction)
+			pending_tx = []
+			for transaction in self.transactions:
+				if(transaction['hash'] not in self.processed_head['transactions']):
+					pending_tx.append(transaction)
+					# self.transactions.remove(transaction)
+			self.transactions = copy.copy(pending_tx)
+
 			logger.info("Fix processed_head: {}    height: {}".format(self.processed_head['hash'],
 																		self.processed_head['height']) )
 			# 4) update chaininfo and save into local file

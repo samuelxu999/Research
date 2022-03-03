@@ -327,11 +327,14 @@ def disp_chaindata(target_address, isDisplay=False):
 		    for block in chain_data:
 		        logger.info("{}\n".format(block))
 
-def count_tx_size(target_address):
-	json_response = VDFchain_client.get_chain(target_address)
-	chain_data = json_response['chain']
-	chain_length = json_response['length']
-	logger.info('Chain length: {}'.format(chain_length))
+def count_tx_size(target_address, block_hash):
+	if(block_hash==""):
+		json_response = VDFchain_client.get_chain(target_address)
+		chain_data = json_response['chain']
+		chain_length = json_response['length']
+		logger.info('Chain length: {}'.format(chain_length))
+	else:
+		chain_data = [VDFchain_client.query_block(target_address, block_hash)]
 	## get the latest unempty block
 	for block in reversed(chain_data):
 		if(block['transactions']!=[]): 
@@ -339,7 +342,8 @@ def count_tx_size(target_address):
 			logger.info('Block size: {} Bytes'.format(len( blk_str.encode('utf-8') ))) 
 			logger.info('transactions count: {}'.format(len( block['transactions'] )))  
 
-			tx=block['transactions'][0]
+			tx_hash=block['transactions'][0]
+			tx = VDFchain_client.query_transaction(target_address, tx_hash)
 			tx_str=TypesUtil.json_to_string(tx)
 			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
 			break
@@ -393,6 +397,8 @@ def define_and_get_arguments(args=sys.argv[1:]):
 						help="Test target address - ip:port.")
 	parser.add_argument("--set_peer", type=str, default="", 
 						help="set peer node, fromat: name@op. this is used for static_nodes setup.")
+	parser.add_argument("--data", type=str, default="", 
+						help="Input date for test.")
 	args = parser.parse_args(args=args)
 	return args
 
@@ -491,9 +497,18 @@ if __name__ == "__main__":
 		elif(op_status == 12):
 			disp_chaindata(target_address, True)
 		elif(op_status == 13):
-			count_tx_size(target_address)
+			block_hash = args.data
+			count_tx_size(target_address, block_hash)
 		elif(op_status == 14):
 			count_vote_size(target_address)
+		elif(op_status == 21):
+			tx_hash = args.data
+			transactions = VDFchain_client.query_transaction(target_address, tx_hash)
+			logger.info(transactions)
+		elif(op_status == 22):
+			block_hash = args.data
+			blocks = VDFchain_client.query_block(target_address, block_hash)
+			logger.info(blocks)
 		elif(op_status == 9):
 			VDFchain_client.run_consensus(target_address, True, True)
 		elif(op_status == 90):
