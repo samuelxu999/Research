@@ -43,13 +43,12 @@ class Validator():
 	self.node_id: 						GUID 
 	self.consensus: 					Consensus algorithm
 	self.chain_db: 						local chain database adapter
-	self.consensus: 					consensus algorithm
+	self.tx_db:							local tx database adapter
 	self.wallet: 						wallet account management
 	self.peer_nodes: 					peer nodes management 
 	self.verify_nodes: 					verify nodes management 
 
 	self.transactions: 					local transaction pool
-	self.chain: 						local chain data buffer
 	self.block_dependencies: 			used to save blocks need for dependency
 	self.vote_dependencies: 			used to save pending vote need for dependency
 	self.processed_head: 				the latest processed descendant of the highest justified checkpoint
@@ -113,9 +112,6 @@ class Validator():
 		if( self.chain_db.select_block(CHAIN_TABLE)==[] ):
 			#add genesis_block as 2-finalized
 			self.add_block(json_data, 2)
-		
-		## new chain buffer
-		self.chain = []
 
 		## new transaction pool
 		self.transactions = []                            
@@ -163,7 +159,7 @@ class Validator():
 		## set committee_size as peer nodes count 
 		self.committee_size = len(ls_nodes)
 		## set block_epoch given args
-		self.block_epoch = block_epoch;
+		self.block_epoch = block_epoch
 
 		''' 
 		Threading as daemon to process received message.
@@ -446,13 +442,18 @@ class Validator():
 		'''
 		self.tx_db.update_tx(TX_TABLE, tx_hash, block_hash)
 
-	def get_tx(self, tx_hash):
+	def get_tx(self, tx_hash,  tx_num=10):
 		'''
 		Database operation: select a tx as json given tx_hash
 		'''
 		ret_tx = []
 		if(tx_hash==''):
-			ret_tx = self.tx_db.select_tx(TX_TABLE)
+			list_tx = self.tx_db.select_tx(TX_TABLE)
+			txs_size = len(list_tx)
+			if(txs_size<tx_num):
+				ret_tx = list_tx
+			else:
+				ret_tx = list_tx[txs_size-tx_num:]
 		else:
 			list_tx = self.tx_db.select_tx(TX_TABLE, tx_hash)
 			if(len(list_tx)!=0):
@@ -479,8 +480,12 @@ class Validator():
 		'''
 		Database operation: select a block as json given block_hash
 		'''
-		str_block = self.chain_db.select_block(CHAIN_TABLE, block_hash)[0][2]
-		return TypesUtil.string_to_json(str_block)
+		ls_block = self.chain_db.select_block(CHAIN_TABLE, block_hash)
+		if(len(ls_block)!=0):
+			str_block = ls_block[-1][2]
+			return TypesUtil.string_to_json(str_block)
+		else:
+			return {}
 
 	def get_node(self, node_address):
 		'''
@@ -556,17 +561,25 @@ class Validator():
 		## return verify result	
 		return sort_address[rid]==node_address
 
-	def load_chain(self):
+	def load_chain(self, block_num=10):
 		'''
-		Database operation: Load chain data from local database
+		Database operation: Load latest block_num of chain data
 		'''
 		ls_chain=self.chain_db.select_block(CHAIN_TABLE)
-		self.chain = []
-		for block in ls_chain:
+		chain_size = len(ls_chain)
+
+		if(chain_size<block_num):
+			ret_chain = ls_chain
+		else:
+			ret_chain = ls_chain[chain_size-block_num:]
+		
+		json_blocks = []
+		for block in ret_chain:
 			json_data = TypesUtil.string_to_json(block[2])
-			if( json_data['hash'] not in self.chain):
+			if( json_data['hash'] not in json_blocks):
 				json_data['status']=block[3]
-				self.chain.append(json_data)
+				json_blocks.append(json_data)
+		return json_blocks
 
 	def save_chainInfo(self):
 		"""
