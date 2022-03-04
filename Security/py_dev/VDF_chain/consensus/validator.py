@@ -283,7 +283,7 @@ class Validator():
 				for node in ls_nodes: 
 					if(node not in ls_peer):
 						logger.info('Remove {} from consensus node list.'.format(node))
-						self.peer_nodes.remove_peernode(node)
+						self.peer_nodes.remove_node(node)
 				## reload peer node
 				self.peer_nodes.load_ByAddress()
 
