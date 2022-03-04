@@ -150,7 +150,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	ls_time_exec=[]
 
 	## get peer node information
-	peer_nodes = PeerNodes()
+	peer_nodes = Nodes(db_file = PEERS_DATABASE)
 	peer_nodes.load_ByAddress()
 
 	## 1) create shares
@@ -365,7 +365,7 @@ def count_vote_size(target_address):
 
 def validator_getStatus():
 	## Instantiate the PeerNodes and load all nodes information
-	peer_nodes = PeerNodes()
+	peer_nodes = Nodes(db_file = PEERS_DATABASE)
 	peer_nodes.load_ByAddress()
 	
 	ls_nodes = list(peer_nodes.get_nodelist())

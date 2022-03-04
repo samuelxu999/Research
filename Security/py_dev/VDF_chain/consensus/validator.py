@@ -759,7 +759,7 @@ class Validator():
 		## b) ----------- evaluate vdf proof pair (pi,l) ---------------------------
 		int_tau_exp = 2**self.eVDF_tau
 		mpz_N = TypesUtil.mpz(self.eVDF_N)
-		x=merkle_root+self.node_id
+		x=str(merkle_root)+str(self.node_id)
 		proof_pair = self.eVDF.evaluate_proof(x, int_tau_exp, mpz_N)
 		hex_proof_pair=[TypesUtil.mpz_to_hex(proof_pair[0]), TypesUtil.mpz_to_hex(proof_pair[1])]
 
@@ -848,7 +848,7 @@ class Validator():
 		## c) ----------- verify vdf proof pair (pi,l) ---------------------------
 		int_tau_exp = 2**self.eVDF_tau
 		mpz_N = TypesUtil.mpz(self.eVDF_N)
-		x=merkle_root+current_block['nonce']
+		x=str(merkle_root)+str(current_block['nonce'])
 
 		## convert hex proof pairs to mpz_proof_pair
 		mpz_proof_pair=[TypesUtil.hex_to_mpz(current_block['vdf_pi']), TypesUtil.hex_to_mpz(current_block['vdf_l'])]
