@@ -62,6 +62,27 @@ def validator_status():
 	response = myblockchain.get_status()
 	return jsonify(response), 200
 
+@app.route('/test/eVDF/status', methods=['GET'])
+def eVDF_status():
+	response = myblockchain.get_eVDF()
+	return jsonify(response), 200
+
+@app.route('/test/eVDF/update', methods=['POST'])
+def eVDF_update():
+	# parse data from request.data
+	req_data=TypesUtil.bytes_to_string(request.data)
+
+	json_params=json.loads(req_data)
+
+	response = myblockchain.set_eVDF(json_params)
+
+	return jsonify({'eVDF_update:': response}), 201
+
+@app.route('/test/eVDF/prime', methods=['POST'])
+def eVDF_prime():
+	response = myblockchain.update_eVDF_N()
+	return jsonify({'eVDF_prime:': response}), 201
+
 # ================================ Transaction RPC handler==================================
 @app.route('/test/transaction/query', methods=['GET'])
 def query_transaction():

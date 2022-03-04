@@ -92,7 +92,7 @@ class VDFchain_RPC(object):
 		self.verify_nodes = Nodes(db_file = VERIFY_DATABASE)
 		self.verify_nodes.load_ByAddress()
 
-	# =========================== client side REST API ==================================
+	# =========================== validator client REST API ==================================
 	def run_consensus(self, target_address, exec_consensus, isBroadcast=False):
 		json_msg={}
 		json_msg['consensus_run']=exec_consensus
@@ -116,6 +116,22 @@ class VDFchain_RPC(object):
 				json_response = SrvAPI.GET('http://'+json_node['node_url']+'/test/validator/getinfo')
 				info_list.append(json_response)
 		return info_list
+
+	def eVDF_status(self, target_address):
+		json_response = SrvAPI.GET('http://'+target_address+'/test/eVDF/status')
+		return json_response
+
+	async def query_eVDF(self, target_address):
+		json_response=SrvAPI.GET('http://'+target_address+'/test/eVDF/status')
+		return json_response
+
+	def eVDF_update(self, target_address, json_params):
+		json_response = SrvAPI.POST('http://'+target_address+'/test/eVDF/update', json_params)
+		return json_response
+
+	def eVDF_prime(self, target_address):
+		json_response = SrvAPI.POST('http://'+target_address+'/test/eVDF/prime', {})
+		return json_response
 
 	def launch_txs(self, tx_size):
 		## Instantiate mypeer_nodes using deepcopy of self.peer_nodes

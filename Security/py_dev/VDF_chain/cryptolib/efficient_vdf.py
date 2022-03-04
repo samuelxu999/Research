@@ -110,6 +110,18 @@ class E_VDF(object):
 		self._lambda = _lambda
 		self._k = _k
 
+	def query_config(self):
+		'''
+		Access VDF configurate parameters
+		@Input
+			_lambda:	This is used to generate RSA prime N with ength p_lambda/2
+			_k:			Security parameter _k defines length of hash string l.
+		'''
+		## get security parameters
+		_lambda = self._lambda 
+		_k = self._k
+		return [_lambda, _k]
+
 	def generate_N(self):
 		'''
 		Create big prime N

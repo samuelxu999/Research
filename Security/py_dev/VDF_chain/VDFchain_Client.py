@@ -509,6 +509,25 @@ if __name__ == "__main__":
 			block_hash = args.data
 			blocks = VDFchain_client.query_block(target_address, block_hash)
 			logger.info(blocks)
+		elif(op_status == 30):
+			json_status = VDFchain_client.eVDF_status(target_address)
+			logger.info(json_status)
+		elif(op_status == 31):
+			## parse parameters
+			ls_params = args.data.split(';')
+			if(len(ls_params)==3):
+				json_params = {}
+				json_params['lamda'] = int(ls_params[0])
+				json_params['k'] = int(ls_params[1])
+				json_params['tau'] = int(ls_params[2])
+
+				## send POST request
+				json_ret = VDFchain_client.eVDF_update(target_address, json_params)
+				logger.info(json_ret)
+		elif(op_status == 32):
+				## send POST request
+				json_ret = VDFchain_client.eVDF_prime(target_address)
+				logger.info(json_ret)
 		elif(op_status == 9):
 			VDFchain_client.run_consensus(target_address, True, True)
 		elif(op_status == 90):

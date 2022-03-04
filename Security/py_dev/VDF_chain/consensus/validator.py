@@ -46,7 +46,8 @@ class Validator():
 	self.tx_db:							local tx database adapter
 	self.wallet: 						wallet account management
 	self.peer_nodes: 					peer nodes management 
-	self.verify_nodes: 					verify nodes management 
+	self.verify_nodes: 					verify nodes management
+	self.bootstrapnode:					bootstrapping server adddress-ip:port 
 
 	self.transactions: 					local transaction pool
 	self.block_dependencies: 			used to save blocks need for dependency
@@ -208,7 +209,7 @@ class Validator():
 
 	def refresh_peers(self):
 		'''
-		daemon thread function: handle message and save into local database
+		daemon thread function: handle 1) peer nodes update; 2) eVDF params synchronization
 		'''
 		# this variable is used as waiting time when there is no message for process.
 		while(True):
@@ -290,6 +291,22 @@ class Validator():
 				ls_nodes=list(self.peer_nodes.get_nodelist())
 				self.sum_stake = len(ls_nodes) 
 				self.committee_size = len(ls_nodes)
+
+				## 4) eVDF parameters synchronization with bootstrap node
+				## Prerequisite: async query eVDF status from bootstrap node
+				eVDF_tasks = [self.RPC_client.query_eVDF(bootstrapnode_address)]
+				loop = asyncio.new_event_loop()
+				done, pending = loop.run_until_complete(asyncio.wait(eVDF_tasks))
+				eVDF_info = []
+				for future in done:
+					eVDF_info = future.result()
+				loop.close()
+
+				## update eVDF parameters
+				self.eVDF.set_up(int(eVDF_info['lamda']), int(eVDF_info['k']))
+				self.eVDF_tau = eVDF_info['tau']
+				self.eVDF_N = TypesUtil.hex_to_mpz(eVDF_info['N'])
+
 			except:
 				logger.info('\n! Some error happen in peers_thread.\n')
 			finally:
@@ -318,12 +335,13 @@ class Validator():
 				# ============= Choose a message from buffer and process it ==================
 				msg_data = self.msg_buf[0]
 				if(msg_data[0]==1):
-					self.add_block(msg_data[1], msg_data[2])
-				
-				if(msg_data[0]==2):
+					self.add_block(msg_data[1], msg_data[2])				
+				elif(msg_data[0]==2):
 					VoteCheckPoint.add_voter_data(msg_data[1], msg_data[2])
-				
+				else:
+					self.add_tx(msg_data[1])
 				self.msg_buf.remove(msg_data)
+
 			except:
 				logger.info('\n! Some error happen in process_msg.\n')
 			finally:
@@ -438,7 +456,7 @@ class Validator():
 
 	def commit_tx(self, tx_hash, block_hash):
 		'''
-		Database operation: update block hash to fix tx data on ledger.
+		Database operation: update block_hash to fix tx on local tx database.
 		'''
 		self.tx_db.update_tx(TX_TABLE, tx_hash, block_hash)
 
@@ -463,7 +481,7 @@ class Validator():
 
 	def add_block(self, json_block, status=0):
 		'''
-		Database operation: add verified block to local chain data
+		Database operation: add verified block to local chain database
 		'''
 		# if block not existed, add block to database
 		if( self.chain_db.select_block(CHAIN_TABLE, json_block['hash'])==[] ):
@@ -631,6 +649,37 @@ class Validator():
 		# validator_status['consensus_status'] = self.statusConsensus
 
 		return validator_status
+
+	def get_eVDF(self):
+		'''
+		Get eVDF parameters [lamda, k, tau, N]
+		'''
+		eVDF_status = {}
+		eVDF_params = self.eVDF.query_config()
+		eVDF_status['lamda'] = eVDF_params[0]
+		eVDF_status['k'] = eVDF_params[1]
+		eVDF_status['tau'] = self.eVDF_tau
+		eVDF_status['N'] = TypesUtil.mpz_to_hex(TypesUtil.mpz(self.eVDF_N))
+
+		return eVDF_status
+
+	def set_eVDF(self, json_params):
+		'''
+		Set eVDF parameters given args[lamda, k, tau]
+		'''
+		self.eVDF.set_up(int(json_params['lamda']), int(json_params['k']))
+		self.eVDF_tau = json_params['tau']
+		# self.eVDF_N = TypesUtil.hex_to_mpz(json_params['N'])
+
+		return True
+
+	def update_eVDF_N(self):
+		'''
+		Update eVDF_N by regenerating a random big prime
+		'''
+		self.eVDF_N = self.eVDF.generate_N()
+
+		return True
 
 	def valid_transaction(self, json_transaction):
 		"""
@@ -971,9 +1020,9 @@ class Validator():
 		## ====================== verify transaction ==========================
 		verify_result = self.valid_transaction(json_tran)
 
-		## add valid tx to local database
+		## add valid tx to self.msg_buf
 		if(verify_result):
-			self.add_tx(json_tran)
+			self.msg_buf.append([0, json_tran])
 
 		return verify_result
 
