@@ -1,13 +1,11 @@
-#!/usr/bin/env python
-
 '''
 ========================
-WS_Client module
+VDFchain_Client module
 ========================
-Created on May.21, 2019
+Created on Feb.27, 2022
 @author: Xu Ronghua
 @Email:  rxu22@binghamton.edu
-@TaskDescription: This module provide encapsulation of client API that access to Web service.
+@TaskDescription: This module provide encapsulation of client API that interact with VDFchain server.
                   Mainly used to test and demo
 '''
 import argparse
@@ -27,13 +25,13 @@ from randomness.randshare import RandShare
 
 logger = logging.getLogger(__name__)
 
-# ------------------------ Instantiate the ENFchain_RPC ----------------------------------
+## ------------------------ Instantiate the ENFchain_RPC ----------------------------------
 VDFchain_client = VDFchain_RPC(keystore="keystore", 
 									keystore_net="keystore_net")
 
 
 def set_peerNodes(target_name, op_status=0, isBroadcast=False):
-	#--------------------------------------- load static nodes -------------------------------------
+	##--------------------------------------- load static nodes -------------------------------------
 	static_nodes = StaticNodes()
 	static_nodes.load_node()
 
@@ -45,24 +43,21 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 		list_address.append(json_node['node_url'])
 		print(json_node['node_name'] + '    ' + json_node['node_address'] + '    ' + json_node['node_url'])
 
-	#print(list_address)
-
-	#-------------- localhost ----------------
+	##-------------- localhost ----------------
 	target_node = static_nodes.get_node(target_name)
 
 	if( target_node=={}):
 		return
 
 	target_address = target_node['node_url']
-	# print(target_address)
 
-	# Instantiate the Wallet by using key_dir: keystore_net
+	## Instantiate the Wallet by using key_dir: keystore_net
 	mywallet = Wallet('keystore_net')
 
-	# load accounts
+	## load accounts
 	mywallet.load_accounts()
 
-	#list account address
+	## list account address
 	#print(mywallet.list_address())
 	json_account = mywallet.get_account(target_node['node_address'])
 	#print(json_account)
@@ -92,7 +87,7 @@ def set_peerNodes(target_name, op_status=0, isBroadcast=False):
 	for node in nodes:
 		logger.info(node)
 
-# ====================================== validator test ==================================
+## ====================================== validator test ==================================
 def Epoch_validator(target_address, op_status, tx_size, tx_count, phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
@@ -141,7 +136,7 @@ def Epoch_validator(target_address, op_status, tx_size, tx_count, phase_delay=BO
 	## Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time.log', str_time_exec)
 
-# ====================================== Random share test ==================================
+## ====================================== Random share test ==================================
 def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	'''
 	This test network latency for one epoch life time:
@@ -238,6 +233,7 @@ def Epoch_randomshare(phase_delay=BOUNDED_TIME):
 	## Save to *.log file
 	FileUtil.save_testlog('test_results', 'exec_time_randshare.log', str_time_exec)
 
+## ======== verify checkpoint at the end of epoch by voting process ===================
 def checkpoint_netInfo(target_address, isDisplay=False):
 	## get validators information in net.
 	validator_info = VDFchain_client.validator_getinfo(target_address, True)
@@ -312,6 +308,7 @@ def checkpoint_netInfo(target_address, isDisplay=False):
 
 	return json_checkpoints
 
+## ======== print out latest blocks of the legder ===================
 def disp_chaindata(target_address, isDisplay=False):
 	json_response = VDFchain_client.get_chain(target_address)
 	chain_data = json_response['chain']
@@ -327,6 +324,7 @@ def disp_chaindata(target_address, isDisplay=False):
 		    for block in chain_data:
 		        logger.info("{}\n".format(block))
 
+## ============================== calculate tx size ===========================
 def count_tx_size(target_address, block_hash):
 	if(block_hash==""):
 		json_response = VDFchain_client.get_chain(target_address)
@@ -348,6 +346,7 @@ def count_tx_size(target_address, block_hash):
 			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
 			break
 
+## ====================== calculate vote message size ===========================
 def count_vote_size(target_address):
 	## get validators information from a validator.
 	validator_info = VDFchain_client.validator_getinfo(target_address, False)[0]
@@ -363,6 +362,7 @@ def count_vote_size(target_address):
 			vote_str = TypesUtil.json_to_string(ls_votes[0]) 
 			logger.info('Vote size: {} Bytes'.format(len( vote_str.encode('utf-8') )))
 
+## ====================== collect all validator status ===========================
 def validator_getStatus():
 	## Instantiate the PeerNodes and load all nodes information
 	peer_nodes = Nodes(db_file = PEERS_DATABASE)
@@ -380,6 +380,7 @@ def validator_getStatus():
 
 	logger.info("Non-syn node: {}".format(unconditional_nodes))
 
+## ====================== arguments definition for cmd tool ========================
 def define_and_get_arguments(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser(description="Run websocket client.")
 	
@@ -410,10 +411,10 @@ if __name__ == "__main__":
 	VDFchain_RPC_logger = logging.getLogger("VDFchain_RPC")
 	VDFchain_RPC_logger.setLevel(logging.INFO)
 
-	# get arguments
+	## get arguments
 	args = define_and_get_arguments()
 
-	# set parameters
+	## set parameters
 	target_address = args.target_address
 	tx_size = args.tx_size
 	tx_count = args.tx_count
@@ -448,20 +449,20 @@ if __name__ == "__main__":
 				logger.info(future.result())
 			loop.close()
 		elif(op_status == 5):
-			# display peering nodes
+			## display peering nodes
 			json_response=VDFchain_client.get_peernodes(target_address)
 			nodes = json_response['nodes']
 			logger.info('Peer nodes:')
 			for node in nodes:
 				logger.info(node)
 		elif(op_status == 6):
-			# list check node result
+			## list check node result
 			json_response=VDFchain_client.check_verifynode(target_address, '5af1d2232756fdff405682ec6f1b785f645cf351')
 			node = json_response['node']
 			logger.info('Check nodes:')
 			logger.info(node)
 		else:
-			# display peering nodes
+			## display peering validators
 			json_response=VDFchain_client.get_verifynodes(target_address)
 			nodes = json_response['nodes']
 			logger.info('Verify nodes:')
@@ -481,7 +482,7 @@ if __name__ == "__main__":
 	elif(test_func == 2):
 		if(op_status == 1):
 			for tps_round in range(tx_count):
-				VDFchain_client.send_transaction(target_address, tx_size, False)
+				VDFchain_client.send_transaction(target_address, tx_size, True)
 		elif(op_status == 10):
 			for tps_round in range(tx_count):
 				VDFchain_client.launch_txs(tx_size)
@@ -537,19 +538,8 @@ if __name__ == "__main__":
 			for _item, _value in json_checkpoints.items():
 				logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 	else:
-		# host_address='ceeebaa052718c0a00adb87de857ba63608260e9'
-		# cache_fetch_share(target_address)
-		# verify_share(host_address)
-		# cache_recovered_shares(target_address)
-		# recovered_shares(host_address)
-		# print(create_randshare(target_address))
-		# cache_vote_shares(target_address)
-		# print(verify_vote_shares())
-		# vote_randshare(target_address)
 
 		for x in range(test_run):
 			logger.info("Test run:{}".format(x+1))
 			Epoch_randomshare()
 			time.sleep(wait_interval)
-	
-		# pass

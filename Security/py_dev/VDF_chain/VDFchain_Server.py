@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 
 # ================================= Instantiate the server =====================================
 app = Flask(__name__)
-#CORS(app)
 
 #===================================== Validator RPC handler ===================================
 @app.route('/test/consensus/run', methods=['POST'])
@@ -86,7 +85,7 @@ def eVDF_prime():
 # ================================ Transaction RPC handler==================================
 @app.route('/test/transaction/query', methods=['GET'])
 def query_transaction():
-	# parse data from request.data
+	## parse data from request.data
 	req_data=TypesUtil.bytes_to_string(request.data)
 
 	tx_hash=json.loads(req_data)
@@ -114,9 +113,9 @@ def verify_transaction():
 	exec_time=time.time()-start_time
 	FileUtil.save_testlog('test_results', 'exec_verify_tx.log', format(exec_time*1000, '.3f'))
 
-	if(verify_data==True):
-		## 5) forward unseen tx to peer nodes.
-		SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), transaction_json, '/test/transaction/verify')
+	# if(verify_data==True):
+	# 	## 5) forward unseen tx to peer nodes.
+	# 	SrvAPI.broadcast_POST(myblockchain.peer_nodes.get_nodelist(), transaction_json, '/test/transaction/verify')
 	
 	return jsonify({'verify_transaction': verify_data}), 201
 
@@ -157,7 +156,7 @@ def full_chain():
 	}
 	return jsonify(response), 200
 
-# ================================ Mining RPC handler==================================
+## ================================ Mining RPC handler==================================
 @app.route('/test/chain/checkhead', methods=['GET'])
 def check_head():
 	myblockchain.fix_processed_head()
@@ -194,7 +193,7 @@ def mine_block():
 	
 	return jsonify(response), 200
 
-# ================================ Node RPC handler==================================
+## ================================ Node RPC handler==================================
 @app.route('/test/p2p/neighbors', methods=['GET'])
 def p2p_neighbors():
 	neighbors = my_p2p.get_neighbors()
@@ -303,7 +302,7 @@ def remove_verifynode():
 	myblockchain.verify_nodes.load_ByAddress()
 	return jsonify({'remove verify node': json_node['address']}), 201
 
-# ================================ Block RPC handler==================================
+## ================================ Block RPC handler==================================
 @app.route('/test/block/query', methods=['GET'])
 def query_block():
 	# parse data from request.data
@@ -331,7 +330,7 @@ def verify_block():
 
 	return jsonify({'verify_block': verify_result}), 201
 
-# ================================ Vote RPC handler==================================
+## ================================ Vote RPC handler==================================
 @app.route('/test/block/vote', methods=['GET'])
 def vote_block():
 	json_block = myblockchain.processed_head
@@ -379,7 +378,7 @@ def broadcast_vote():
 
 	return jsonify({'broadcast_vote': 'Succeed!'}), 201
 
-# ====================================== Random share RPC handler==================================
+## ====================================== Random share RPC handler==================================
 @app.route('/test/randshare/create', methods=['GET'])
 def create_randshare():
 
@@ -393,7 +392,7 @@ def create_randshare():
 
 	return jsonify({'create_randshare': 'Succeed!'}), 201
 
-# request for share from peers
+## request for share from peers
 @app.route('/test/randshare/fetch', methods=['POST'])
 def fetch_randshare():
 	# parse data from request.data
@@ -406,13 +405,13 @@ def fetch_randshare():
 	response = myrandshare.fetch_randomshares(json_node)
 	return jsonify(response), 200
 
-# request for share from peers and cache to local
+## request for share from peers and cache to local
 @app.route('/test/randshare/cachefetched', methods=['GET'])
 def cachefetched_randshare():
 	randshare_daemon.set_cmd(1)
 	return jsonify({'cachefetched_randshare': 'Succeed!'}), 200
 
-# verify share and proof 
+## verify share and proof 
 @app.route('/test/randshare/verify', methods=['GET'])
 def verify_randshare():
 	start_time=time.time()
@@ -471,7 +470,7 @@ def disp_randomshare(json_shares):
 		for share_proof in share_proofs:
 			logger.info('    {}'.format(share_proof))
 
-# ================================ Private functions ==================================
+## ================================ Private functions ==================================
 def new_account():
 	## Instantiate the Wallet
 	mywallet = Wallet()
