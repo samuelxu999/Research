@@ -912,30 +912,40 @@ class Validator():
 			@ verify_result: True or False
 		'''
 		verify_result = True
+
+		tx_pool = []
+		for tx in self.transactions:
+			tx_pool.append(tx['hash'])
+
+		## each tx_hash to check if it's valid in tx_pool
 		for tx_hash in transactions:
-			## for each tx_hash to get json transaction data
-			transaction_data = self.get_tx(tx_hash)
-			
-			# ====================== rebuild order dict transaction ==========================
-			dict_transaction = Transaction.get_dict(transaction_data['hash'],
-												transaction_data['sender_address'], 
-			                                    transaction_data['recipient_address'],
-			                                    transaction_data['time_stamp'],
-			                                    transaction_data['value'])
-
-			sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
-
-			# get node data from self.peer_nodes buffer
-			sender_node=self.get_node(transaction_data['sender_address'])
-
-			# ====================== verify transaction ==========================
-			if(sender_node!={}):
-			    sender_pk= sender_node['public_key']
-			    verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
-			else:
+			if(tx_hash not in tx_pool):
 				verify_result = False
-			if(not verify_result):
 				break
+
+			# ## for each tx_hash to get json transaction data
+			# transaction_data = self.get_tx(tx_hash)
+			
+			# # ====================== rebuild order dict transaction ==========================
+			# dict_transaction = Transaction.get_dict(transaction_data['hash'],
+			# 									transaction_data['sender_address'], 
+			#                                     transaction_data['recipient_address'],
+			#                                     transaction_data['time_stamp'],
+			#                                     transaction_data['value'])
+
+			# sign_str = TypesUtil.hex_to_string(transaction_data['signature'])
+
+			# # get node data from self.peer_nodes buffer
+			# sender_node=self.get_node(transaction_data['sender_address'])
+
+			# # ====================== verify transaction ==========================
+			# if(sender_node!={}):
+			#     sender_pk= sender_node['public_key']
+			#     verify_result = Transaction.verify(sender_pk, sign_str, dict_transaction)
+			# else:
+			# 	verify_result = False
+			# if(not verify_result):
+			# 	break
 		return verify_result
 
 	def get_parent(self, json_block):
