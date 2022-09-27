@@ -11,7 +11,7 @@ import sys
 import argparse
 import time, datetime
 import logging
-import asyncio
+import threading
 import requests
 
 from utils.utilities import TypesUtil, FileUtil, DatetimeUtil
@@ -181,12 +181,56 @@ def show_tx_size(target_address):
 			logger.info('Tx size: {} Bytes'.format(len( tx_str.encode('utf-8') )))
 			break
 
+## ========================== uav test functions ===================
+class queryTxsThread(threading.Thread):
+	'''
+	Threading class to handle multiple txs threads pool
+	'''
+	def __init__(self, argv):
+		threading.Thread.__init__(self)
+		self.argv = argv
+
+	def run(self):
+		'''
+		The run() method is the entry point for a thread.
+		'''
+		## set parameters based on argv
+		_address = self.argv[0]
+		_data = self.argv[1]
+
+		ret_msg=query_uavData(_address, _data)
+		# logger.info(ret_msg)
+
+def query_txs(args):
+	address = args.uav_server
+	data = args.data
+	thread_count = args.tx_thread
+	## Create thread pool
+	threads_pool = []
+
+	## 1) build tx_thread for each task
+	for idx in range(thread_count):
+		## Create new threads for tx
+		p_thread = queryTxsThread( [address, data] )
+
+		## append to threads pool
+		threads_pool.append(p_thread)
+
+		## The start() method starts a thread by calling the run method.
+		p_thread.start()
+
+	## 2) The join() waits for all threads to terminate.
+	for p_thread in threads_pool:
+		p_thread.join()
+
+	logger.info('launch query_txs, number:{}'.format(thread_count))
+
 def query_uavData(uav_server, ac_receipt):
 	api_url = 'http://'+ uav_server + '/drone/api/v1.0/uav/data'
 	data_args = {}
 	data_args['ac_receipt'] = ac_receipt
 	uav_data = SrvAPI.GET(api_url, data_args)
-	print(uav_data)
+	return uav_data
 
 def build_CapAC_tx():
 	CapAC_tx = {}
@@ -251,6 +295,8 @@ if __name__ == "__main__":
 	op_status = args.op_status
 	wait_interval = args.wait_interval
 	test_run = args.test_round
+	uav_server =args.uav_server
+	data = args.data
 
 	# ------------------------ Instantiate the Client_RPC ----------------------------------
 	Client_instace = Client_RPC(bootstrap_address)
@@ -271,14 +317,14 @@ if __name__ == "__main__":
 			tx_pool = Client_instace.query_tx_pool(target_address)
 			logger.info(tx_pool)
 		elif(op_status == 5):
-			tx_hash = args.data
+			tx_hash = data
 			list_tx = Client_instace.query_tx(target_address, tx_hash)
 			for tx in list_tx:
 				count_tx_size=len( tx[2].encode('utf-8'))
 				logger.info("{}, committed in block:{}, size:{}.\n".format(TypesUtil.string_to_json(tx[2]),
 																tx[3], count_tx_size))
 		elif(op_status == 6):
-			block_hash = args.data
+			block_hash = data
 			json_block = Client_instace.query_blk(target_address, block_hash)
 			if(json_block!={}):
 				block_size = len( TypesUtil.json_to_string(json_block).encode('utf-8'))
@@ -331,16 +377,24 @@ if __name__ == "__main__":
 			for _item, _value in json_checkpoints.items():
 				logger.info("{}: {}    {}".format(_item, _value[0], _value[1]))
 	elif(test_func==3):
-		if(op_status == 10):
-			ls_time_exec = []
-			start_time=time.time()   
-			query_uavData(args.uav_server, args.data)
-			exec_time=time.time()-start_time
-			ls_time_exec.append(format(exec_time*1000, '.3f'))
-			## Prepare log messgae
-			str_time_exec=" ".join(ls_time_exec)
-			## Save to *.log file
-			FileUtil.save_testlog('test_results', 'query_uavData.log', str_time_exec)
+		if(op_status == 10):  
+			ret_msg = query_uavData(uav_server, data)
+			logger.info(ret_msg)
+		elif(op_status == 11):
+			for x in range(test_run):
+				logger.info("Test run:{}".format(x+1))
+				ls_time_exec = []
+				start_time=time.time()
+				## call multi query txs
+				query_txs(args)
+				exec_time=time.time()-start_time
+				ls_time_exec.append(format(exec_time*1000, '.3f'))
+				## Prepare log messgae
+				str_time_exec=" ".join(ls_time_exec)
+				## Save to *.log file
+				FileUtil.save_testlog('test_results', 'query_uavData.log', str_time_exec)
+
+				time.sleep(wait_interval)
 		elif(op_status == 20):
 			cap_ac = build_CapAC_tx()
 			print(cap_ac)
