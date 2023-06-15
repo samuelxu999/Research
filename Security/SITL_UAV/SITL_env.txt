@@ -1,0 +1,50 @@
+This document is used for Software-In-The-Loop (SITL) Simulator Installation
+
+1) Install MAVLink python library
+	pip install pymavlink
+
+2) Install ArduPilot for simulation with the following commands:
+
+	a) Clone ardupilot from github and install
+	git clone https://github.com/ArduPilot/ardupilot.git
+	cd ardupilot
+	git checkout Copter-4.3.6
+	git submodule update --init --recursive
+
+	b) Install dependencies
+	#sudo apt-get install ccache gawk
+	sudo apt-get install python3-matplotlib python3-serial python3-wxgtk4.0 python-wxtools python3-lxml python3-scipy python3-opencv ccache gawk python3-pip python3-pexpect
+
+3) Install MAVProxy
+	a) install MAVProxy
+	sudo python3 -m pip install future MAVProxy
+
+	b) Write path to the system with the following steps
+	--- Run ‘pico ~/.bashrc’ to edit the ~/.bashrc file
+	--- Append following export to the end.
+		export PATH=$PATH:$HOME/Desktop/Github/ardupilot/Tools/autotest
+		export PATH=/usr/lib/ccache:$PATH
+	--- Ctrl (CMD) +X and Y yo save change and close editor
+
+	c) Reload the ~/.bashrc file use command ‘. ~/.bashrc’
+
+	d) Install ardupilot
+		Run ‘cd ./ardupilot/ArduCopter’
+		Use the command ‘sim_vehicle.py -w’ to check if the program was installed successfully.
+
+4) Install QGroundControl as the GUI for ArduPilot
+	a) 	Preparation
+		sudo usermod -a -G dialout $USER
+		sudo apt-get remove modemmanager -y
+		sudo apt install gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl -y
+		sudo apt install libqt5gui5 -y
+		sudo apt install libfuse2 -y
+	b) Download QGroundControl.AppImag
+		wget https://s3-us-west-2.amazonaws.com/qgroundcontrol/latest/QGroundControl.AppImage
+	c)Install (and run) using the terminal commands: 	
+		chmod +x ./QGroundControl.AppImage
+		Run ‘./QGroundControl.AppImage’ to check if the program was installed successfully
+
+
+
+	
